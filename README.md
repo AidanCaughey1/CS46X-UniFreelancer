@@ -4,7 +4,7 @@ Team 37 for the OSU 2025 Capstone Project UniFreelancer Academy
 UniFreelancer Academy connects aspiring professionals with mentors and micro-learning experiences designed around practical freelancing skills.  
 This repository hosts the codebase, documentation, and project management rails for our capstone development.
 
-Team Roster:
+Team Roster: <br />.
 Aidan Caughey  | Roles | caugheya@oregonstate.edu <br />
 Aiden McCoy    | Roles | mccoaide@oregonstate.edu <br />
 Baron Baker    | Roles | bakerbar@oregonstate.edu <br />
