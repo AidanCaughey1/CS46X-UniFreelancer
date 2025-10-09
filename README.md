@@ -5,8 +5,8 @@ UniFreelancer Academy connects aspiring professionals with mentors and micro-lea
 This repository hosts the codebase, documentation, and project management rails for our capstone development.
 
 Team Roster:
-Aidan Caughey  | Roles | caugheya@oregonstate.edu
-Aiden McCoy    | Roles | mccoaide@oregonstate.edu
-Baron Baker    | Roles | bakerbar@oregonstate.edu
-Daniel Molina  | Roles | molindan@oregonstate.edu
-Nafizur Rahman | Roles | rahmanna@oregonstate.edu
+Aidan Caughey  | Roles | caugheya@oregonstate.edu <br />
+Aiden McCoy    | Roles | mccoaide@oregonstate.edu <br />
+Baron Baker    | Roles | bakerbar@oregonstate.edu <br />
+Daniel Molina  | Roles | molindan@oregonstate.edu <br />
+Nafizur Rahman | Roles | rahmanna@oregonstate.edu <br />
