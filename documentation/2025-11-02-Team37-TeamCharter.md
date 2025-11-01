@@ -14,10 +14,10 @@
 - Daniel Molina – Technical Architect / Frontend Developer
 - Nafizur Rahman – Frontend Developer
 
-**Decision Rule:** Consensus with majority vote (3/5) fallback.
-**Meeting Cadence:** Communicating daily (Discord), weekly partner check-ins, biweekly TA meetings, and sprint retros via Google Docs.
-**Core Tools:** GitHub (issues, CI/CD), Discord (communication), Google Docs (notes), Figma (design), VS Code.  
-**Risks:** Integration complexity, database schema mismatch, and unclear payment platform (Stripe vs Sharetribe).  
+**Decision Rule:** Consensus with majority vote (3/5) fallback.  
+**Meeting Cadence:** Communicating daily (Discord), weekly partner check-ins, biweekly TA meetings, and sprint retros via Google Docs.  
+**Core Tools:** GitHub (issues, CI/CD), Discord (communication), Google Docs (notes), Figma (design), VS Code.    
+**Risks:** Integration complexity, database schema mismatch, and unclear payment platform (Stripe vs Sharetribe).    
 **Escalation Path:**  
 1. Peer discussion within 24 hrs.  
 2. Escalate to TA/instructor if unresolved or blocking sprint progress.
