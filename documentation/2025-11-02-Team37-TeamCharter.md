@@ -12,7 +12,7 @@
 - Aiden McCoy – Partner Liaison / Backend Developer
 - Baron Baker – Data Lead / Backend Developer
 - Daniel Molina – Technical Architect / Frontend Developer
-- Nafizur Rahman – Frontend Developer
+- Nafizur Rahman – UI/UX Lead / Frontend Developer
 
 **Decision Rule:** Consensus with majority vote (3/5) fallback.  
 **Meeting Cadence:** Communicating daily (Discord), weekly partner check-ins, biweekly TA meetings, and sprint retros via Google Docs.  
@@ -27,5 +27,14 @@
 
 ---
 ## Conflict Resolution & Accountability
+**Triggers:** Missed deadlines, unreviewed PRs > 48 h, repeated meeting absences.
+**Step by Step Plan:**
+1. Send a reminder and quick checkup - Make sure the team member(s) is aware of the problem and if they need any help to handle it. (Within 24h of conflict not resolving)
+2. Meeting - Sit down with the team member(s) and discuss evidence and create an action plan to resolve the conflict. (Within 48h of conflict not resolving)
+3. Follow Up - Following up with team members and making sure that the action plan is being followed. (Within 1w of the conflict)
+4. Escalate - contact instructor and determine how to solve this issue (ASAP if follow up fails)
+
+**Owner:** Nafizur Rahman
+**Review By:** 2025-12-01
 ## Definition of Done (DoD) & Quality Gates
 ## Accessibility & Inclusion Practices
