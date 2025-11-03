@@ -8,7 +8,7 @@
 ---
 
 **Roles:**  
-- Aidan Caughey – Project Manager / Backend Developer
+- Aidan Caughey – Project Manager / Backend Developer 
 - Aiden McCoy – Partner Liaison / Backend Developer
 - Baron Baker – Data Lead / Backend Developer
 - Daniel Molina – Technical Architect / Frontend Developer
