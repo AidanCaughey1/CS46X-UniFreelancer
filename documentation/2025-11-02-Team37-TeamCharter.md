@@ -58,3 +58,29 @@
 
 ---
 ## Accessibility & Inclusion Practices
+**Meeting Norms**  
+- Weekly project partner meetings occur via Zoom, led by the Project Manager.  
+- A reminder is sent in Discord ten minutes before each meeting, with the Zoom link posted five minutes prior.  
+- Team members unable to attend notify the group in advance; meetings are recorded and shared in Discord for review.  
+- Zoom auto-captions are enabled by default to support accessibility.  
+- Each meeting includes a brief check-in and follows inclusive **turn-taking** so that every member can contribute comfortably.  
+
+**Inclusive Participation**  
+- Most discussions and decision-making occur asynchronously in Discord, ensuring equal participation across different schedules and time zones.  
+- Team members are encouraged to share ideas, feedback, or concerns freely, whether during live discussions or asynchronously.  
+- Constructive feedback is the norm; team members build on each other’s ideas rather than compete for airtime.  
+- Note-taking rotates weekly to include diverse perspectives and distribute responsibility.  
+
+**Requesting Accommodations**  
+- Team members may request adjustments such as flexible deadlines, reduced meeting frequency, or modified task assignments by notifying the Team and Project Manager in advance (via Discord).  
+- The team reviews accommodation requests collaboratively to ensure fairness and transparency while maintaining project progress.  
+
+**Addressing Barriers**  
+- Any accessibility or participation barriers (e.g., technical issues, scheduling conflicts, unclear communication) can be raised in Discord or during meetings without penalty.  
+- The Project Manager tracks recurring issues and discusses potential solutions with the team or escalates them to the TA if unresolved.  
+- Barriers and inclusion improvements are reviewed during sprint retrospectives, and adjustments are made as needed.  
+
+**Owner:** Daniel Molina
+**Review By:** 2025-12-01  
+
+---
