@@ -36,5 +36,25 @@
 
 **Owner:** Nafizur Rahman
 **Review By:** 2025-12-01
+
+---
 ## Definition of Done (DoD) & Quality Gates
+**DOD:** A task or feature is considered done when all of the following conditions are met:
+1. The feature meets all acceptance criteria in the issue description and passes functional testing.
+2. Code compiles without errors or warnings and passes all automated tests in CI.
+3. Code has been reviewed and approved by at least one team member through a GitHub pull request.
+4. Documentation (README, in-code comments, or API docs) has been updated to reflect changes.
+5. No sensitive data is hardcoded or pushed to the repo.
+6. The new functionality is deployed successfully to the test branch without breaking existing features.
+
+**Quality Gates:** To ensure our main branch always remains shippable, each request must pass these quality checks before merging:
+1. Run unit and integration tests through GitHub Actions
+2. No new dependencies added without a review for licensing and security impact.
+3. Changes that affect setup, APIs, or UI must include updates to relevant documentation
+4. Reviewers verify readability, maintainability, and adherence to project structure
+
+**Owner:** Baron Baker
+**Review By:** 2025-12-01
+
+---
 ## Accessibility & Inclusion Practices
