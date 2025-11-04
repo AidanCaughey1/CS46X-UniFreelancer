@@ -30,26 +30,29 @@ const CourseSchema = new mongoose.Schema({
   },
   category: { type: String },
   thumbnail: { type: String },
-  isLiteVersion: { type: Boolean, default: false }, // For free/limited access courses
+  isLiteVersion: { type: Boolean, default: false },
 
   // Instructor Info
   instructor: InstructorSchema,
 
-  // Pricing Info
+  // Pricing
   pricing: {
     type: String,
     enum: ["Free", "Paid"],
     default: "Free",
   },
-  priceAmount: { type: Number, default: 0 }, // Optional, only used if pricing is "Paid"
+  priceAmount: { type: Number, default: 0 },
 
-  // Content / Learning Points
+  // Learning Content
   learningPoints: [{ type: String }],
-
-  // Modules and Lessons
   modules: [ModuleSchema],
 
-  // Course Metadata
+  // Course Relationships
+  studentsEnrolled: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  completedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  totalHours: { type: Number, default: 0 },
+
+  // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
