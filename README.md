@@ -9,11 +9,11 @@ This repository hosts the codebase, documentation, and project management rails 
 ---
 
 ### Team Roster
-Aidan Caughey  | Roles | caugheya@oregonstate.edu <br />
-Aiden McCoy    | Roles | mccoaide@oregonstate.edu <br />
-Baron Baker    | Roles | bakerbar@oregonstate.edu <br />
-Daniel Molina  | Roles | molindan@oregonstate.edu <br />
-Nafizur Rahman | Roles | rahmanna@oregonstate.edu <br />
+Aidan Caughey  | Backend Development | caugheya@oregonstate.edu <br />
+Aiden McCoy    | Backend Development | mccoaide@oregonstate.edu <br />
+Baron Baker    | Database Manager | bakerbar@oregonstate.edu <br />
+Daniel Molina  | Frontend Development | molindan@oregonstate.edu <br />
+Nafizur Rahman | Frontend Development | rahmanna@oregonstate.edu <br />
 
 ---
 
