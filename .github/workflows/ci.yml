@@ -15,7 +15,7 @@ jobs:
         node-version: [18]  
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Node.js
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
+      - name: Install testing dependencies
         run: npm install --prefix testing
 
       - name: Run tests
