@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-//import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+// import { useNavigate } from 'react-router-dom';
 import './Courses.css';
 
 function Courses() {
-  //const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'my-learning' or 'all'
-  
-  // Filter states
+
   const [filters, setFilters] = useState({
     level: [],
     language: [],
@@ -38,15 +37,10 @@ function Courses() {
     }
   };
 
-  // Handle search
-  useEffect(() => {
-    filterCourses();
-  }, [searchTerm, filters, courses]);
-
-  const filterCourses = () => {
+  // Wrap filterCourses in useCallback
+  const filterCourses = useCallback(() => {
     let filtered = [...courses];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(course =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,14 +49,10 @@ function Courses() {
       );
     }
 
-    // Level filter
     if (filters.level.length > 0) {
-      filtered = filtered.filter(course =>
-        filters.level.includes(course.difficulty)
-      );
+      filtered = filtered.filter(course => filters.level.includes(course.difficulty));
     }
 
-    // Duration filter
     if (filters.duration.length > 0) {
       filtered = filtered.filter(course => {
         const weeks = parseInt(course.duration);
@@ -76,12 +66,11 @@ function Courses() {
       });
     }
 
-    // Price filter
     if (filters.price.length > 0) {
       filtered = filtered.filter(course => {
         const isFree = course.isLiteVersion || !course.priceAmount || course.priceAmount === 0;
         const price = course.priceAmount || 0;
-        
+
         return filters.price.some(range => {
           if (range === 'free') return isFree;
           if (range === 'under-300') return price > 0 && price < 300;
@@ -93,7 +82,12 @@ function Courses() {
     }
 
     setFilteredCourses(filtered);
-  };
+  }, [courses, searchTerm, filters]);
+
+  // Call filterCourses whenever dependencies change
+  useEffect(() => {
+    filterCourses();
+  }, [filterCourses]);
 
   const handleFilterChange = (category, value) => {
     setFilters(prev => {
@@ -117,7 +111,6 @@ function Courses() {
     return `$${course.priceAmount}`;
   };
 
-  // Mock data for My Learning stats (will be dynamic later)
   const myLearningStats = {
     enrolled: 2,
     completed: 0,
@@ -127,13 +120,11 @@ function Courses() {
 
   return (
     <div className="courses-page">
-
       <div className="courses-container">
         {/* My Learning Section */}
         <div className="my-learning-section">
           <h2 className="section-title">My Learning</h2>
           <p className="section-subtitle">Track your progress and continue your learning journey</p>
-          
           <div className="stats-grid">
             <div className="stat-card">
               <span className="stat-icon">📖</span>
@@ -185,7 +176,6 @@ function Courses() {
         <div className="courses-section">
           <h2 className="section-title">Courses</h2>
           <p className="section-subtitle">Structured learning programs to master freelancing disciplines</p>
-
           <div className="search-bar-container">
             <div className="search-bar">
               <span className="search-icon">🔍</span>
@@ -206,111 +196,62 @@ function Courses() {
           </div>
 
           <div className="courses-content">
-            {/* Filters Sidebar */}
             <div className="filters-sidebar">
               <h3 className="filters-title">Filter By</h3>
 
               {/* Level Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Level</h4>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.level.includes('Beginner')}
-                    onChange={() => handleFilterChange('level', 'Beginner')}
-                  />
-                  <span>Beginner</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.level.includes('Intermediate')}
-                    onChange={() => handleFilterChange('level', 'Intermediate')}
-                  />
-                  <span>Intermediate</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.level.includes('Advanced')}
-                    onChange={() => handleFilterChange('level', 'Advanced')}
-                  />
-                  <span>Advanced</span>
-                </label>
+                {['Beginner','Intermediate','Advanced'].map(level => (
+                  <label key={level} className="filter-option">
+                    <input
+                      type="checkbox"
+                      checked={filters.level.includes(level)}
+                      onChange={() => handleFilterChange('level', level)}
+                    />
+                    <span>{level}</span>
+                  </label>
+                ))}
               </div>
 
               {/* Duration Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Duration</h4>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.duration.includes('less-4')}
-                    onChange={() => handleFilterChange('duration', 'less-4')}
-                  />
-                  <span>Less than 4 weeks</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.duration.includes('4-8')}
-                    onChange={() => handleFilterChange('duration', '4-8')}
-                  />
-                  <span>4-8 weeks</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.duration.includes('8-12')}
-                    onChange={() => handleFilterChange('duration', '8-12')}
-                  />
-                  <span>8-12 weeks</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.duration.includes('more-12')}
-                    onChange={() => handleFilterChange('duration', 'more-12')}
-                  />
-                  <span>More than 12 weeks</span>
-                </label>
+                {['less-4','4-8','8-12','more-12'].map(range => (
+                  <label key={range} className="filter-option">
+                    <input
+                      type="checkbox"
+                      checked={filters.duration.includes(range)}
+                      onChange={() => handleFilterChange('duration', range)}
+                    />
+                    <span>
+                      {range === 'less-4' ? 'Less than 4 weeks' :
+                       range === '4-8' ? '4-8 weeks' :
+                       range === '8-12' ? '8-12 weeks' :
+                       'More than 12 weeks'}
+                    </span>
+                  </label>
+                ))}
               </div>
 
               {/* Price Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Price</h4>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.price.includes('free')}
-                    onChange={() => handleFilterChange('price', 'free')}
-                  />
-                  <span>Free</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.price.includes('under-300')}
-                    onChange={() => handleFilterChange('price', 'under-300')}
-                  />
-                  <span>Under $300</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.price.includes('300-600')}
-                    onChange={() => handleFilterChange('price', '300-600')}
-                  />
-                  <span>$300 - $600</span>
-                </label>
-                <label className="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={filters.price.includes('over-600')}
-                    onChange={() => handleFilterChange('price', 'over-600')}
-                  />
-                  <span>Over $600</span>
-                </label>
+                {['free','under-300','300-600','over-600'].map(range => (
+                  <label key={range} className="filter-option">
+                    <input
+                      type="checkbox"
+                      checked={filters.price.includes(range)}
+                      onChange={() => handleFilterChange('price', range)}
+                    />
+                    <span>
+                      {range === 'free' ? 'Free' :
+                       range === 'under-300' ? 'Under $300' :
+                       range === '300-600' ? '$300 - $600' :
+                       'Over $600'}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -343,28 +284,15 @@ function Courses() {
                         <h3 className="course-title">{course.title}</h3>
                         {course.isLiteVersion && <span className="lite-badge">Lite</span>}
                       </div>
-                      <p className="course-description">
-                        {course.description?.substring(0, 80)}...
-                      </p>
+                      <p className="course-description">{course.description?.substring(0,80)}...</p>
                       <div className="course-details">
-                        <div className="course-detail">
-                          <span className="detail-icon">🕐</span>
-                          <span>{getCourseDuration(course.duration)}</span>
-                        </div>
-                        <div className="course-detail">
-                          <span className="detail-icon">🏷️</span>
-                          <span>{course.category || 'General'}</span>
-                        </div>
-                        <div className="course-detail">
-                          <span className="detail-icon">📊</span>
-                          <span>{course.difficulty}</span>
-                        </div>
+                        <div className="course-detail"><span className="detail-icon">🕐</span><span>{getCourseDuration(course.duration)}</span></div>
+                        <div className="course-detail"><span className="detail-icon">🏷️</span><span>{course.category || 'General'}</span></div>
+                        <div className="course-detail"><span className="detail-icon">📊</span><span>{course.difficulty}</span></div>
                       </div>
                       <div className="course-footer">
                         <div className="course-price">{getCoursePrice(course)}</div>
-                        <button className="view-details-btn">
-                          View Details →
-                        </button>
+                        <button className="view-details-btn">View Details →</button>
                       </div>
                     </div>
                   </div>
