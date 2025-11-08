@@ -4,14 +4,15 @@
   "description": "",
   "main": "userRoutes.test.js",
   "scripts": {
-  "test": "mocha ./tests/**/*.js"
-},
+    "test": "mocha ./tests/**/*.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
     "chai": "^6.2.0",
-    "mocha": "^11.7.5"
+    "mocha": "^11.7.5",
+    "supertest": "^7.1.4"
   }
 }
