@@ -28,7 +28,13 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+        if npm run | grep -q "build"; then
+          npm run build
+        else
+          echo "No build script, skipping"
+        fi
+
 
       - name: Run tests
         run: npm test
