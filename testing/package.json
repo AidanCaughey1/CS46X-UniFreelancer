@@ -2,7 +2,7 @@
   "name": "testing",
   "version": "1.0.0",
   "description": "",
-  "main": "userRoutes.test.js",
+  "main": "simple.test.js",
   "scripts": {
     "test": "mocha ./tests/**/*.js"
   },

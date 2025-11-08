@@ -4,7 +4,7 @@
   "description": "Team 37 for the OSU 2025 Capstone Project **UniFreelancer Academy** <br />",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+  "test": "mocha \"testing/tests/**/*.js\""
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.5.0",
     "jest": "^30.2.0",
+    "mocha": "^11.7.5",
     "supertest": "^7.1.4"
   }
 }
