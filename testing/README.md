@@ -11,7 +11,7 @@ We use **Mocha** as the test framework and **Chai + Chai HTTP** for assertions a
 - Test files should **end with `.test.js`** to be automatically discovered by Mocha.
 
 ## How to Run
-Install dependencies
-npm install
-Run tests
+Install dependencies//
+npm install//
+Run tests//
 npm test
