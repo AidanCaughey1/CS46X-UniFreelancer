@@ -1,6 +1,6 @@
 // testing/userRoutes.test.js
 const request = require('supertest');
-const app = require('../src/index');
+const app = require('../frontend/src/index');
 
 describe('User Routes', () => {
   
