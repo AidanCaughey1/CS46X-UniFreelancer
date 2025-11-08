@@ -29,13 +29,12 @@ jobs:
 
       - name: Build
         run: |
-        if npm run | grep -q "build"; then
-          npm run build
-        else
-          echo "No build script, skipping"
-        fi
-
-
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No build script, skipping"
+          fi
+        
       - name: Run tests
         run: npm test
 
