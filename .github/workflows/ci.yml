@@ -27,14 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build frontend
         run: |
-          if npm run | grep -q "build"; then
-            npm run build
-          else
-            echo "No build script, skipping"
-          fi
-        
+          cd frontend
+          npm install
+          npm run build
+
       - name: Run tests
         run: npm test
 
