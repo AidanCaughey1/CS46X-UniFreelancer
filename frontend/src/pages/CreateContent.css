@@ -1,0 +1,238 @@
+.create-content-page {
+  min-height: 100vh;
+  background-color: var(--main-background-color);
+  padding: 40px 20px;
+}
+
+.create-content-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: var(--dark-primary-color);
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 30px;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: var(--dark-secondary-color);
+}
+
+.page-title {
+  font-size: 36px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--dark-primary-color);
+  margin-bottom: 15px;
+}
+
+.page-description {
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--dark-secondary-color);
+  max-width: 700px;
+  margin: 0 auto 40px;
+}
+
+/* Tab Navigation */
+.content-tabs {
+  display: flex;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.content-tab {
+  flex: 1;
+  padding: 18px 24px;
+  background-color: var(--light-primary-color);
+  border: none;
+  border-right: 1px solid #d0d0d0;
+  color: var(--dark-primary-color);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  /* Only animate on hover and active (click) state */
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.content-tab:last-child {
+  border-right: none;
+}
+
+.content-tab:hover {
+  background-color: var(--light-secondary-color);  
+}
+
+.content-tab.active {
+  background-color: var(--light-tertiary-color);
+  color: var(--dark-primary-color);
+}
+
+
+/* Tab Content Area */
+.tab-content-area {
+  background-color: var(--light-tertiary-color);
+  border-radius: 0 0 8px 8px;
+  padding: 50px 60px;
+  min-height: 500px;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-info {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.content-type-heading {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--dark-primary-color);
+  margin-bottom: 20px;
+}
+
+.content-type-description {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--dark-secondary-color);
+  margin-bottom: 35px;
+}
+
+.content-features {
+  margin-bottom: 30px;
+}
+
+.content-features h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dark-primary-color);
+  margin-bottom: 15px;
+}
+
+.content-features ul {
+  list-style: none;
+  padding: 0;
+}
+
+.content-features li {
+  padding: 10px 0 10px 30px;
+  position: relative;
+  font-size: 15px;
+  color: var(--dark-secondary-color);
+  line-height: 1.6;
+}
+
+.content-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--accent-primary-color);
+  font-weight: bold;
+  font-size: 18px;
+}
+
+
+.create-button-large {
+  width: 100%;
+  padding: 16px 32px;
+  background-color: var(--accent-primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(44, 62, 80, 0.2);
+}
+
+.create-button-large:hover {
+  background-color: var(--accent-tertiary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .create-content-page {
+    padding: 20px 15px;
+  }
+
+  .page-title {
+    font-size: 28px;
+  }
+
+  .page-description {
+    font-size: 15px;
+  }
+
+  .content-tab {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+
+  .tab-content-area {
+    padding: 30px 25px;
+    min-height: 400px;
+  }
+
+  .content-type-heading {
+    font-size: 26px;
+  }
+
+  .content-type-description {
+    font-size: 15px;
+  }
+
+  .content-features h3 {
+    font-size: 18px;
+  }
+
+  .content-features li {
+    font-size: 14px;
+    padding: 8px 0 8px 28px;
+  }
+
+  .create-button-large {
+    font-size: 16px;
+    padding: 14px 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-tab {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
+
+  .tab-content-area {
+    padding: 25px 20px;
+  }
+
+  .content-type-heading {
+    font-size: 22px;
+  }
+}
+

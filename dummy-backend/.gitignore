@@ -1,0 +1,20 @@
+# Dependency directories
+node_modules/
+
+# Data files (will be generated)
+data/*.json
+
+# Keep the data directory structure
+!data/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+
+
