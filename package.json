@@ -4,7 +4,7 @@
   "description": "Team 37 for the OSU 2025 Capstone Project **UniFreelancer Academy** <br />",
   "main": "index.js",
   "scripts": {
-  "test": "jest --coverage"
+  "test": "mocha"
 },
   "repository": {
     "type": "git",
