@@ -1,46 +1,35 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main    # default branch
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  build-test-lint:
+  ci:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
 
-      - name: Install testing dependencies
-        run: npm install --prefix testing
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install backend dependencies
-        run: npm install --prefix dummy-backend
+      - name: Build
+        run: npm run build
 
-      - name: Install frontend dependencies
-        run: npm install --prefix frontend
+      - name: Run tests
+        run: npm test
 
-      - name: Install ESLint v9 and plugins
-        run: |
-          npm install -D eslint@^9.39.1 @eslint/js eslint-plugin-react globals
-
-      - name: Run lint
+      - name: Lint code
         run: npx eslint .
-
-      - name: Run backend tests
-        run: npm test --prefix testing
-
-      - name: Build frontend
-        run: npm run build --prefix frontend
