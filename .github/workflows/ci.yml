@@ -36,7 +36,7 @@ jobs:
         run: npm install -g eslint@8
 
       - name: Run lint
-        run: eslint . --ext .js,.jsx
+        run: eslint .
 
       - name: Run backend tests
         run: npm test --prefix testing
