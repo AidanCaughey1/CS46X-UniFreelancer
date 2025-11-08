@@ -4,8 +4,8 @@
   "description": "",
   "main": "userRoutes.test.js",
   "scripts": {
-    "test": "mocha --recursive"
-  },
+  "test": "mocha ./test/**/*.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
