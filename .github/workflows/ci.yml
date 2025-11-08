@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]   # default branch
+    branches: [ main ]   # replace with your default branch
   pull_request:
     branches: [ main ]
 
@@ -23,21 +23,23 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Install dependencies for backend/testing/frontend if needed
       - name: Install testing dependencies
         run: npm install --prefix testing
 
       - name: Install backend dependencies
         run: npm install --prefix dummy-backend
 
-      - name: Lint code
-        run: |
-          npm install -g eslint
-          eslint . --ext .js,.jsx
+      - name: Install frontend dependencies
+        run: npm install --prefix frontend
 
-      - name: Run tests
+      - name: Install ESLint v8
+        run: npm install -g eslint@8
+
+      - name: Run lint
+        run: eslint . --ext .js,.jsx
+
+      - name: Run backend tests
         run: npm test --prefix testing
 
-      # Optional: build frontend
       - name: Build frontend
-        run: npm install --prefix frontend && npm run build --prefix frontend
+        run: npm run build --prefix frontend
