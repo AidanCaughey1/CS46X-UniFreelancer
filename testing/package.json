@@ -14,5 +14,10 @@
     "chai": "^6.2.0",
     "mocha": "^11.7.5",
     "supertest": "^7.1.4"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   }
 }
