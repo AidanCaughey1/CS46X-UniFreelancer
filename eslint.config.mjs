@@ -1,55 +1,44 @@
-import { defineConfig } from "eslint/config";
 import js from "@eslint/js";
 import globals from "globals";
 import pluginReact from "eslint-plugin-react";
+import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-  // -------------------- Node Backend --------------------
+  // Node files
   {
-    files: ["dummy-backend/**/*.js", "backend/**/*.js"],
-    languageOptions: {
-      sourceType: "script", // Node usually uses CommonJS
-      globals: globals.node, // Node globals: process, __dirname, etc.
-    },
+    files: ["backend/**/*.js", "dummy-backend/**/*.js"],
     plugins: { js },
     extends: ["js/recommended"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: {},
+  },
+
+  // Frontend source files
+  {
+    files: ["frontend/src/**/*.{js,jsx}"],
+    plugins: { js, react: pluginReact },
+    extends: ["js/recommended", pluginReact.configs.flat.recommended],
+    languageOptions: { globals: globals.browser, sourceType: "module" },
+    settings: { react: { version: "detect" } },
     rules: {
-      // customize as needed
+      "react/no-unescaped-entities": "off",
     },
   },
 
-  // -------------------- Frontend React --------------------
+  // Frontend build files (ignore generated warnings)
   {
-    files: ["frontend/**/*.js", "frontend/**/*.jsx"],
-    languageOptions: {
-      parserOptions: {
-        ecmaVersion: 2023,
-        sourceType: "module", // for import/export
-        ecmaFeatures: { jsx: true },
-      },
-      globals: globals.browser, // browser globals like window
-    },
-    plugins: { react: pluginReact },
-    extends: ["plugin:react/recommended", "js/recommended"],
-    settings: {
-      react: { version: "detect" },
-    },
+    files: ["frontend/build/**/*.js"],
     rules: {
-      "react/no-unescaped-entities": "warn",
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-prototype-builtins": "off",
+      "no-unused-vars": "off",
+      "no-cond-assign": "off",
+      "no-undef": "off",
     },
   },
 
-  // -------------------- Testing (Mocha) --------------------
+  // Test files
   {
-    files: ["testing/**/*.js", "testing/**/*.mjs"],
-    env: { mocha: true, node: true },
-    languageOptions: {
-      globals: globals.node,
-    },
-    extends: ["js/recommended"],
-    rules: {
-      // you can customize rules for tests here
-    },
+    files: ["**/*.test.js"],
+    languageOptions: { globals: { ...globals.node, describe: true, it: true, expect: true } },
   },
 ]);
