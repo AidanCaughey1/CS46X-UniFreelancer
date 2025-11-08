@@ -4,7 +4,7 @@
   "description": "",
   "main": "userRoutes.test.js",
   "scripts": {
-  "test": "mocha ./test/**/*.js"
+  "test": "mocha ./tests/**/*.js"
 },
   "keywords": [],
   "author": "",
