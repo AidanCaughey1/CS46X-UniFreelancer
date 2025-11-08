@@ -11,8 +11,6 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "chai": "^4.5.0",
-    "chai-http": "^5.1.2",
     "mocha": "^11.7.5",
     "supertest": "^7.1.4"
   },

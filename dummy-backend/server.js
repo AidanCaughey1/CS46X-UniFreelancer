@@ -228,23 +228,29 @@ app.get('/', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('╔════════════════════════════════════════════════════╗');
-  console.log('║   UniFreelancer Academy - Dummy Backend           ║');
-  console.log('╚════════════════════════════════════════════════════╝');
-  console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-  console.log(`\n📊 Data stored in: ${DATA_DIR}`);
-  console.log(`\n📍 Endpoints:`);
-  console.log(`   - GET  /api/health`);
-  console.log(`   - GET  /api/academy/courses`);
-  console.log(`   - POST /api/academy/courses`);
-  console.log(`   - GET  /api/academy/seminars`);
-  console.log(`   - POST /api/academy/seminars`);
-  console.log(`   - GET  /api/academy/tutorials`);
-  console.log(`   - POST /api/academy/tutorials`);
-  console.log(`\n✨ Ready to accept requests!\n`);
-});
+// Export app for testing
+module.exports = app;
+
+// Only start server if run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('╔════════════════════════════════════════════════════╗');
+    console.log('║   UniFreelancer Academy - Dummy Backend           ║');
+    console.log('╚════════════════════════════════════════════════════╝');
+    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+    console.log(`\n📊 Data stored in: ${DATA_DIR}`);
+    console.log(`\n📍 Endpoints:`);
+    console.log(`   - GET  /api/health`);
+    console.log(`   - GET  /api/academy/courses`);
+    console.log(`   - POST /api/academy/courses`);
+    console.log(`   - GET  /api/academy/seminars`);
+    console.log(`   - POST /api/academy/seminars`);
+    console.log(`   - GET  /api/academy/tutorials`);
+    console.log(`   - POST /api/academy/tutorials`);
+    console.log(`\n✨ Ready to accept requests!\n`);
+  });
+}
+
 
 
 
