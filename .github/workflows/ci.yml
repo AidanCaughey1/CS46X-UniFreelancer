@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]   # replace with your default branch
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -32,11 +32,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm install --prefix frontend
 
-      - name: Install ESLint v8
-        run: npm install -g eslint@8
+      - name: Install ESLint v9 and plugins
+        run: |
+          npm install -D eslint@^9.39.1 @eslint/js eslint-plugin-react globals
 
       - name: Run lint
-        run: eslint .
+        run: npx eslint .
 
       - name: Run backend tests
         run: npm test --prefix testing
