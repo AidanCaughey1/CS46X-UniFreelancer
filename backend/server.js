@@ -3,6 +3,7 @@ require("dotenv").config({ path: __dirname + "/../.env" });
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,12 +36,28 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "Backend is running properly" });
 });
 
-// Only start the server if this file is run directly (not imported by tests)
+// Only start server if run directly
+let server;
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
 
-// Export app for testing
-module.exports = app;
+// Function to start server for tests
+async function startServer() {
+  if (process.env.NODE_ENV === "test") {
+    await connectDB(); // connect to MongoDB in test
+  }
+  return new Promise((resolve) => {
+    const s = app.listen(PORT, () => resolve(s));
+  });
+}
+
+// Function to stop server and disconnect MongoDB
+async function stopServer(s) {
+  if (s) await s.close();
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+}
+
+module.exports = { app, startServer, stopServer };
