@@ -49,8 +49,7 @@ jobs:
 
       # Run frontend/backend tests
       - name: Run tests
-        run: |
-          cd frontend
+        run:
           npm test
 
       - name: Lint
