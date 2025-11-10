@@ -11,34 +11,50 @@ on:
       - master
 
 jobs:
-  build-test-lint: 
+  build-test:
     runs-on: ubuntu-latest
 
     env:
-      MONGO_URI: ${{ secrets.MONGO_URI }} 
-      PORT: 5000                          
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      PORT: 5000
+      REACT_APP_API_URL: http://localhost:5000
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: "npm"
 
+      # 3. Install backend dependencies
       - name: Install backend dependencies
-        run: npm ci
+        run: |
+          cd backend
+          npm ci
 
-      - name: Build frontend
+      # 4. Start backend in background
+      - name: Start backend
+        run: |
+          cd backend
+          npm start &
+          sleep 5  # give server time to start
+
+      # 5. Install frontend dependencies and build
+      - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install
+          npm ci
           npm run build
 
-      - name: Run backend tests
+      # 6. Run tests from root
+      - name: Run tests
         run: npm test
 
+      # 7. Lint the project
       - name: Lint
         run: npx eslint .
