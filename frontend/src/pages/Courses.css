@@ -154,10 +154,9 @@
 
 /* Courses Section */
 .courses-section {
-  background-color: var(--light-tertiary-color);
+  background-color: var(--main-background-color);
   border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .search-bar-container {
@@ -219,7 +218,7 @@
 .filters-sidebar {
   width: 250px;
   flex-shrink: 0;
-  background: var(--light-secondary-color);
+  background: var(--light-tertiary-color);
   border-radius: 14px;
   padding: 18px 18px 6px;
 }
@@ -277,7 +276,7 @@
 }
 
 .course-card {
-  background-color: var(--light-secondary-color);
+  background-color: var(--light-tertiary-color);
   border: 1px solid #e0e0e0;
   border-radius: 14px;
   overflow: hidden;
