@@ -36,13 +36,12 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "Backend is running properly" });
 });
 
-// Only start server if run directly
-let server;
 if (require.main === module) {
-  server = app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
+
 
 // Function to start server for tests
 async function startServer() {
