@@ -53,7 +53,9 @@ jobs:
 
       # 6. Run tests from root
       - name: Run tests
-        run: npm test
+        run: |
+          npm ci
+          npm test
 
       # 7. Lint the project
       - name: Lint
