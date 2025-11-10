@@ -1,5 +1,8 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
+const connectDB = require("./config/db");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -9,6 +12,9 @@ const coursesRoutes = require("./routes/courses");
 const tutorialsRoutes = require("./routes/tutorials");
 const seminarsRoutes = require("./routes/seminars");
 const podcastsRoutes = require("./routes/podcasts");
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors()); // Allow requests from frontend (React)
