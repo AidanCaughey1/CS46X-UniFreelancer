@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  build-test-lint:
+  build-test-lint: 
     runs-on: ubuntu-latest
 
     steps:
