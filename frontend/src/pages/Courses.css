@@ -220,7 +220,10 @@
   flex-shrink: 0;
   background: var(--light-tertiary-color);
   border-radius: 14px;
-  padding: 18px 18px 6px;
+  padding: 16px 18px 16px;
+  position: sticky;
+  top: 80px;
+  max-height: 70vh;
 }
 
 .filters-title {
