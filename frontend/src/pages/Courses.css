@@ -1,6 +1,6 @@
 .courses-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: var(--main-background-color);
   padding-bottom: 60px;
 }
 
@@ -52,7 +52,7 @@
 
 /* My Learning Section */
 .my-learning-section {
-  background-color: white;
+  background-color: var(--light-tertiary-color);
   border-radius: 12px;
   padding: 40px;
   margin-bottom: 40px;
@@ -62,13 +62,13 @@
 .section-title {
   font-size: 32px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--dark-primary-color);
   margin-bottom: 8px;
 }
 
 .section-subtitle {
   font-size: 16px;
-  color: #666;
+  color: var(--dark-secondary-color);
   margin-bottom: 30px;
 }
 
@@ -84,7 +84,7 @@
   align-items: center;
   gap: 15px;
   padding: 20px;
-  background-color: #f8f9fa;
+  background-color: var(--light-secondary-color);
   border-radius: 10px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -101,7 +101,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white;
+  background-color: var(--light-secondary-color);
   border-radius: 10px;
 }
 
@@ -154,10 +154,9 @@
 
 /* Courses Section */
 .courses-section {
-  background-color: white;
+  background-color: var(--main-background-color);
   border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .search-bar-container {
@@ -195,7 +194,7 @@
 }
 
 .sort-dropdown {
-  padding: 12px 20px;
+  padding: 10px 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 15px;
@@ -219,6 +218,12 @@
 .filters-sidebar {
   width: 250px;
   flex-shrink: 0;
+  background: var(--light-tertiary-color);
+  border-radius: 14px;
+  padding: 16px 18px 16px;
+  position: sticky;
+  top: 80px;
+  max-height: 70vh;
 }
 
 .filters-title {
@@ -274,16 +279,17 @@
 }
 
 .course-card {
-  background-color: white;
+  background-color: var(--light-tertiary-color);
   border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .course-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
 }
 
 .course-image {
@@ -291,6 +297,8 @@
   height: 180px;
   overflow: hidden;
   background-color: #f5f5f5;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
 }
 
 .course-image img {
@@ -311,7 +319,7 @@
 }
 
 .course-content {
-  padding: 20px;
+  padding: 18px 20px 20px;
 }
 
 .course-header {
@@ -324,7 +332,7 @@
 .course-title {
   font-size: 18px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--dark-primary-color);
   flex: 1;
 }
 
@@ -339,7 +347,7 @@
 
 .course-description {
   font-size: 14px;
-  color: #666;
+  color: var(--dark-secondary-color);
   line-height: 1.5;
   margin-bottom: 15px;
 }
@@ -379,7 +387,7 @@
 
 .view-details-btn {
   padding: 8px 16px;
-  background-color: #2c3e50;
+  background-color: var(--accent-primary-color);
   color: white;
   border: none;
   border-radius: 6px;
@@ -390,7 +398,7 @@
 }
 
 .view-details-btn:hover {
-  background-color: #1a252f;
+  background-color: var(--accent-tertiary-color);
 }
 
 /* Loading and Empty States */
@@ -456,6 +464,7 @@
 
   .my-learning-section,
   .courses-section {
+    background-color: var(--light-tertiary-color);
     padding: 25px;
   }
 

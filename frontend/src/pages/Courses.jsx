@@ -106,9 +106,24 @@ function Courses() {
   };
 
   const getCoursePrice = (course) => {
+    if (
+      course.subscription &&
+      (course.subscription.isSubscriptionCourse === true ||
+        course.subscription.isSubscriptionCourse === 'true')
+    ) {
+      return 'Included in subscription';
+    }
+
+    const amountFromPricing = 
+      typeof course.pricing?.amount === 'number' ? course.pricing.amount : undefined;
+
+    const amount = amountFromPricing ?? Number(course.priceAmount || 0);
+    if (amount > 0) {
+      return `$${amount}`;
+    }
     if (course.isLiteVersion) return 'Free';
-    if (!course.priceAmount || course.priceAmount === 0) return 'Free';
-    return `$${course.priceAmount}`;
+
+    return 'Free';
   };
 
   const myLearningStats = {

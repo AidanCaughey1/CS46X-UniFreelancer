@@ -6,6 +6,7 @@ function CreateCourse() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState('basic-info');
   const [courseData, setCourseData] = useState({
+    // basic info
     title: '',
     description: '',
     duration: '',
@@ -13,6 +14,21 @@ function CreateCourse() {
     category: '',
     thumbnail: '',
     isLiteVersion: false,
+
+    // instructor
+    instructorName: '',
+    instructorTitle: '',
+    instructorBio: '',
+    instructorAvatar: '',
+
+    // pricing
+    priceAmount: '',
+    priceCurrency: 'USD',
+    pricingType: 'one-time', // one-time | subscription
+
+    // subscription info (for future tiers)
+    isSubscriptionCourse: false,
+    subscriptionTier: '', 
   });
 
   const handleBack = () => {
@@ -42,6 +58,24 @@ function CreateCourse() {
           category: courseData.category,
           thumbnail: courseData.thumbnail,
           isLiteVersion: courseData.isLiteVersion,
+
+          instructor: {
+            name: courseData.instructorName,
+            title: courseData.instructorTitle,
+            bio: courseData.instructorBio,
+            avatar: courseData.instructorAvatar,
+          },
+
+          pricing: {
+            amount: courseData.priceAmount ? Number(courseData.priceAmount) : 0,
+            currency: 'USD',
+            type: courseData.pricingType,
+          },
+
+          subscription: {
+            isSubscriptionCourse: courseData.isSubscriptionCourse,
+            tier: courseData.subscriptionTier,
+          }
         }),
       });
 
@@ -197,15 +231,118 @@ function CreateCourse() {
           <div className="form-section">
             <h2 className="section-title">Instructor Information</h2>
             <p className="section-subtitle">Details about the course instructor</p>
-            <p className="coming-soon">This section is coming soon...</p>
+            
+            <div className="form-group">
+              <label className="form-label">
+                Instructor Name <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                name="instructorName"
+                className="form-input"
+                placeholder="e.g., Alina Padilla-Miller"
+                value={courseData.instructorName}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Instructor Title/Role</label>
+              <input
+                type="text"
+                name="instructorTitle"
+                className="form-input"
+                placeholder="e.g., Senior Freelance Designer"
+                value={courseData.instructorTitle}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Instructor Bio</label>
+              <textarea
+                name="instructorBio"
+                className="form-textarea"
+                rows="4"
+                placeholder="Short overview of the instructor's background..."
+                value={courseData.instructorBio}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Instructor Avatar URL</label>
+              <input
+                type="text"
+                name="instructorAvatar"
+                className="form-input"
+                placeholder="https://example.com/avatar.png"
+                value={courseData.instructorAvatar}
+                onChange={handleInputChange}
+              />
+            </div>
           </div>
         )}
 
         {currentStep === 'pricing' && (
           <div className="form-section">
             <h2 className="section-title">Pricing Details</h2>
-            <p className="section-subtitle">Set the price for your course</p>
-            <p className="coming-soon">This section is coming soon...</p>
+            <p className="section-subtitle">Set the price for your course. Leave blank for free courses</p>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Price Amount</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="priceAmount"
+                  className="form-input"
+                  placeholder="e.g., 199"
+                  value={courseData.priceAmount}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Currency</label>
+                <select
+                  name="priceCurrency"
+                  className="form-select"
+                  value={courseData.priceCurrency}
+                  onChange={handleInputChange}
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="CAD">CAD</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Pricing Type</label>
+              <select
+                name="pricingType"
+                className="form-select"
+                value={courseData.pricingType}
+                onChange={handleInputChange}
+              >
+                <option value="one-time">One-time payment</option>
+                <option value="subscription">Subscription</option>
+              </select>
+            </div>
+
+            {courseData.pricingType === 'subscription' && (
+              <p className="section-subtitle" style={{ marginTop: '10px' }}>
+                (You can extend this to monthly / yearly plans later.)
+              </p>
+            )}
+
+            {courseData.isLiteVersion && (
+              <p className="section-subtitle" style={{ marginTop: '10px' }}>
+                Note: this course is marked as “Lite”, so it may be treated as
+                free in the course list.
+              </p>
+            )}
           </div>
         )}
 
