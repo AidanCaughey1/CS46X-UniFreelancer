@@ -9,7 +9,7 @@ This repository hosts the codebase, documentation, and project management rails 
 ---
 
 ### Team Roster
-Aidan Caughey  | Backend Development | caugheya@oregonstate.edu <br />
+Aidan Caughey  | Testing Manager | caugheya@oregonstate.edu <br />
 Aiden McCoy    | Backend Development | mccoaide@oregonstate.edu <br />
 Baron Baker    | Database Manager | bakerbar@oregonstate.edu <br />
 Daniel Molina  | Frontend Development | molindan@oregonstate.edu <br />
