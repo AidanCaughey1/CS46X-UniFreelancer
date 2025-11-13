@@ -1,10 +1,21 @@
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/../.env" });
 
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const mongoose = require("mongoose");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB only if not in test environment
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
+
+// Middleware
+app.use(cors());
+app.use(express.json());
 
 // Import route files
 const academyRoutes = require("./routes/academy");
@@ -12,13 +23,6 @@ const coursesRoutes = require("./routes/courses");
 const tutorialsRoutes = require("./routes/tutorials");
 const seminarsRoutes = require("./routes/seminars");
 const podcastsRoutes = require("./routes/podcasts");
-
-// Connect to MongoDB
-connectDB();
-
-// Middleware
-app.use(cors()); // Allow requests from frontend (React)
-app.use(express.json()); // Parse incoming JSON data
 
 // Backend Routes
 app.use("/api/academy", academyRoutes);
@@ -32,7 +36,27 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "Backend is running properly" });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+
+// Function to start server for tests
+async function startServer() {
+  if (process.env.NODE_ENV === "test") {
+    await connectDB(); // connect to MongoDB in test
+  }
+  return new Promise((resolve) => {
+    const s = app.listen(PORT, () => resolve(s));
+  });
+}
+
+// Function to stop server and disconnect MongoDB
+async function stopServer(s) {
+  if (s) await s.close();
+  if (mongoose.connection.readyState) await mongoose.disconnect();
+}
+
+module.exports = { app, startServer, stopServer };
