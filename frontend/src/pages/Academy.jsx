@@ -56,7 +56,7 @@ function Academy() {
             <button className="category-card" onClick={goToSeminars}>
               <div className="category-image-wrapper">
                 <img
-                  src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=800&q=80"
+                  src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                   alt="Seminars"
                   className="category-image"
                 />
@@ -72,7 +72,7 @@ function Academy() {
             <button className="category-card" onClick={goToTutorials}>
               <div className="category-image-wrapper">
                 <img
-                  src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80"
+                  src="https://images.unsplash.com/photo-1664575197229-3bbebc281874?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                   alt="Tutorials"
                   className="category-image"
                 />
@@ -88,7 +88,7 @@ function Academy() {
             <button className="category-card" onClick={goToPodcasts}>
               <div className="category-image-wrapper">
                 <img
-                  src="https://images.unsplash.com/photo-1512427691650-1e0c2f9a81b3?auto=format&fit=crop&w=800&q=80"
+                  src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                   alt="Podcasts"
                   className="category-image"
                 />

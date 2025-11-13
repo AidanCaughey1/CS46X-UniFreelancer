@@ -3,8 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import Academy from './pages/Academy';
 import Courses from './pages/Courses';
+import Tutorials from './pages/Tutorials';
 import CreateContent from './pages/CreateContent';
 import CreateCourse from './pages/CreateCourse';
+import CreateTutorial from './pages/CreateTutorial';
 
 function App() {
   return (
@@ -15,8 +17,10 @@ function App() {
           <Route path="/" element={<Academy />} />
           <Route path="/academy" element={<Academy />} />
           <Route path="/academy/courses" element={<Courses />} />
+          <Route path='/academy/tutorials' element={<Tutorials />} />
           <Route path="/academy/create" element={<CreateContent />} />
           <Route path="/academy/create/course" element={<CreateCourse />} />
+          <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
         </Routes>
       </div>
     </Router>

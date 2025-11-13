@@ -19,7 +19,7 @@ function CreateContent() {
   };
 
   const handleCreateTutorial = () => {
-    alert('Tutorial creation coming soon!');
+    navigate('/academy/create/tutorial');
   };
 
   return (
