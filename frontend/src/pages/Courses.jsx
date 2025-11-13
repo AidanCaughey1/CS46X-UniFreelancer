@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import './Courses.css';
+import AcademySubnav from '../components/AcademySubnav';
 
 function Courses() {
   // const navigate = useNavigate();
@@ -137,6 +138,7 @@ function Courses() {
     <div className="courses-page">
       <div className="courses-container">
         {/* My Learning Section */}
+        <AcademySubnav />
         <div className="my-learning-section">
           <h2 className="section-title">My Learning</h2>
           <p className="section-subtitle">Track your progress and continue your learning journey</p>
@@ -186,7 +188,6 @@ function Courses() {
             </button>
           </div>
         </div>
-
         {/* Courses Section */}
         <div className="courses-section">
           <h2 className="section-title">Courses</h2>
