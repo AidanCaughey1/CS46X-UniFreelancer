@@ -51,12 +51,12 @@ jobs:
           npm ci
           npm run build
 
-      # 6. Run tests from root
+      # 6. Run tests
       - name: Run tests
         run: |
           npm ci
           npm test
 
-      # 7. Lint the project
+      # 7. Lint
       - name: Lint
         run: npx eslint .
