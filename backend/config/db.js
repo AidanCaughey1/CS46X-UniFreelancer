@@ -1,13 +1,21 @@
 const mongoose = require("mongoose");
 
-const connectDB = async () => {
+// Validate environment variables 
+if (!process.env.MONGO_URI) {
+  throw new Error("Missing MONGO_URI environment variable");
+}
+
+// NEW added retry logic
+const connectDB = async (retries = 5) => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`MongoDB connected: ${conn.connection.host}`);
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB Connected");
   } catch (err) {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1); // Stop the server if DB connection fails
+    if (retries === 0) throw err;
+    console.error("Retrying MongoDB connection...");
+    setTimeout(() => connectDB(retries - 1), 3000);
   }
 };
+
 
 module.exports = connectDB;
