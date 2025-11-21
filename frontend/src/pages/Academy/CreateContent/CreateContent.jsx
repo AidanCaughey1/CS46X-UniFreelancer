@@ -15,11 +15,11 @@ function CreateContent() {
   };
 
   const handleCreateSeminar = () => {
-    alert('Seminar creation coming soon!');
+    navigate('/academy/create/seminar');
   };
 
   const handleCreateTutorial = () => {
-    alert('Tutorial creation coming soon!');
+    navigate('/academy/create/tutorial');
   };
 
   return (
@@ -149,7 +149,3 @@ function CreateContent() {
 }
 
 export default CreateContent;
-
-
-
-

@@ -9,26 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ------------------------------
-// GLOBAL ERROR HANDLERS
-// ------------------------------
-process.on("uncaughtException", err => {
-  console.error("🔥 UNCAUGHT EXCEPTION:", err);
-});
-
-process.on("unhandledRejection", err => {
-  console.error("🔥 UNHANDLED REJECTION:", err);
-});
-
-// ------------------------------
 // CONNECT TO MONGO
 // ------------------------------
-if (process.env.NODE_ENV !== "test") {
-  connectDB().catch((err) => console.error("MongoDB connection error:", err));
-}
+connectDB().catch((err) => console.error("MongoDB connection error:", err));
 
-// ------------------------------
-// MIDDLEWARE
-// ------------------------------
 app.use(cors());
 app.use(express.json());
 
@@ -49,9 +33,6 @@ app.use("/api/academy/seminars", seminarsRoutes);
 app.use("/api/academy/podcasts", podcastsRoutes);
 app.use("/api/users", userRoutes);
 
-// ------------------------------
-// HEALTH CHECK
-// ------------------------------
 app.get("/api/health", (req, res) => {
   res.json({
     status: "Backend is running properly",
@@ -59,50 +40,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// ------------------------------
-// GLOBAL ERROR HANDLER
-// ------------------------------
-app.use((err, req, res) => {
-  console.error("🔥 SERVER ERROR:", err);
+app.use((err, req, res, next) => {
+  console.error("SERVER ERROR:", err);
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
-// ------------------------------
-// START SERVER (ALWAYS RUNS)
-// ------------------------------
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Backend running on port ${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`Backend running on port ${PORT}`);
+});
 
-// ------------------------------
-// EXPORTS FOR TESTS
-// ------------------------------
-async function startServer() {
-  // In test mode, connect here (we skipped it above)
-  if (process.env.NODE_ENV === "test") {
-    await connectDB().catch((err) =>
-      console.error("MongoDB connection error (test):", err)
-    );
-  }
-
-  return new Promise((resolve) => {
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Test server running on port ${PORT}`);
-      resolve(server);
-    });
-  });
-}
-
-async function stopServer(server) {
-  if (server && server.close) {
-    await server.close();
-  }
-
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
-  }
-}
-
-module.exports = { app, startServer, stopServer };
+module.exports = app;
