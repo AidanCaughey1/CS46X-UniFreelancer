@@ -8,7 +8,9 @@ function Seminars() {
   const [loading, setLoading] = useState(true);
 
   const [filters, setFilters] = useState({
-    type: [], // Live Now, Recorded, Hybrid
+    type: [],
+    duration: [],
+    status: []
   });
 
   // Fetch seminars
@@ -33,20 +35,40 @@ function Seminars() {
   const filterSeminars = useCallback(() => {
     let filtered = [...seminars];
 
-    // Search filter
+    // SEARCH
     if (searchTerm) {
-      filtered = filtered.filter((seminar) =>
-        seminar.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        seminar.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        seminar.speaker?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((s) =>
+        s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.speaker?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Type filter
+    // TYPE FILTER
     if (filters.type.length > 0) {
-      filtered = filtered.filter((seminar) =>
-        filters.type.includes(seminar.type)
-      );
+      filtered = filtered.filter((s) => filters.type.includes(s.type));
+    }
+
+    // DURATION FILTER
+    if (filters.duration.length > 0) {
+      filtered = filtered.filter((s) => {
+        const mins = parseInt(s.duration) || 0;
+
+        return filters.duration.some((range) => {
+          if (range === "less-60") return mins < 60;
+          if (range === "60-90") return mins >= 60 && mins <= 90;
+          if (range === "more-90") return mins > 90;
+          return false;
+        });
+      });
+    }
+
+    // STATUS FILTER
+    if (filters.status.length > 0) {
+      filtered = filtered.filter((s) => {
+        const watched = s.watched ? "Watched" : "Not Watched";
+        return filters.status.includes(watched);
+      });
     }
 
     setFilteredSeminars(filtered);
@@ -70,13 +92,11 @@ function Seminars() {
   return (
     <div className="seminars-page">
       <div className="seminars-container">
-        
-        <h2 className="section-title">Seminars</h2>
-        <p className="section-subtitle">
-          Live and recorded sessions to develop your freelance skills
-        </p>
 
-        {/* Search + Sort */}
+        <h2 className="section-title">Seminars & Events</h2>
+        <p className="section-subtitle">Interactive live sessions and expert workshops</p>
+
+        {/* SEARCH + SORT */}
         <div className="search-bar-container">
           <div className="search-bar">
             <span className="search-icon">🔍</span>
@@ -96,14 +116,15 @@ function Seminars() {
         </div>
 
         <div className="seminars-content">
-          {/* Sidebar Filters */}
+
+          {/* ===== FILTER SIDEBAR ===== */}
           <div className="filters-sidebar">
             <h3 className="filters-title">Filter By</h3>
 
+            {/* TYPE */}
             <div className="filter-section">
-              <h4 className="filter-heading">Seminar Type</h4>
-
-              {["Live Now", "Recorded", "Hybrid"].map((type) => (
+              <h4 className="filter-heading">Type</h4>
+              {["Live", "Recorded", "Podcast"].map((type) => (
                 <label key={type} className="filter-option">
                   <input
                     type="checkbox"
@@ -114,9 +135,57 @@ function Seminars() {
                 </label>
               ))}
             </div>
+
+            {/* DURATION */}
+            <div className="filter-section">
+              <h4 className="filter-heading">Duration</h4>
+
+              <label className="filter-option">
+                <input
+                  type="checkbox"
+                  checked={filters.duration.includes("less-60")}
+                  onChange={() => handleFilterChange("duration", "less-60")}
+                />
+                <span>Less than 60 min</span>
+              </label>
+
+              <label className="filter-option">
+                <input
+                  type="checkbox"
+                  checked={filters.duration.includes("60-90")}
+                  onChange={() => handleFilterChange("duration", "60-90")}
+                />
+                <span>60–90 min</span>
+              </label>
+
+              <label className="filter-option">
+                <input
+                  type="checkbox"
+                  checked={filters.duration.includes("more-90")}
+                  onChange={() => handleFilterChange("duration", "more-90")}
+                />
+                <span>More than 90 min</span>
+              </label>
+            </div>
+
+            {/* STATUS */}
+            <div className="filter-section">
+              <h4 className="filter-heading">Status</h4>
+              {["Watched", "Not Watched"].map((status) => (
+                <label key={status} className="filter-option">
+                  <input
+                    type="checkbox"
+                    checked={filters.status.includes(status)}
+                    onChange={() => handleFilterChange("status", status)}
+                  />
+                  <span>{status}</span>
+                </label>
+              ))}
+            </div>
+
           </div>
 
-          {/* Seminar Cards Grid */}
+          {/* ===== SEMINAR CARDS ===== */}
           <div className="seminars-grid">
             {loading ? (
               <div className="loading-message">Loading seminars...</div>
@@ -126,7 +195,7 @@ function Seminars() {
                 <button
                   onClick={() => {
                     setSearchTerm("");
-                    setFilters({ type: [] });
+                    setFilters({ type: [], duration: [], status: [] });
                   }}
                 >
                   Clear Filters
@@ -172,11 +241,13 @@ function Seminars() {
                         View Details →
                       </button>
                     </div>
+
                   </div>
                 </div>
               ))
             )}
           </div>
+
         </div>
       </div>
     </div>

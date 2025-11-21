@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Seminars.css';
+import './CreateSeminar.css';
 
 function CreateSeminar() {
   const navigate = useNavigate();
