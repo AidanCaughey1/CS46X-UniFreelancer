@@ -22,7 +22,9 @@ process.on("unhandledRejection", err => {
 // ------------------------------
 // CONNECT TO MONGO
 // ------------------------------
-connectDB().catch((err) => console.error("MongoDB connection error:", err));
+if (process.env.NODE_ENV !== "test") {
+  connectDB().catch((err) => console.error("MongoDB connection error:", err));
+}
 
 // ------------------------------
 // MIDDLEWARE
@@ -68,9 +70,39 @@ app.use((err, req, res, next) => {
 // ------------------------------
 // START SERVER (ALWAYS RUNS)
 // ------------------------------
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Backend running on port ${PORT}`);
+  });
+}
 
-// Export ONLY what React tests may need
-module.exports = app;
+// ------------------------------
+// EXPORTS FOR TESTS
+// ------------------------------
+async function startServer() {
+  // In test mode, connect here (we skipped it above)
+  if (process.env.NODE_ENV === "test") {
+    await connectDB().catch((err) =>
+      console.error("MongoDB connection error (test):", err)
+    );
+  }
+
+  return new Promise((resolve) => {
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Test server running on port ${PORT}`);
+      resolve(server);
+    });
+  });
+}
+
+async function stopServer(server) {
+  if (server && server.close) {
+    await server.close();
+  }
+
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
+}
+
+module.exports = { app, startServer, stopServer };
