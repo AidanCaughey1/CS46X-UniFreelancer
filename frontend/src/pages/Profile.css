@@ -1,0 +1,193 @@
+.profile-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.profile-header {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--accent-primary-color), var(--accent-secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: white;
+    font-weight: bold;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header h2 {
+    margin: 0 0 10px 0;
+    color: var(--dark-primary-color);
+    font-size: 2rem;
+}
+
+.profile-header p {
+    color: var(--dark-secondary-color);
+    margin: 0 0 20px 0;
+    font-size: 1.1rem;
+}
+
+.sign-out-btn {
+    padding: 10px 25px;
+    background: transparent;
+    border: 2px solid var(--accent-primary-color);
+    color: var(--accent-primary-color);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sign-out-btn:hover {
+    background: var(--accent-primary-color);
+    color: white;
+}
+
+.profile-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.profile-section {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.profile-section h3 {
+    color: var(--dark-primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.item-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--dark-secondary-color);
+}
+
+.item-list li:last-child {
+    border-bottom: none;
+}
+
+.empty-state {
+    color: #999;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-container {
+        margin: 20px auto;
+        padding: 15px;
+    }
+
+    .profile-header {
+        padding: 30px 20px;
+        margin-bottom: 30px;
+        border-radius: 15px;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+    }
+
+    .profile-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .profile-header p {
+        font-size: 1rem;
+    }
+
+    .sign-out-btn {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+    }
+
+    .profile-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .profile-section {
+        padding: 20px;
+    }
+
+    .profile-section h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-container {
+        margin: 15px auto;
+        padding: 10px;
+    }
+
+    .profile-header {
+        padding: 25px 15px;
+        border-radius: 12px;
+    }
+
+    .profile-avatar {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+    }
+
+    .profile-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .profile-header p {
+        font-size: 0.9rem;
+    }
+
+    .profile-section {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .profile-section h3 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+
+    .item-list li {
+        font-size: 0.9rem;
+        padding: 8px 0;
+    }
+}
