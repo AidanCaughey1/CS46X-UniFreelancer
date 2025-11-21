@@ -10,7 +10,11 @@ const InstructorSchema = new mongoose.Schema({
 const PricingSchema = new mongoose.Schema({
   amount: { type: Number, default: 0 },
   currency: { type: String, default: "USD" },
-  type: { type: String, default: "one-time" }
+  type: {
+    type: String,
+    enum: ["one-time", "subscription"],
+    default: "one-time"
+  },
 }, { _id: false });
 
 const SubscriptionSchema = new mongoose.Schema({
@@ -18,36 +22,62 @@ const SubscriptionSchema = new mongoose.Schema({
   tier: { type: String, default: "" }
 }, { _id: false });
 
+const ModuleSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, default: "" },
+
+  // Content types
+  videoUrl: { type: String, default: "" },
+  articleContent: { type: String, default: "" },
+  pdfUrl: { type: String, default: "" },
+
+  // Quiz placeholder for future
+  hasQuiz: { type: Boolean, default: false },
+  quizData: { type: Object, default: null },
+
+  learningPoints: { type: [String], default: [] },
+  duration: { type: String, default: "" },
+  thumbnail: { type: String, default: "" },
+
+  order: { type: Number, default: 0 }
+}, { _id: true });
+
 const CourseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
 
   duration: { type: String, default: "" },
-  difficulty: { type: String, default: "Beginner" },
+  difficulty: {
+    type: String,
+    enum: ["Beginner", "Intermediate", "Advanced"],
+    default: "Beginner"
+  },
   category: { type: String, default: "" },
   thumbnail: { type: String, default: "" },
   isLiteVersion: { type: Boolean, default: false },
 
-  instructor: { 
-    type: InstructorSchema, 
-    required: true 
+  instructor: {
+    type: InstructorSchema,
+    required: true
   },
 
-  pricing: { 
-    type: PricingSchema, 
-    default: () => ({}) 
+  pricing: {
+    type: PricingSchema,
+    default: () => ({})
   },
 
-  subscription: { 
-    type: SubscriptionSchema, 
-    default: () => ({}) 
+  subscription: {
+    type: SubscriptionSchema,
+    default: () => ({})
   },
 
-  learningPoints: { type: Array, default: [] },
-  modules: { type: Array, default: [] },
+  learningPoints: { type: [String], default: [] },
+  modules: { type: [ModuleSchema], default: [] },
 
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+},
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("Course", CourseSchema);

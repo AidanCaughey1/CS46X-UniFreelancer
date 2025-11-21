@@ -1,6 +1,5 @@
 const express = require("express");
 const User = require("../models/UserModel");
-const { message } = require("statuses");
 
 const router = express.Router();
 
@@ -9,15 +8,15 @@ const router = express.Router();
 // -------------------------------
 router.post("/register", async (req, res) => {
   try {
-    const { 
+    const {
       firstName,
       lastName,
       username,
       email,
       password,
       role,
-     } = req.body;
-    
+    } = req.body;
+
     // Basic required fields check
     if (!firstName || !lastName || !username || !email || !password) {
       return res
@@ -57,7 +56,7 @@ router.post("/login", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
-    
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 

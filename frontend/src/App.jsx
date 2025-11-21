@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import './App.css';
 import Academy from './pages/Academy';
 import Courses from './pages/Courses';
@@ -82,5 +83,15 @@ function Header({ user }) {
     </header>
   );
 }
+
+Header.propTypes = {
+  user: PropTypes.shape({
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
+    username: PropTypes.string,
+    email: PropTypes.string,
+    _id: PropTypes.string
+  })
+};
 
 export default App;
