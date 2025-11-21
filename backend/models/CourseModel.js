@@ -37,6 +37,7 @@ const ModuleSchema = new mongoose.Schema({
 
   learningPoints: { type: [String], default: [] },
   duration: { type: String, default: "" },
+  estimatedMinutes: { type: Number, default: 0 },
   thumbnail: { type: String, default: "" },
 
   order: { type: Number, default: 0 }
@@ -47,6 +48,7 @@ const CourseSchema = new mongoose.Schema({
   description: { type: String, required: true },
 
   duration: { type: String, default: "" },
+  estimatedMinutes: { type: Number, default: 0 },
   difficulty: {
     type: String,
     enum: ["Beginner", "Intermediate", "Advanced"],

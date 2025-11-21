@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
   // Basic Identity
-  firstName: { type: String, required: true, trim: true},
-  lastName: { type: String, required: true, trim: true},
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
 
   username: {
     type: String,
@@ -15,10 +15,10 @@ const UserSchema = new mongoose.Schema({
     maxlength: 24,
   },
 
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true 
+  email: {
+    type: String,
+    required: true,
+    unique: true
   },
 
   password: { type: String, required: true }, // plain text for now
@@ -32,6 +32,10 @@ const UserSchema = new mongoose.Schema({
 
   // Learning relationships
   enrolledCourses: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
+  ],
+
+  completedCourses: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
   ],
 

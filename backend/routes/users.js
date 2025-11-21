@@ -76,6 +76,7 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .populate("enrolledCourses")
+      .populate("completedCourses")
       .populate("registeredSeminars")
       .populate("completedTutorials")
       .populate("savedPodcasts");
@@ -155,6 +156,54 @@ router.post("/:id/save-podcast/:podcastId", async (req, res) => {
     }
 
     res.json({ message: "Podcast saved", savedPodcasts: user.savedPodcasts });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------
+// Complete a course
+// -------------------------------
+router.post("/:id/complete-course/:courseId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user.completedCourses.includes(req.params.courseId)) {
+      user.completedCourses.push(req.params.courseId);
+      await user.save();
+    }
+
+    res.json({ message: "Course completed", completedCourses: user.completedCourses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------
+// Get learning summary
+// -------------------------------
+router.get("/:id/learning-summary", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate("completedCourses");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const enrolledCount = user.enrolledCourses.length;
+    const completedCount = user.completedCourses.length;
+
+    // Calculate total learning minutes from completed courses
+    const totalMinutes = user.completedCourses.reduce((acc, course) => {
+      return acc + (course.estimatedMinutes || 0);
+    }, 0);
+
+    const learningHours = Math.round(totalMinutes / 60);
+
+    res.json({
+      enrolledCount,
+      completedCount,
+      learningHours
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
