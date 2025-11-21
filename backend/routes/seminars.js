@@ -53,7 +53,7 @@ router.put("/:id", async (req, res) => {
 // Delete seminar
 router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await Seminar.findByIdAndDelete(req.params.id);
+    await Seminar.findByIdAndDelete(req.params.id);
     res.json({ message: "Seminar deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
