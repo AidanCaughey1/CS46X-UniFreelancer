@@ -41,8 +41,21 @@
 
 .profile-header p {
     color: var(--dark-secondary-color);
-    margin: 0 0 20px 0;
+    margin: 0 0 10px 0;
     font-size: 1.1rem;
+}
+
+.profile-username {
+    color: var(--accent-primary-color) !important;
+    font-weight: 600;
+    font-size: 1rem !important;
+    margin: 5px 0 !important;
+}
+
+.profile-email {
+    color: var(--dark-tertiary-color) !important;
+    font-size: 0.95rem !important;
+    margin: 5px 0 20px 0 !important;
 }
 
 .sign-out-btn {

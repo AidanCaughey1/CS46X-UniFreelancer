@@ -144,6 +144,33 @@ body {
   transform: scale(1.05);
 }
 
+/* Navigation Profile Avatar */
+.user-profile-link {
+  display: flex;
+  align-items: center;
+}
+
+.nav-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary-color), var(--accent-secondary-color));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(244, 102, 62, 0.3);
+}
+
+.nav-profile-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(244, 102, 62, 0.4);
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .nav {

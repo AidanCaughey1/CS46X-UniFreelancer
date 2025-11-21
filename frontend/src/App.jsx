@@ -67,7 +67,9 @@ function Header({ user }) {
 
           {user ? (
             <Link to="/profile" className={`user-profile-link ${isActive('/profile')}`}>
-              {user.name}
+              <div className="nav-profile-avatar">
+                {user.firstName && user.firstName.charAt(0).toUpperCase()}
+              </div>
             </Link>
           ) : (
             <>

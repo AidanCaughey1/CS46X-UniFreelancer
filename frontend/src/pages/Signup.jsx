@@ -7,7 +7,9 @@ const Signup = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [formData, setFormData] = useState({
-        name: '',
+        firstName: '',
+        lastName: '',
+        username: '',
         email: '',
         password: '',
         confirmPassword: ''
@@ -49,7 +51,9 @@ const Signup = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name: formData.name,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    username: formData.username,
                     email: formData.email,
                     password: formData.password
                 }),
@@ -79,15 +83,43 @@ const Signup = () => {
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="name">Full Name</label>
+                        <label htmlFor="firstName">First Name</label>
                         <input
                             type="text"
-                            id="name"
-                            name="name"
-                            placeholder="Enter your full name"
-                            value={formData.name}
+                            id="firstName"
+                            name="firstName"
+                            placeholder="Enter your first name"
+                            value={formData.firstName}
                             onChange={handleChange}
                             required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="lastName">Last Name</label>
+                        <input
+                            type="text"
+                            id="lastName"
+                            name="lastName"
+                            placeholder="Enter your last name"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="username">Username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Choose a username (4-24 characters)"
+                            value={formData.username}
+                            onChange={handleChange}
+                            required
+                            minLength="4"
+                            maxLength="24"
                         />
                     </div>
 

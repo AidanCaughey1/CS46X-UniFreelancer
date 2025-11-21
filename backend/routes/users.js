@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/UserModel");
+const { message } = require("statuses");
 
 const router = express.Router();
 
@@ -8,12 +9,36 @@ const router = express.Router();
 // -------------------------------
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { 
+      firstName,
+      lastName,
+      username,
+      email,
+      password,
+      role,
+     } = req.body;
+    
+    // Basic required fields check
+    if (!firstName || !lastName || !username || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields for registration" });
+    }
 
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: "User already exists" });
+    // Check if email or username already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-    const user = new User({ name, email, password });
+    const user = new User({
+      firstName,
+      lastName,
+      username,
+      email,
+      password,
+      role,
+    });
     await user.save();
 
     res.status(201).json({ message: "User registered", user });
@@ -29,6 +54,10 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+    
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 

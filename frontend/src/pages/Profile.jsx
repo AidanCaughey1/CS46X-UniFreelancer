@@ -51,10 +51,11 @@ const Profile = () => {
         <div className="profile-container">
             <div className="profile-header">
                 <div className="profile-avatar">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.firstName && user.firstName.charAt(0).toUpperCase()}
                 </div>
-                <h2>{user.name}</h2>
-                <p>{user.email}</p>
+                <h2>{user.firstName} {user.lastName}</h2>
+                <p className="profile-username">@{user.username}</p>
+                <p className="profile-email">{user.email}</p>
                 <button onClick={handleSignOut} className="sign-out-btn">Sign Out</button>
             </div>
 
@@ -89,7 +90,7 @@ const Profile = () => {
                     <h3>Completed Tutorials</h3>
                     {user.completedTutorials && user.completedTutorials.length > 0 ? (
                         <ul className="item-list">
-                            {user.completedTutorials.map(tutorial => (
+                            {user.enrolledCourses.map(tutorial => (
                                 <li key={tutorial._id}>{tutorial.title}</li>
                             ))}
                         </ul>
