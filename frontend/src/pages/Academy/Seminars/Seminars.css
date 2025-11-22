@@ -1,0 +1,140 @@
+/* ===== PAGE WRAPPER ===== */
+.seminars-page {
+    min-height: 100vh;
+    background-color: var(--main-background-color);
+    padding-bottom: 60px;
+  }
+  
+  /* ===== MAIN CONTAINER ===== */
+  .seminars-page .seminars-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+  }
+  
+  /* ===== TITLES ===== */
+  .seminars-page .section-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--dark-primary-color);
+    margin-bottom: 8px;
+  }
+  
+  .seminars-page .section-subtitle {
+    font-size: 16px;
+    color: var(--dark-secondary-color);
+    margin-bottom: 30px;
+  }
+  
+  /* ===== SEARCH BAR ===== */
+  .seminars-page .search-bar-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .seminars-page .search-bar {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .seminars-page .search-icon {
+    position: absolute;
+    left: 15px;
+    font-size: 18px;
+    color: #999;
+  }
+  
+  .seminars-page .search-bar input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: 0.3s ease;
+  }
+  
+  /* ===== LAYOUT ===== */
+  .seminars-page .seminars-content {
+    display: flex;
+    gap: 30px;
+  }
+  
+  /* ===== FILTER SIDEBAR ===== */
+  .seminars-page .filters-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: var(--light-tertiary-color);
+    border-radius: 14px;
+    padding: 18px;
+    position: sticky;
+    top: 80px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  
+  .seminars-page .filters-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #2c3e50;
+  }
+  
+  .seminars-page .filter-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .seminars-page .filter-heading {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #2c3e50;
+  }
+  
+  .seminars-page .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .seminars-page .filter-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* ===== GRID ===== */
+  .seminars-page .seminars-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+  }
+  
+  /* ===== SEMINAR CARD ===== */
+  .seminars-page .seminar-card {
+    background: var(--light-tertiary-color);
+    border: 1px solid #e0e0e0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.03);
+    transition: 0.3s ease;
+  }
+  
+  .seminars-page .seminar-content {
+    padding: 18px 20px;
+  }
+  
+  .seminars-page .seminar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dark-primary-color);
+  }
+  
