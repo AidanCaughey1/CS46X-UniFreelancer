@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
 const app = express();
@@ -40,11 +39,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
+// Error handler must have 4 params, but `_next` avoids ESLint error
+app.use((err, req, res, _next) => {
   console.error("SERVER ERROR:", err);
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
-
 
 let server;
 
