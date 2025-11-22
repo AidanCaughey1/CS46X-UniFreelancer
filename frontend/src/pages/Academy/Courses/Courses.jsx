@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import './Courses.css';
-import AcademySubnav from '../components/AcademySubnav';
+import AcademySubnav from '../../../components/AcademySubnav';
 
 function Courses() {
   // const navigate = useNavigate();

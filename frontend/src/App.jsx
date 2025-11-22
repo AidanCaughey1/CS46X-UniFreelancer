@@ -10,6 +10,9 @@ import CreateContent from './pages/Academy/CreateContent/CreateContent';
 import CreateCourse from './pages/Academy/Courses/CreateCourse';
 import CreateSeminar from './pages/Academy/Seminars/CreateSeminar';
 import CreateTutorial from './pages/Academy/Tutorials/CreateTutorial';
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
+import Profile from './pages/Auth/Profile';
 
 function App() {
   const [user, setUser] = useState(null);
