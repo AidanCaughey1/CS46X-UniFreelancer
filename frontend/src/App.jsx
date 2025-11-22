@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import './App.css';
 import Academy from './pages/Academy/Academy';
 import Courses from './pages/Academy/Courses/Courses';
@@ -9,12 +10,24 @@ import CreateContent from './pages/Academy/CreateContent/CreateContent';
 import CreateCourse from './pages/Academy/Courses/CreateCourse';
 import CreateSeminar from './pages/Academy/Seminars/CreateSeminar';
 import CreateTutorial from './pages/Academy/Tutorials/CreateTutorial';
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
+import Profile from './pages/Auth/Profile';
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
+
   return (
     <Router>
       <div className="App">
-        <Header />
+        <Header user={user} />
         <Routes>
           <Route path="/" element={<Academy />} />
           <Route path="/academy" element={<Academy />} />
@@ -23,6 +36,9 @@ function App() {
           <Route path="/academy/seminars" element={<Seminars />} />
           <Route path="/academy/tutorials" element={<Tutorials />} />
           <Route path="/academy/create/course" element={<CreateCourse />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/academy/create/seminar" element={<CreateSeminar />} />
           <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
         </Routes>
@@ -31,7 +47,14 @@ function App() {
   );
 }
 
-function Header() {
+function Header({ user }) {
+  const location = useLocation();
+
+  // Function to check if link is active
+  const isActive = (path) => {
+    return location.pathname === path ? 'active' : '';
+  };
+
   return (
     <header className="header">
       <div className="header-content">
@@ -42,22 +65,41 @@ function Header() {
           </Link>
         </div>
         <nav className="nav">
-          <Link to="/">Home</Link>
-          <Link to="/find-work">Find Work</Link>
-          <Link to="/browse-freelancers">Browse Freelancers</Link>
-          <Link to="/hire-talent">Hire Talent</Link>
-          <Link to="/academy" className="active">UF Academy</Link>
-          <Link to="/social">UF Social</Link>
-          <Link to="/about">About Us</Link>
-          <Link to="/inbox">Inbox</Link>
+          <Link to="/" className={isActive('/')}>Home</Link>
+          <Link to="/find-work" className={isActive('/find-work')}>Find Work</Link>
+          <Link to="/browse-freelancers" className={isActive('/browse-freelancers')}>Browse Freelancers</Link>
+          <Link to="/hire-talent" className={isActive('/hire-talent')}>Hire Talent</Link>
+          <Link to="/academy" className={isActive('/academy')}>UF Academy</Link>
+          <Link to="/social" className={isActive('/social')}>UF Social</Link>
+          <Link to="/about" className={isActive('/about')}>About Us</Link>
+          <Link to="/inbox" className={isActive('/inbox')}>Inbox</Link>
+
+          {user ? (
+            <Link to="/profile" className={`user-profile-link ${isActive('/profile')}`}>
+              <div className="nav-profile-avatar">
+                {user.firstName && user.firstName.charAt(0).toUpperCase()}
+              </div>
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className={isActive('/login')}>Login</Link>
+              <Link to="/signup" className={isActive('/signup')}>Sign Up</Link>
+            </>
+          )}
         </nav>
-        <div className="user-profile">
-          <div className="avatar">JD</div>
-        </div>
       </div>
     </header>
   );
 }
 
-export default App;
+Header.propTypes = {
+  user: PropTypes.shape({
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
+    username: PropTypes.string,
+    email: PropTypes.string,
+    _id: PropTypes.string
+  })
+};
 
+export default App;

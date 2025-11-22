@@ -1,12 +1,41 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  // Basic Identity
+  firstName: { type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
+
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    minlength: 4,
+    maxlength: 24,
+  },
+
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+
   password: { type: String, required: true }, // plain text for now
+
+  // User Permissions
+  role: {
+    type: String,
+    enum: ["student", "instructor", "admin"],
+    default: "student",
+  },
 
   // Learning relationships
   enrolledCourses: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
+  ],
+
+  completedCourses: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
   ],
 
@@ -21,9 +50,10 @@ const UserSchema = new mongoose.Schema({
   savedPodcasts: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
   ],
-
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+},
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("User", UserSchema);

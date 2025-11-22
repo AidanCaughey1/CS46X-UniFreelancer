@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useNavigate } from 'react-router-dom';
 import './Courses.css';
+import AcademySubnav from '../../../components/AcademySubnav';
 
 function Courses() {
   // const navigate = useNavigate();
@@ -10,6 +11,14 @@ function Courses() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'my-learning' or 'all'
 
+  const [stats, setStats] = useState({
+    enrolledCount: 0,
+    completedCount: 0,
+    learningHours: 0
+  });
+
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
+
   const [filters, setFilters] = useState({
     level: [],
     language: [],
@@ -17,10 +26,42 @@ function Courses() {
     price: []
   });
 
-  // Fetch courses from backend
+  // Fetch courses and stats from backend
   useEffect(() => {
     fetchCourses();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+
+      const user = JSON.parse(userStr);
+      if (!user._id) return;
+
+      // Fetch user details including enrolled courses
+      const response = await fetch(`http://localhost:5000/api/users/${user._id}`);
+      if (response.ok) {
+        const userData = await response.json();
+
+        // Calculate stats
+        const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
+        const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
+        const learningHours = userData.completedCourses
+          ? Math.round(userData.completedCourses.reduce((acc, c) => acc + (c.estimatedMinutes || 0), 0) / 60)
+          : 0;
+
+        setStats({ enrolledCount, completedCount, learningHours });
+
+        // Set enrolled course IDs for filtering
+        const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
+        setEnrolledCourseIds(enrolledIds);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -40,6 +81,11 @@ function Courses() {
   // Wrap filterCourses in useCallback
   const filterCourses = useCallback(() => {
     let filtered = [...courses];
+
+    // Filter by Active Tab (My Learning)
+    if (activeTab === 'my-learning') {
+      filtered = filtered.filter(course => enrolledCourseIds.includes(course._id));
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(course =>
@@ -82,7 +128,7 @@ function Courses() {
     }
 
     setFilteredCourses(filtered);
-  }, [courses, searchTerm, filters]);
+  }, [courses, searchTerm, filters, activeTab, enrolledCourseIds]);
 
   // Call filterCourses whenever dependencies change
   useEffect(() => {
@@ -95,7 +141,7 @@ function Courses() {
       const newFilters = currentFilters.includes(value)
         ? currentFilters.filter(v => v !== value)
         : [...currentFilters, value];
-      
+
       return { ...prev, [category]: newFilters };
     });
   };
@@ -114,7 +160,7 @@ function Courses() {
       return 'Included in subscription';
     }
 
-    const amountFromPricing = 
+    const amountFromPricing =
       typeof course.pricing?.amount === 'number' ? course.pricing.amount : undefined;
 
     const amount = amountFromPricing ?? Number(course.priceAmount || 0);
@@ -126,17 +172,11 @@ function Courses() {
     return 'Free';
   };
 
-  const myLearningStats = {
-    enrolled: 2,
-    completed: 0,
-    avgProgress: 42,
-    learningHours: 5
-  };
-
   return (
     <div className="courses-page">
       <div className="courses-container">
         {/* My Learning Section */}
+        <AcademySubnav />
         <div className="my-learning-section">
           <h2 className="section-title">My Learning</h2>
           <p className="section-subtitle">Track your progress and continue your learning journey</p>
@@ -144,41 +184,34 @@ function Courses() {
             <div className="stat-card">
               <span className="stat-icon">📖</span>
               <div className="stat-content">
-                <div className="stat-value">{myLearningStats.enrolled}</div>
+                <div className="stat-value">{stats.enrolledCount}</div>
                 <div className="stat-label">Enrolled Courses</div>
               </div>
             </div>
             <div className="stat-card">
               <span className="stat-icon">🎓</span>
               <div className="stat-content">
-                <div className="stat-value">{myLearningStats.completed}</div>
+                <div className="stat-value">{stats.completedCount}</div>
                 <div className="stat-label">Completed</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <span className="stat-icon">📈</span>
-              <div className="stat-content">
-                <div className="stat-value">{myLearningStats.avgProgress}%</div>
-                <div className="stat-label">Avg. Progress</div>
               </div>
             </div>
             <div className="stat-card">
               <span className="stat-icon">🕐</span>
               <div className="stat-content">
-                <div className="stat-value">{myLearningStats.learningHours}</div>
+                <div className="stat-value">{stats.learningHours}</div>
                 <div className="stat-label">Learning Hours</div>
               </div>
             </div>
           </div>
 
           <div className="learning-tabs">
-            <button 
+            <button
               className={`tab ${activeTab === 'my-learning' ? 'active' : ''}`}
               onClick={() => setActiveTab('my-learning')}
             >
               My Learning
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'all' ? 'active' : ''}`}
               onClick={() => setActiveTab('all')}
             >
@@ -186,7 +219,6 @@ function Courses() {
             </button>
           </div>
         </div>
-
         {/* Courses Section */}
         <div className="courses-section">
           <h2 className="section-title">Courses</h2>
@@ -217,7 +249,7 @@ function Courses() {
               {/* Level Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Level</h4>
-                {['Beginner','Intermediate','Advanced'].map(level => (
+                {['Beginner', 'Intermediate', 'Advanced'].map(level => (
                   <label key={level} className="filter-option">
                     <input
                       type="checkbox"
@@ -232,7 +264,7 @@ function Courses() {
               {/* Duration Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Duration</h4>
-                {['less-4','4-8','8-12','more-12'].map(range => (
+                {['less-4', '4-8', '8-12', 'more-12'].map(range => (
                   <label key={range} className="filter-option">
                     <input
                       type="checkbox"
@@ -241,9 +273,9 @@ function Courses() {
                     />
                     <span>
                       {range === 'less-4' ? 'Less than 4 weeks' :
-                       range === '4-8' ? '4-8 weeks' :
-                       range === '8-12' ? '8-12 weeks' :
-                       'More than 12 weeks'}
+                        range === '4-8' ? '4-8 weeks' :
+                          range === '8-12' ? '8-12 weeks' :
+                            'More than 12 weeks'}
                     </span>
                   </label>
                 ))}
@@ -252,7 +284,7 @@ function Courses() {
               {/* Price Filter */}
               <div className="filter-section">
                 <h4 className="filter-heading">Price</h4>
-                {['free','under-300','300-600','over-600'].map(range => (
+                {['free', 'under-300', '300-600', 'over-600'].map(range => (
                   <label key={range} className="filter-option">
                     <input
                       type="checkbox"
@@ -261,9 +293,9 @@ function Courses() {
                     />
                     <span>
                       {range === 'free' ? 'Free' :
-                       range === 'under-300' ? 'Under $300' :
-                       range === '300-600' ? '$300 - $600' :
-                       'Over $600'}
+                        range === 'under-300' ? 'Under $300' :
+                          range === '300-600' ? '$300 - $600' :
+                            'Over $600'}
                     </span>
                   </label>
                 ))}
@@ -299,7 +331,7 @@ function Courses() {
                         <h3 className="course-title">{course.title}</h3>
                         {course.isLiteVersion && <span className="lite-badge">Lite</span>}
                       </div>
-                      <p className="course-description">{course.description?.substring(0,80)}...</p>
+                      <p className="course-description">{course.description?.substring(0, 80)}...</p>
                       <div className="course-details">
                         <div className="course-detail"><span className="detail-icon">🕐</span><span>{getCourseDuration(course.duration)}</span></div>
                         <div className="course-detail"><span className="detail-icon">🏷️</span><span>{course.category || 'General'}</span></div>
