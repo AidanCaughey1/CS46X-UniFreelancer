@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import './App.css';
-import Academy from './pages/Academy';
-import Courses from './pages/Courses';
-import CreateContent from './pages/CreateContent';
-import CreateCourse from './pages/CreateCourse';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Profile from './pages/Profile';
+import Academy from './pages/Academy/Academy';
+import Courses from './pages/Academy/Courses/Courses';
+import Seminars from './pages/Academy/Seminars/Seminars';
+import Tutorials from './pages/Academy/Tutorials/Tutorials';
+import CreateContent from './pages/Academy/CreateContent/CreateContent';
+import CreateCourse from './pages/Academy/Courses/CreateCourse';
+import CreateSeminar from './pages/Academy/Seminars/CreateSeminar';
+import CreateTutorial from './pages/Academy/Tutorials/CreateTutorial';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,10 +30,14 @@ function App() {
           <Route path="/academy" element={<Academy />} />
           <Route path="/academy/courses" element={<Courses />} />
           <Route path="/academy/create" element={<CreateContent />} />
+          <Route path="/academy/seminars" element={<Seminars />} />
+          <Route path="/academy/tutorials" element={<Tutorials />} />
           <Route path="/academy/create/course" element={<CreateCourse />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/academy/create/seminar" element={<CreateSeminar />} />
+          <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
         </Routes>
       </div>
     </Router>

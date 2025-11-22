@@ -4,8 +4,14 @@ const SeminarSchema = new mongoose.Schema({
   // Basic seminar info
   title: { type: String, required: true },
   description: { type: String, required: true },
-  duration: { type: String }, // e.g. "90 min", "1.5 hours"
-  type: { type: String, enum: ["Live", "Recorded", "Podcast"], default: "Live" },
+  duration: { type: String }, // e.g. "1.5 hours"
+
+  type: { 
+    type: String, 
+    enum: ["Live Now", "Recorded", "Hybrid"], 
+    default: "Live Now" 
+  },
+
   thumbnail: { type: String },
 
   // Speaker section
@@ -22,7 +28,7 @@ const SeminarSchema = new mongoose.Schema({
     joinUrl: { type: String }
   },
 
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Seminar", SeminarSchema);

@@ -16,8 +16,10 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     console.log("Incoming Seminar:", req.body);
+
     const seminar = new Seminar(req.body);
     const saved = await seminar.save();
+    
     res.status(201).json(saved);
   } catch (err) {
     console.error("SEMINAR CREATE ERROR:", err);
