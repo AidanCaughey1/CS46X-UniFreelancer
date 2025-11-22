@@ -4,8 +4,8 @@
   "description": "",
   "main": "simple.test.js",
   "scripts": {
-    "test": "mocha ./tests/**/*.js"
-  },
+  "test": "cross-env NODE_ENV=test nyc mocha \"testing/tests/**/*.js\""
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

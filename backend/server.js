@@ -45,8 +45,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
-});
 
-module.exports = app;
+let server;
+
+if (process.env.NODE_ENV !== "test") {
+  server = app.listen(PORT, () => {
+    console.log(`Backend running on port ${PORT}`);
+  });
+}
+
+module.exports = { app, server };
