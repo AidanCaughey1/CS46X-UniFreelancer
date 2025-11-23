@@ -5,6 +5,7 @@ import { FiArrowLeft, FiUpload } from "react-icons/fi";
 
 function CreateTutorial() {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState('basic-info');
 
   const [formData, setFormData] = useState({
     title: "",
@@ -64,6 +65,12 @@ function CreateTutorial() {
     }
   };
 
+  const steps = [
+    { id: 'basic-info', label: 'Basic Info' },
+    { id: 'content', label: 'Content' },
+    { id: 'resources', label: 'Resources' },
+  ];
+
   return (
     <div className="create-tutorial-page">
       <div className="create-tutorial-container">
@@ -78,8 +85,20 @@ function CreateTutorial() {
           Fill in the details to create a new tutorial
         </p>
 
-        {/* ===================== TUTORIAL INFO ===================== */}
-        <div className="form-section">
+        <div className="step-navigation">
+          {steps.map((step) => (
+            <button
+              key={step.id}
+              className={`step-button ${currentStep === step.id ? 'active' : ''}`}
+              onClick={() => setCurrentStep(step.id)}
+            >
+              {step.label}
+            </button>
+          ))}
+        </div>
+
+        {currentStep === 'basic-info' && (
+          <div className="form-section">
           <h2 className="section-title">Tutorial Information</h2>
           <p className="section-subtitle">Basic details about your tutorial</p>
 
@@ -150,11 +169,12 @@ function CreateTutorial() {
             <FiUpload className="upload-icon" />
           </div>
         </div>
+        )}
 
-        {/* ===================== CONTENT ===================== */}
-        <div className="form-section">
-          <h2 className="section-title">Tutorial Content</h2>
-          <p className="section-subtitle">Video and written content</p>
+        {currentStep === 'content' && (
+          <div className="form-section">
+            <h2 className="section-title">Tutorial Content</h2>
+            <p className="section-subtitle">Video and written content</p>
 
           <div className="form-group">
             <label className="form-label">Video URL</label>
@@ -179,11 +199,12 @@ function CreateTutorial() {
             />
           </div>
         </div>
+        )}
 
-        {/* ===================== RESOURCES ===================== */}
-        <div className="form-section">
-          <h2 className="section-title">Downloadable Resources</h2>
-          <p className="section-subtitle">Optional supporting materials</p>
+        {currentStep === 'resources' && (
+          <div className="form-section">
+            <h2 className="section-title">Downloadable Resources</h2>
+            <p className="section-subtitle">Optional supporting materials</p>
 
           <div className="resource-list">
             {formData.resources.length === 0 && (
@@ -208,6 +229,7 @@ function CreateTutorial() {
             + Add Downloadable Resource
           </button>
         </div>
+        )}
 
         {/* ===================== ACTION BUTTONS ===================== */}
         <div className="form-actions">
