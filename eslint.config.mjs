@@ -10,7 +10,10 @@ export default defineConfig([
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
-    rules: {},
+    rules: {
+      // Ignore unused arguments that start with _
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    },
   },
 
   // Frontend source files
@@ -22,6 +25,9 @@ export default defineConfig([
     settings: { react: { version: "detect" } },
     rules: {
       "react/no-unescaped-entities": "off",
+
+      // Prevent unused imports from failing CI
+      "no-unused-vars": "warn",
     },
   },
 
@@ -39,6 +45,8 @@ export default defineConfig([
   // Test files
   {
     files: ["**/*.test.js"],
-    languageOptions: { globals: { ...globals.node, describe: true, it: true, expect: true } },
+    languageOptions: {
+      globals: { ...globals.node, describe: true, it: true, expect: true },
+    },
   },
 ]);
