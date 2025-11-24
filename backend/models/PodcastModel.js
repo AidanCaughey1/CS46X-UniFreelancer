@@ -22,4 +22,9 @@ const PodcastSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+// Indexes to support browsing & search
+PodcastSchema.index({ category: 1 });
+PodcastSchema.index({ publishedAt: -1 });
+PodcastSchema.index({ title: "text", description: "text" });
+
 module.exports = mongoose.model("Podcast", PodcastSchema);

@@ -82,4 +82,43 @@ const CourseSchema = new mongoose.Schema({
   }
 );
 
+CourseSchema.virtual("priceAmount").get(function () {
+  // 1) If pricing.amount is set, use that
+  if (
+    this.pricing &&
+    typeof this.pricing.amount === "number" &&
+    !Number.isNaN(this.pricing.amount)
+  ) {
+    return this.pricing.amount;
+  }
+
+  // 2) If the raw document (e.g., created via Atlas) has priceAmount, use it
+  if (this._doc && typeof this._doc.priceAmount === "number") {
+    return this._doc.priceAmount;
+  }
+
+  return 0;
+});
+
+// Virtual: whether the course counts as free
+CourseSchema.virtual("isFree").get(function () {
+  const price = this.priceAmount;
+  return this.isLiteVersion || price === 0;
+});
+
+// Make sure virtuals show up in JSON sent to frontend
+CourseSchema.set("toJSON", { virtuals: true });
+CourseSchema.set("toObject", { virtuals: true });
+
+// Indexes to support search & filtering (optional but good to add)
+CourseSchema.index({
+  title: "text",
+  description: "text",
+  category: "text",
+});
+CourseSchema.index({ difficulty: 1 });
+CourseSchema.index({ category: 1 });
+CourseSchema.index({ "pricing.amount": 1 });
+CourseSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Course", CourseSchema);

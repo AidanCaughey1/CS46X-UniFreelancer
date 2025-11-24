@@ -31,4 +31,9 @@ const SeminarSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Indexes to support upcoming/recorded filters and search
+SeminarSchema.index({ "schedule.date": 1 });
+SeminarSchema.index({ type: 1 });
+SeminarSchema.index({ title: "text", description: "text" });
+
 module.exports = mongoose.model("Seminar", SeminarSchema);

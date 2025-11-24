@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");                    // <-- NEW
+
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);   // <-- NEW
 
 const UserSchema = new mongoose.Schema({
   // Basic Identity
@@ -21,7 +24,7 @@ const UserSchema = new mongoose.Schema({
     unique: true
   },
 
-  password: { type: String, required: true }, // plain text for now
+  password: { type: String, required: true }, // now stored as hash
 
   // User Permissions
   role: {
@@ -55,5 +58,25 @@ const UserSchema = new mongoose.Schema({
     timestamps: true,
   }
 );
+
+// ------------------------------------------------------
+// Password hashing
+// ------------------------------------------------------
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  try {
+    const hash = await bcrypt.hash(this.password, SALT_ROUNDS);
+    this.password = hash;
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Fast lookups for login + registration
+UserSchema.index({ role: 1 });
+UserSchema.index({ enrolledCourses: 1 });
+UserSchema.index({ completedCourses: 1 });
 
 module.exports = mongoose.model("User", UserSchema);
