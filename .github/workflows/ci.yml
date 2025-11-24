@@ -48,7 +48,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm ci
+          npm install
           npm run build
 
       # 6. Run tests
