@@ -49,7 +49,7 @@ jobs:
         run: |
           cd frontend
           npm install
-          npm run build
+          npm start
 
       # 6. Run tests
       - name: Run tests
