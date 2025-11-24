@@ -4,6 +4,7 @@ import './CreateSeminar.css';
 
 function CreateSeminar() {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState('basic-info');
   const [seminarData, setSeminarData] = useState({
     title: '',
     description: '',
@@ -74,6 +75,12 @@ function CreateSeminar() {
     navigate('/academy/create');
   };
 
+  const steps = [
+    { id: 'basic-info', label: 'Basic Info' },
+    { id: 'speaker', label: 'Speaker' },
+    { id: 'schedule', label: 'Schedule' },
+  ];
+
   return (
     <div className="create-seminar-page">
       <div className="create-seminar-container">
@@ -87,8 +94,20 @@ function CreateSeminar() {
           Fill in the details to create a new seminar or webinar
         </p>
 
-        {/* Seminar Information */}
-        <div className="form-section">
+        <div className="step-navigation">
+          {steps.map((step) => (
+            <button
+              key={step.id}
+              className={`step-button ${currentStep === step.id ? 'active' : ''}`}
+              onClick={() => setCurrentStep(step.id)}
+            >
+              {step.label}
+            </button>
+          ))}
+        </div>
+
+        {currentStep === 'basic-info' && (
+          <div className="form-section">
           <h2 className="section-title">Seminar Information</h2>
           <p className="section-subtitle">Basic details about your seminar</p>
 
@@ -156,11 +175,12 @@ function CreateSeminar() {
             />
           </div>
         </div>
+        )}
 
-        {/* Speaker Information */}
-        <div className="form-section">
-          <h2 className="section-title">Speaker Information</h2>
-          <p className="section-subtitle">Details about the seminar speaker</p>
+        {currentStep === 'speaker' && (
+          <div className="form-section">
+            <h2 className="section-title">Speaker Information</h2>
+            <p className="section-subtitle">Details about the seminar speaker</p>
 
           <div className="form-group">
             <label className="form-label">Speaker Name *</label>
@@ -198,11 +218,12 @@ function CreateSeminar() {
             />
           </div>
         </div>
+        )}
 
-        {/* Schedule */}
-        <div className="form-section">
-          <h2 className="section-title">Schedule</h2>
-          <p className="section-subtitle">When will this seminar take place?</p>
+        {currentStep === 'schedule' && (
+          <div className="form-section">
+            <h2 className="section-title">Schedule</h2>
+            <p className="section-subtitle">When will this seminar take place?</p>
 
           <div className="form-row">
             <div className="form-group">
@@ -240,6 +261,7 @@ function CreateSeminar() {
             />
           </div>
         </div>
+        )}
 
         {/* Buttons */}
         <div className="form-actions">

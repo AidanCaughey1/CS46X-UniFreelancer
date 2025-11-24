@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import PropTypes from 'prop-types';
 import './App.css';
 import Academy from './pages/Academy/Academy';
-import Courses from './pages/Academy/Courses/Courses';
+import LearningHub from './pages/Academy/LearningHub/LearningHub';
 import Seminars from './pages/Academy/Seminars/Seminars';
 import Tutorials from './pages/Academy/Tutorials/Tutorials';
 import CreateContent from './pages/Academy/CreateContent/CreateContent';
@@ -31,10 +31,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Academy />} />
           <Route path="/academy" element={<Academy />} />
-          <Route path="/academy/courses" element={<Courses />} />
+          <Route path="/academy/courses" element={<LearningHub />} />
           <Route path="/academy/create" element={<CreateContent />} />
-          <Route path="/academy/seminars" element={<Seminars />} />
-          <Route path="/academy/tutorials" element={<Tutorials />} />
+          <Route path="/academy/seminars" element={<LearningHub />} />
+          <Route path="/academy/tutorials" element={<LearningHub />} />
           <Route path="/academy/create/course" element={<CreateCourse />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

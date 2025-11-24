@@ -43,6 +43,31 @@
     margin-bottom: 30px;
   }
   
+  /* ===== STEP NAVIGATION ===== */
+  .step-navigation {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .step-button {
+    padding: 10px 20px;
+    background-color: var(--light-primary-color);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-tertiary-color);
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .step-button:hover {
+    background-color: var(--light-secondary-color);
+  }
+  
+  .step-button.active {
+    background-color: var(--light-tertiary-color);
+    color: var(--dark-primary-color);
+  }
   /* ===== FORM SECTION WRAPPER ===== */
   .form-section {
     background-color: var(--light-tertiary-color);
