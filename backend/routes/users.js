@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt")
 const User = require("../models/UserModel");
 
 const router = express.Router();
@@ -28,19 +29,27 @@ router.post("/register", async (req, res) => {
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
     const user = new User({
       firstName,
       lastName,
       username,
       email,
-      password,
+      password,   // <-- will be hashed by the pre-save hook
       role,
     });
     await user.save();
 
-    res.status(201).json({ message: "User registered", user });
+    // Strip password before sending back
+    const userSafe = user.toObject();
+    delete userSafe.password;
+
+    res.status(201).json({
+      message: "User registered",
+      user: userSafe,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -54,16 +63,29 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
-
-    if (user.password !== password)
+    if (!user)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    res.json({ message: "Login successful", user });
+    // Compare provided password with stored hash
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // NEW: strip password before sending back
+    const userSafe = user.toObject();
+    delete userSafe.password;
+
+    res.json({
+      message: "Login successful",
+      user: userSafe,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -83,7 +105,10 @@ router.get("/:id", async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json(user);
+    const userSafe = user.toObject();
+    delete userSafe.password;
+
+    res.json(userSafe);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -114,14 +114,24 @@ function Courses() {
 
     if (filters.price.length > 0) {
       filtered = filtered.filter(course => {
-        const isFree = course.isLiteVersion || !course.priceAmount || course.priceAmount === 0;
-        const price = course.priceAmount || 0;
+        const price = Number(course.priceAmount ?? 0);
+        const isFree =
+          course.isFree === true ||
+          course.isLiteVersion === true ||
+          !price ||
+          price === 0;
 
         return filters.price.some(range => {
-          if (range === 'free') return isFree;
-          if (range === 'under-300') return price > 0 && price < 300;
-          if (range === '300-600') return price >= 300 && price <= 600;
-          if (range === 'over-600') return price > 600;
+          if (range === "free") return isFree;
+
+          if (range === "under-300") {
+            // Include free + anything under $300
+            return price >= 0 && price < 300;
+          }
+
+          if (range === "300-600") return price >= 300 && price <= 600;
+          if (range === "over-600") return price > 600;
+
           return false;
         });
       });
@@ -155,21 +165,17 @@ function Courses() {
     if (
       course.subscription &&
       (course.subscription.isSubscriptionCourse === true ||
-        course.subscription.isSubscriptionCourse === 'true')
+        course.subscription.isSubscriptionCourse === "true")
     ) {
-      return 'Included in subscription';
+      return "Included in subscription";
     }
 
-    const amountFromPricing =
-      typeof course.pricing?.amount === 'number' ? course.pricing.amount : undefined;
+    const price = Number(course.priceAmount ?? 0);
 
-    const amount = amountFromPricing ?? Number(course.priceAmount || 0);
-    if (amount > 0) {
-      return `$${amount}`;
-    }
-    if (course.isLiteVersion) return 'Free';
+    if (price > 0) return `$${price}`;
+    if (course.isLiteVersion || course.isFree) return "Free";
 
-    return 'Free';
+    return "Free";
   };
 
   return (

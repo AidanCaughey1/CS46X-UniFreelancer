@@ -25,4 +25,8 @@ const TutorialSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+TutorialSchema.index({ category: 1 });
+TutorialSchema.index({ createdAt: -1 });
+TutorialSchema.index({ title: "text", description: "text" });
+
 module.exports = mongoose.model("Tutorial", TutorialSchema);
