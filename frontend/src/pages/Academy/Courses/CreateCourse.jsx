@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CreateCourse.css';
@@ -161,7 +162,6 @@ function CreateCourse() {
     }
 
     try {
-      /* global process */
       const apiUrl = process.env.REACT_APP_API_URL;
       const response = await fetch(`${apiUrl}/api/academy/courses`, {
         method: 'POST',
