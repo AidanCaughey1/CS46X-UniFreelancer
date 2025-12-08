@@ -21,6 +21,9 @@
     "react-app",
     "react-app/jest"
   ],
+  "globals": {
+    "process": "readonly"
+    },
   "env": {
     "browser": true,
     "node": true
