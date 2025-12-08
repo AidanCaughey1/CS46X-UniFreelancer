@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState, useEffect, useCallback } from "react";
 import "./Seminars.css";
 
@@ -20,7 +21,8 @@ function Seminars() {
 
   const fetchSeminars = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/academy/seminars");
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/api/academy/seminars`);
       const data = await response.json();
       setSeminars(data);
       setFilteredSeminars(data);

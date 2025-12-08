@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
@@ -16,7 +17,8 @@ const Profile = () => {
 
         const fetchUserData = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/users/${storedUser._id}`);
+                const apiUrl = process.env.REACT_APP_API_URL;
+                const response = await fetch(`${apiUrl}/api/users/${storedUser._id}`);
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data);

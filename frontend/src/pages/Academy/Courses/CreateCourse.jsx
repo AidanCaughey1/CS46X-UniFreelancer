@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CreateCourse.css';
@@ -161,7 +162,8 @@ function CreateCourse() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/academy/courses', {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/api/academy/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

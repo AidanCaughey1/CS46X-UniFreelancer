@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Signup.css';
@@ -45,7 +46,8 @@ const Signup = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/users/register', {
+            const apiUrl = process.env.REACT_APP_API_URL;
+            const response = await fetch(`${apiUrl}/api/users/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
