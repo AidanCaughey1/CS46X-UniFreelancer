@@ -16,7 +16,8 @@ const Profile = () => {
 
         const fetchUserData = async () => {
             try {
-                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${storedUser._id}`);
+                const apiUrl = process.env.REACT_APP_API_URL;
+                const response = await fetch(`${apiUrl}/api/users/${storedUser._id}`);
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data);

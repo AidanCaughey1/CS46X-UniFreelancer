@@ -41,7 +41,8 @@ function Courses() {
       if (!user._id) return;
 
       // Fetch user details including enrolled courses
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/academy/courses`);
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/api/academy/courses`);
       if (response.ok) {
         const userData = await response.json();
 
@@ -65,7 +66,8 @@ function Courses() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/academy/seminars`);
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/api/academy/seminars`);
       if (response.ok) {
         const data = await response.json();
         setCourses(data);

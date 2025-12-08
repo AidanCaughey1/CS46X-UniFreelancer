@@ -20,7 +20,8 @@ function Seminars() {
 
   const fetchSeminars = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/academy/seminars`);
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/api/academy/seminars`);
       const data = await response.json();
       setSeminars(data);
       setFilteredSeminars(data);
