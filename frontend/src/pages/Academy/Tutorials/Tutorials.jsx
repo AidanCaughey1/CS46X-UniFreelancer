@@ -21,7 +21,7 @@ function Tutorials() {
 
   const fetchTutorials = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/academy/tutorials");
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/academy/tutorials`);
       const data = await response.json();
       setTutorials(data);
       setFilteredTutorials(data);

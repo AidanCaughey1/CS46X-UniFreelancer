@@ -161,7 +161,7 @@ function CreateCourse() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/academy/courses', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/academy/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
