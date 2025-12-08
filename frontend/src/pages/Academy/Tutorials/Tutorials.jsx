@@ -1,3 +1,4 @@
+/* global process */
 import React, { useState, useEffect, useCallback } from "react";
 import "./Tutorials.css";
 
