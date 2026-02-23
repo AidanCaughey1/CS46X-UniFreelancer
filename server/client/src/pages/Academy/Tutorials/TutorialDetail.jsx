@@ -1,7 +1,7 @@
 /* global process */
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiBookOpen, FiClock, FiVideo, FiLink } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiVideo } from "react-icons/fi";
 import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import "./TutorialDetail.css";
 
@@ -23,26 +23,6 @@ const getEmbedUrl = (url) => {
   return null;
 };
 
-const normalizeResources = (resources = []) => {
-  if (!Array.isArray(resources)) return [];
-  return resources
-    .map((resource, index) => {
-      if (!resource) return null;
-      if (typeof resource === "string") {
-        const trimmed = resource.trim();
-        if (!trimmed) return null;
-        return { label: `Resource ${index + 1}`, url: trimmed };
-      }
-
-      const label = resource.label || resource.name || `Resource ${index + 1}`;
-      const url = resource.url || resource.link || "";
-      if (!url) return null;
-
-      return { label, url };
-    })
-    .filter(Boolean);
-};
-
 const formatWrittenContent = (content) => {
   if (typeof content !== "string") return [];
   return content
@@ -62,7 +42,6 @@ function TutorialDetail() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [modal, setModal] = useState({ open: false, title: "", message: "" });
@@ -110,7 +89,6 @@ function TutorialDetail() {
         if (!response.ok) {
           setIsAuthenticated(false);
           setIsBookmarked(false);
-          setIsCompleted(false);
           return;
         }
 
@@ -127,11 +105,9 @@ function TutorialDetail() {
         };
 
         setIsBookmarked(includesId(data.bookmarkedTutorials, id));
-        setIsCompleted(includesId(data.completedTutorials, id));
       } catch {
         setIsAuthenticated(false);
         setIsBookmarked(false);
-        setIsCompleted(false);
       } finally {
         setAuthChecked(true);
       }
@@ -205,40 +181,6 @@ function TutorialDetail() {
     }
   };
 
-  const setCompleted = async (next) => {
-    if (!id) return;
-
-    try {
-      setIsSaving(true);
-      const response = await fetch(`/api/users/tutorials/${id}/complete`, {
-        method: next ? "POST" : "DELETE",
-        credentials: "include",
-      });
-
-      if (response.status === 401) {
-        setIsAuthenticated(false);
-        goToLoginForIntent("complete");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Unable to update completion");
-      }
-
-      setIsCompleted(next);
-      setIsAuthenticated(true);
-      openModal(
-        next ? "Completed" : "Updated",
-        next ? "Marked as completed." : "Completion removed."
-      );
-    } catch (err) {
-      console.error(err);
-      openModal("Error", "Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   useEffect(() => {
     const run = async () => {
       if (intentHandledRef.current) return;
@@ -256,27 +198,18 @@ function TutorialDetail() {
         if (!isBookmarked) await setBookmark(true);
         clearIntentFromUrl();
         intentHandledRef.current = true;
-        return;
-      }
-
-      if (intent === "complete") {
-        if (!isCompleted) await setCompleted(true);
-        clearIntentFromUrl();
-        intentHandledRef.current = true;
       }
     };
 
     run();
-  }, [authChecked, isAuthenticated, isBookmarked, isCompleted, location.search]);
+  }, [authChecked, isAuthenticated, isBookmarked, location.search]);
 
   const thumbnail = tutorial?.thumbnail || tutorial?.thumbnailUrl;
-  const resources = normalizeResources(tutorial?.resources);
   const paragraphs = formatWrittenContent(tutorial?.writtenContent);
   const embedUrl = getEmbedUrl(tutorial?.videoUrl);
   const category = tutorial?.category || tutorial?.topic || "General";
   const hasVideo = Boolean(tutorial?.videoUrl);
   const hasArticle = paragraphs.length > 0;
-  const instructorName = tutorial?.instructor?.name || "";
   const publishedDate = tutorial?.createdAt
     ? new Date(tutorial.createdAt).toLocaleDateString()
     : null;
@@ -341,19 +274,9 @@ function TutorialDetail() {
                 </div>
 
                 <h1 className="tutorial-title">{tutorial.title}</h1>
-                <p className="tutorial-description">{tutorial.description}</p>
 
                 <div className="tutorial-hero-bottom">
                   <div className="tutorial-meta">
-                    <div className="tutorial-meta-item">
-                      <FiBookOpen className="tutorial-meta-icon" />
-                      <div>
-                        <span className="tutorial-meta-label">Instructor</span>
-                        <span className="tutorial-meta-value">
-                          {instructorName || "Not specified"}
-                        </span>
-                      </div>
-                    </div>
                     <div className="tutorial-meta-item">
                       <FiClock className="tutorial-meta-icon" />
                       <div>
@@ -422,55 +345,6 @@ function TutorialDetail() {
                 </div>
               </div>
             )}
-
-            <div className="tutorial-section">
-              <h2 className="section-title">Resources</h2>
-              {resources.length > 0 ? (
-                <ul className="tutorial-resources-list">
-                  {resources.map((resource, index) => (
-                    <li
-                      key={`${resource.label}-${index}`}
-                      className="tutorial-resource-item"
-                    >
-                      <div className="tutorial-resource-info">
-                        <FiLink />
-                        <span>{resource.label}</span>
-                      </div>
-                      <a
-                        className="resource-link"
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Download
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="tutorial-empty-state">
-                  No downloadable resources have been added yet.
-                </p>
-              )}
-            </div>
-
-            <div className="tutorial-actions">
-              <button
-                type="button"
-                className={`complete-button ${isCompleted ? "is-completed" : ""}`}
-                onClick={() => setCompleted(!isCompleted)}
-                disabled={isSaving}
-                title={
-                  isAuthenticated
-                    ? isCompleted
-                      ? "Mark as not completed"
-                      : "Mark as completed"
-                    : "Sign in to track completion"
-                }
-              >
-                {isCompleted ? "Completed" : "Mark as Completed"}
-              </button>
-            </div>
 
             {modal.open && (
               <div

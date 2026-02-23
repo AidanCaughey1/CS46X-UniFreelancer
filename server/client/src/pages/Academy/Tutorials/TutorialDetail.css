@@ -1,7 +1,28 @@
 .tutorial-detail-page {
+  --tutorial-page-bg: #f5f5f5;
+  --tutorial-surface: #ffffff;
+  --tutorial-surface-strong: #ffffff;
+  --tutorial-border: #e0e0e0;
+  --tutorial-border-strong: #d6d6d6;
+  --tutorial-text: #333;
+  --tutorial-text-muted: #666;
+
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
-  background-color: var(--light-primary-color);
+  background-color: var(--tutorial-page-bg);
   padding: 40px 20px;
+}
+
+.tutorial-detail-page::before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 45vh;
+  background: var(--tutorial-page-bg);
+  z-index: -1;
 }
 
 .tutorial-detail-container {
@@ -12,7 +33,7 @@
 .tutorial-detail-page .back-button {
   background: none;
   border: none;
-  color: var(--dark-primary-color);
+  color: var(--tutorial-text);
   font-size: 16px;
   cursor: pointer;
   margin-bottom: 30px;
@@ -23,13 +44,13 @@
 }
 
 .tutorial-detail-page .back-button:hover {
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .loading-message {
   text-align: center;
   padding: 60px 20px;
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .tutorial-hero {
@@ -37,10 +58,10 @@
   display: grid;
   grid-template-columns: 1fr 1.5fr;
   gap: 40px;
-  background: var(--light-tertiary-color);
+  background: var(--tutorial-surface);
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   margin-bottom: 50px;
 }
 
@@ -52,10 +73,11 @@
   height: 44px;
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 0;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
   z-index: 2;
@@ -64,21 +86,23 @@
 .tutorial-detail-page .bookmark-button svg {
   width: 18px;
   height: 18px;
-  color: var(--dark-primary-color);
+  display: block;
+  overflow: visible;
+  color: var(--tutorial-text);
 }
 
 .tutorial-detail-page .bookmark-button:hover {
   transform: translateY(-1px);
-  border-color: rgba(0, 0, 0, 0.14);
+  border-color: var(--tutorial-border-strong);
   background: rgba(255, 255, 255, 1);
 }
 
 .tutorial-detail-page .bookmark-button.is-active {
-  border-color: rgba(123, 31, 162, 0.35);
+  border-color: rgba(244, 102, 62, 0.35);
 }
 
 .tutorial-detail-page .bookmark-button.is-active svg {
-  color: #7b1fa2;
+  color: var(--accent-primary-color);
 }
 
 .tutorial-detail-page .bookmark-button:disabled {
@@ -109,7 +133,7 @@
   justify-content: center;
   font-size: 100px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: #fff;
 }
 
 .tutorial-detail-page .tutorial-hero-content {
@@ -147,28 +171,22 @@
 }
 
 .tutorial-detail-page .tutorial-badge-article {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: #e8e8e8;
+  color: #666;
 }
 
 .tutorial-detail-page .tutorial-title {
   font-size: 36px;
   font-weight: 700;
-  color: var(--dark-primary-color);
+  color: var(--tutorial-text);
   margin-bottom: 16px;
   line-height: 1.2;
-}
-
-.tutorial-detail-page .tutorial-description {
-  font-size: 16px;
-  line-height: 1.8;
-  color: var(--dark-secondary-color);
 }
 
 .tutorial-detail-page .published-date {
   margin-top: 30px;
   font-size: 13px;
-  color: var(--dark-tertiary-color);
+  color: var(--tutorial-text-muted);
   text-align: right;
 }
 
@@ -180,8 +198,8 @@
 }
 
 .tutorial-detail-page .tutorial-meta-item {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--tutorial-surface);
+  border: none;
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
@@ -199,37 +217,37 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--dark-tertiary-color);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .tutorial-meta-value {
   font-size: 14px;
   font-weight: 600;
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text);
 }
 
 .tutorial-detail-page .tutorial-section {
   margin-bottom: 50px;
-  background: var(--light-tertiary-color);
+  background: var(--tutorial-surface);
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
 }
 
 .tutorial-detail-page .section-title {
   font-size: 28px;
   font-weight: 700;
-  color: var(--dark-primary-color);
+  color: var(--tutorial-text);
   margin-bottom: 25px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--tutorial-border);
 }
 
 .tutorial-detail-page .tutorial-overview-copy p {
   margin: 0;
   font-size: 16px;
   line-height: 1.8;
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .tutorial-video-wrapper {
@@ -237,7 +255,7 @@
   padding-bottom: 56.25%;
   /* 16:9 Aspect Ratio */
   height: 0;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--tutorial-border);
   border-radius: 14px;
   overflow: hidden;
   background: #111;
@@ -258,8 +276,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 30px;
-  background: var(--light-tertiary-color);
-  color: var(--dark-secondary-color);
+  background: var(--tutorial-surface);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .tutorial-video-fallback svg {
@@ -288,96 +306,15 @@
   gap: 14px;
   font-size: 16px;
   line-height: 1.8;
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text-muted);
 }
 
 .tutorial-detail-page .tutorial-written-content p {
   margin: 0;
 }
 
-.tutorial-detail-page .tutorial-resources-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0;
-  margin: 0;
-}
-
-.tutorial-detail-page .tutorial-resource-item {
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  background: white;
-}
-
-.tutorial-detail-page .tutorial-resource-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--dark-primary-color);
-}
-
-.tutorial-detail-page .tutorial-resource-info svg {
-  color: var(--accent-primary-color);
-}
-
-.tutorial-detail-page .tutorial-empty-state {
-  color: var(--dark-secondary-color);
-  font-size: 14px;
-}
-
 .tutorial-detail-page .tutorial-error {
   text-align: left;
-}
-
-/* Tutorial Actions */
-.tutorial-detail-page .tutorial-actions {
-  margin-top: 50px;
-  padding-top: 30px;
-  border-top: 2px solid #e0e0e0;
-  display: flex;
-  justify-content: center;
-}
-
-.tutorial-detail-page .complete-button {
-  background-color: var(--dark-primary-color);
-  color: white;
-  border: none;
-  padding: 16px 48px;
-  font-size: 18px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.tutorial-detail-page .complete-button:hover {
-  background-color: var(--dark-secondary-color);
-  transform: translateY(-2px);
-}
-
-.tutorial-detail-page .complete-button:active {
-  transform: translateY(0);
-}
-
-.tutorial-detail-page .complete-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.tutorial-detail-page .complete-button.is-completed {
-  background-color: #2e7d32;
-}
-
-.tutorial-detail-page .complete-button.is-completed:hover {
-  background-color: #1f5d24;
 }
 
 /* Modal */
@@ -395,7 +332,8 @@
 .tutorial-detail-page .tutorial-modal {
   width: 100%;
   max-width: 420px;
-  background: white;
+  background: var(--tutorial-surface-strong);
+  border: 1px solid var(--tutorial-border);
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
@@ -404,12 +342,12 @@
 .tutorial-detail-page .tutorial-modal-title {
   margin: 0 0 8px;
   font-size: 18px;
-  color: var(--dark-primary-color);
+  color: var(--tutorial-text);
 }
 
 .tutorial-detail-page .tutorial-modal-message {
   margin: 0 0 18px;
-  color: var(--dark-secondary-color);
+  color: var(--tutorial-text-muted);
   line-height: 1.5;
 }
 
@@ -421,7 +359,7 @@
   padding: 10px 14px;
   cursor: pointer;
   font-weight: 600;
-  color: var(--dark-primary-color);
+  color: var(--tutorial-text);
 }
 
 .tutorial-detail-page .tutorial-modal-close:hover {
