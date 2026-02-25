@@ -61,7 +61,7 @@ function InstructorDashboard() {
   };
 
   const handleEditCourse = (courseId) => {
-    navigate(`/academy/create-course/${courseId}`);
+    navigate(`/academy/create/${courseId}`);
   };
 
   if (loading) {
@@ -80,7 +80,7 @@ function InstructorDashboard() {
           <h1>Instructor Dashboard</h1>
           <button 
             className="create-course-button"
-            onClick={() => navigate('/academy/create-course')}
+            onClick={() => navigate('/academy/create')}
           >
             + Create New Course
           </button>
@@ -196,7 +196,7 @@ function InstructorDashboard() {
                 <h2>My Courses ({courses.length})</h2>
                 <button
                   className="create-course-button-secondary"
-                  onClick={() => navigate('/academy/create-course')}
+                  onClick={() => navigate('/academy/create')}
                 >
                   + New Course
                 </button>
@@ -208,7 +208,7 @@ function InstructorDashboard() {
                   <p>Create your first course to start teaching!</p>
                   <button
                     className="create-course-button"
-                    onClick={() => navigate('/academy/create-course')}
+                    onClick={() => navigate('/academy/create')}
                   >
                     Create Course
                   </button>
