@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 
 const InstructorSchema = new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.ObjectId, required: true }, // ADD THIS LINE
   name: { type: String, required: true },
   title: { type: String, default: "" },
   bio: { type: String, default: "" },
-  avatar: { type: String, default: "" }
+  avatar: { type: String, default: "" },
+  email: { type: String, default: "" } 
 }, { _id: false });
 
 const PricingSchema = new mongoose.Schema({
