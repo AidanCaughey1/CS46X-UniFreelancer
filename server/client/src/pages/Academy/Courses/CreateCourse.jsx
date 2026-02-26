@@ -80,13 +80,21 @@ function CreateCourse() {
   const steps = ['Basic Info', 'Instructor', 'Pricing', 'Modules', 'Final Test', 'Badge'];
 
   // Fetch course data if editing
-  useEffect(() => {
-    if (courseId) {
-      fetchCourseData();
-    }
-  }, [courseId]);
+useEffect(() => {
+  console.log('=== USEFFECT RUNNING ===');
+  console.log('courseId:', courseId);
+  if (courseId) {
+    console.log('courseId exists, calling fetchCourseData');
+    fetchCourseData();
+  } else {
+    console.log('courseId is undefined or null');
+  }
+}, [courseId]);
 
   const fetchCourseData = async () => {
+    console.log('=== FETCH COURSE DATA CALLED ===');
+  console.log('courseId from useParams:', courseId);
+  console.log('Full URL will be:', `/api/academy/courses/${courseId}`);
     try {
       const response = await fetch(`/api/academy/courses/${courseId}`, {
         credentials: 'include'
