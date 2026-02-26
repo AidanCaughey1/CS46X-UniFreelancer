@@ -51,6 +51,8 @@ router.post("/", protect, async (req, res) => {
       return res.status(404).json({ error: 'Instructor not found' });
     }
 
+    console.log('Found instructor:', instructor); // ADD THIS
+
     // Verify user is an instructor
     if (instructor.accountType !== 'instructor') {
       return res.status(403).json({ error: 'Only instructors can create courses' });
@@ -68,10 +70,12 @@ router.post("/", protect, async (req, res) => {
       }
     };
 
+    console.log('Course data to save:', JSON.stringify(courseData.instructor, null, 2)); // ADD THIS
+
     const course = new Course(courseData);
     const saved = await course.save();
 
-    console.log("Saved Course:", saved);
+    console.log("Saved Course instructor field:", saved.instructor); // ADD THIS
     res.status(201).json(saved);
 
   } catch (err) {
