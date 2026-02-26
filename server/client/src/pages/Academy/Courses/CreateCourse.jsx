@@ -79,18 +79,6 @@ function CreateCourse() {
 
   const steps = ['Basic Info', 'Instructor', 'Pricing', 'Modules', 'Final Test', 'Badge'];
 
-  // Fetch course data if editing
-useEffect(() => {
-  console.log('=== USEFFECT RUNNING ===');
-  console.log('courseId:', courseId);
-  if (courseId) {
-    console.log('courseId exists, calling fetchCourseData');
-    fetchCourseData();
-  } else {
-    console.log('courseId is undefined or null');
-  }
-}, [courseId]);
-
   const fetchCourseData = async () => {
     console.log('=== FETCH COURSE DATA CALLED ===');
   console.log('courseId from useParams:', courseId);
@@ -155,6 +143,18 @@ useEffect(() => {
       navigate('/instructor/dashboard');
     }
   };
+
+    // Fetch course data if editing
+useEffect(() => {
+  console.log('=== USEFFECT RUNNING ===');
+  console.log('courseId:', courseId);
+  if (courseId) {
+    console.log('courseId exists, calling fetchCourseData');
+    fetchCourseData();
+  } else {
+    console.log('courseId is undefined or null');
+  }
+}, [courseId]);
 
   const handleNext = () => {
     if (currentStep < steps.length) setCurrentStep(currentStep + 1);
