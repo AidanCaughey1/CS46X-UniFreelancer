@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './ModuleBuilder.css';
+import './CreateCourse.css';
 import LearningMaterialsInput from './LearningMaterialsInput';
-import AssignmentBuilder from './AssignmentBuilder';
+import AssignmentQuestionBuilder from './AssignmentQuestionBuilder';
 
 function ModuleBuilder({ 
   currentModule, 
@@ -13,6 +14,15 @@ function ModuleBuilder({
   removeLearningOutcome
 }) {
 
+  /* ===============================
+     ASSIGNMENT STATE
+  =============================== */
+  const [showAssignment, setShowAssignment] = useState(false);
+  const [assignmentQuestions, setAssignmentQuestions] = useState([]);
+
+  /* ===============================
+     MODULE SAVE
+  =============================== */
   const handleSaveModule = () => {
     if (!currentModule.title) {
       alert('Please enter a module title');
@@ -28,27 +38,75 @@ function ModuleBuilder({
     }
 
     onSave(currentModule);
+
+    // reset assignment builder UI
+    setShowAssignment(false);
+    setAssignmentQuestions([]);
   };
 
-  const handleAssignmentSave = (assignment) => {
+  /* ===============================
+     ASSIGNMENT LOGIC
+  =============================== */
+
+  const handleAddQuestion = (question) => {
+    const questionWithNumber = {
+      ...question,
+      questionNumber: assignmentQuestions.length + 1
+    };
+    setAssignmentQuestions(prev => [...prev, questionWithNumber]);
+  };
+
+  const removeQuestion = (index) => {
+    setAssignmentQuestions(prev =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
+
+  const handleCreateAssignment = () => {
+    if (assignmentQuestions.length === 0) {
+      alert('Please add at least one question');
+      return;
+    }
+
+    const totalPoints = assignmentQuestions.reduce(
+      (sum, q) => sum + Number(q.points || 0),
+      0
+    );
+
+    const assignment = {
+      title: `${currentModule.title || 'Module'} Assignment`,
+      instructions: 'Complete all questions below.',
+      questions: assignmentQuestions,
+      totalPoints
+    };
+
     setCurrentModule(prev => ({
       ...prev,
-      assignment: assignment
+      assignment
     }));
+
+    setShowAssignment(false);
+    setAssignmentQuestions([]);
   };
 
   return (
     <div className="module-builder">
+
+      {/* ===============================
+          MODULE INFO
+      =============================== */}
       <div className="builder-section">
         <h3>Module Information</h3>
-        
+
         <div className="form-group">
           <label>Module Title *</label>
           <input
             type="text"
             value={currentModule.title}
-            onChange={(e) => setCurrentModule({ ...currentModule, title: e.target.value })}
-            placeholder="e.g., Module 1: Brand Identity and Social Currency"
+            onChange={(e) =>
+              setCurrentModule({ ...currentModule, title: e.target.value })
+            }
+            placeholder="e.g., Module 1: Brand Identity"
           />
         </div>
 
@@ -56,73 +114,180 @@ function ModuleBuilder({
           <label>Module Overview *</label>
           <textarea
             value={currentModule.overview}
-            onChange={(e) => setCurrentModule({ ...currentModule, overview: e.target.value })}
-            placeholder="This module focuses on building a strong brand identity and leveraging social currency..."
+            onChange={(e) =>
+              setCurrentModule({ ...currentModule, overview: e.target.value })
+            }
             rows={4}
           />
         </div>
       </div>
 
+      {/* ===============================
+          LEARNING OUTCOMES
+      =============================== */}
       <div className="builder-section">
         <h3>Learning Outcomes</h3>
-        <p className="helper-text">After successful completion of this module, students will be able to:</p>
-        
+
         <div className="form-group">
           <div className="add-item-container">
             <input
               type="text"
               value={newOutcome}
               onChange={(e) => setNewOutcome(e.target.value)}
-              placeholder="e.g., Define and apply the concept of social currency..."
               onKeyPress={(e) => e.key === 'Enter' && addLearningOutcome()}
             />
-            <button type="button" onClick={addLearningOutcome} className="add-button">
+            <button
+              type="button"
+              onClick={addLearningOutcome}
+              className="add-button"
+            >
               Add Outcome
             </button>
           </div>
         </div>
 
-        {currentModule.learningOutcomes.length > 0 && (
+        {currentModule.learningOutcomes.length > 0 ? (
           <div className="outcomes-list">
             {currentModule.learningOutcomes.map((outcome, index) => (
               <div key={index} className="outcome-item">
-                <span className="outcome-number">{index + 1}.</span>
-                <span className="outcome-text">{outcome}</span>
-                <button onClick={() => removeLearningOutcome(index)} className="remove-button-small">
+                <span>{index + 1}. {outcome}</span>
+                <button
+                  onClick={() => removeLearningOutcome(index)}
+                  className="remove-button-small"
+                >
                   ×
                 </button>
               </div>
             ))}
           </div>
-        )}
-
-        {currentModule.learningOutcomes.length === 0 && (
-          <p className="empty-state">No learning outcomes added yet</p>
+        ) : (
+          <p className="empty-state">
+            No learning outcomes added yet
+          </p>
         )}
       </div>
 
+      {/* ===============================
+          LEARNING MATERIALS
+      =============================== */}
       <div className="builder-section">
         <h3>Learning Materials</h3>
-        <LearningMaterialsInput 
+        <LearningMaterialsInput
           materials={currentModule.learningMaterials}
-          setMaterials={(materials) => setCurrentModule({ ...currentModule, learningMaterials: materials })}
+          setMaterials={(materials) =>
+            setCurrentModule({
+              ...currentModule,
+              learningMaterials: materials
+            })
+          }
         />
       </div>
 
-      <div className="builder-section">
-        <h3>Assignment (Optional)</h3>
-        <AssignmentBuilder 
-          assignment={currentModule.assignment}
-          onSave={handleAssignmentSave}
-          onRemove={() => setCurrentModule({ ...currentModule, assignment: null })}
-        />
+      {/* ===============================
+          ASSIGNMENT SECTION
+      =============================== */}
+      <div className="assignment-section">
+        <h4>Assignment (Optional)</h4>
+
+        {!currentModule.assignment && !showAssignment && (
+          <button
+            type="button"
+            onClick={() => setShowAssignment(true)}
+            className="secondary-button"
+          >
+            + Create Assignment
+          </button>
+        )}
+
+        {showAssignment && (
+          <div className="assignment-builder">
+
+            <AssignmentQuestionBuilder
+              onAddQuestion={handleAddQuestion}
+            />
+
+            {assignmentQuestions.length > 0 && (
+              <div className="assignment-questions-list">
+                <h5>
+                  Assignment Questions ({assignmentQuestions.length})
+                </h5>
+
+                {assignmentQuestions.map((q, index) => (
+                  <div key={index} className="assignment-question-item">
+                    <div className="question-header">
+                      <strong>Q{index + 1}: {q.type}</strong>
+                      <span>{q.points} pts</span>
+                      <button
+                        onClick={() => removeQuestion(index)}
+                        className="remove-button-small"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <p>{q.question}</p>
+                  </div>
+                ))}
+
+                <div className="assignment-actions">
+                  <button
+                    type="button"
+                    onClick={handleCreateAssignment}
+                    className="primary-button"
+                  >
+                    Save Assignment to Module
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAssignment(false);
+                      setAssignmentQuestions([]);
+                    }}
+                    className="secondary-button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentModule.assignment && !showAssignment && (
+          <div className="assignment-preview">
+            <strong>✅ Assignment Added</strong>
+            <p>
+              {currentModule.assignment.questions.length} questions •{" "}
+              {currentModule.assignment.totalPoints} total points
+            </p>
+            <button
+              onClick={() =>
+                setCurrentModule({
+                  ...currentModule,
+                  assignment: null
+                })
+              }
+              className="remove-button"
+            >
+              Remove Assignment
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* ===============================
+          SAVE MODULE
+      =============================== */}
       <div className="module-actions">
-        <button type="button" onClick={handleSaveModule} className="save-module-button">
+        <button
+          type="button"
+          onClick={handleSaveModule}
+          className="save-module-button"
+        >
           + Add Module to Course
         </button>
       </div>
+
     </div>
   );
 }

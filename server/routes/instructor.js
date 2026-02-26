@@ -252,7 +252,7 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
     // Get all enrolled students
     const students = await User.find({
       enrolledCourses: courseId
-    }).select('name email avatar enrolledAt');
+    }).select('firstName lastName username email avatar enrolledAt');
 
     // For each student, get their progress
     const studentsWithProgress = await Promise.all(
@@ -274,9 +274,13 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
 
         return {
           ...student.toObject(),
+          name: student.firstName && student.lastName 
+            ? `${student.firstName} ${student.lastName}` 
+            : student.username,  // Create name from firstName + lastName
           totalSubmissions,
           gradedSubmissions: gradedSubmissions.length,
           averageGrade: avgGrade
+
         };
       })
     );

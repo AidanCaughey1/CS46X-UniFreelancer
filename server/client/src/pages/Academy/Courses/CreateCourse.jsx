@@ -105,10 +105,12 @@ function CreateCourse() {
         isLiteVersion: course.isLiteVersion || false,
         
         instructor: {
+          _id: course.instructor?._id, 
           name: course.instructor?.name || '',
           title: course.instructor?.title || '',
           bio: course.instructor?.bio || '',
-          avatar: course.instructor?.avatar || ''
+          avatar: course.instructor?.avatar || '',
+          email: course.instructor?.email || ''
         },
         
         pricing: {

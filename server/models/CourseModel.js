@@ -42,22 +42,62 @@ const LearningMaterialsSchema = new mongoose.Schema({
   }]
 }, { _id: false });
 
-// NEW: Assignment Schema
+// NEW: Assignment Question Schema with different types
+const AssignmentQuestionSchema = new mongoose.Schema({
+  questionNumber: { type: Number, required: true },
+  type: { 
+    type: String, 
+    enum: ['multiple-choice', 'written', 'matching', 'pdf-upload'],
+    required: true 
+  },
+  
+  // Common fields
+  question: { type: String, required: true },
+  points: { type: Number, default: 10 },
+  
+  // For multiple-choice
+  options: [{ type: String }],
+  correctAnswer: { type: Number }, // index of correct option
+  
+  // For matching
+  matchPairs: [{
+    left: { type: String },
+    right: { type: String }
+  }],
+  
+  // For written response
+  wordLimit: { type: Number },
+  rubric: { type: String },
+  
+  // For PDF upload
+  fileRequirements: { type: String }
+  
+}, { _id: false });
+
+// Updated Assignment Schema
 const AssignmentSchema = new mongoose.Schema({
-  title: { type: String },
+  title: { type: String, required: true },
   purpose: { type: String },
   instructions: { type: String },
+  
+  // NEW: Question-based structure
+  questions: [AssignmentQuestionSchema],
+  
+  // DEPRECATED: Old part-based structure (keep for backward compatibility)
   parts: [{
     partNumber: { type: Number },
     title: { type: String },
     instructions: { type: String }
   }],
+  
   gradingCriteria: [{
     name: { type: String },
     points: { type: Number }
   }],
+  
   deliverableFormat: { type: String },
-  totalPoints: { type: Number, default: 30 }
+  totalPoints: { type: Number, default: 100 }
+  
 }, { _id: false });
 
 // Lesson Schema (videos, assignments, quizzes within a module)

@@ -515,3 +515,165 @@
     gap: 0.5rem;
   }
 }
+
+/* Assignment Question Builder Styles */
+.assignment-question-builder {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.question-type-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.matching-pairs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.matching-pair-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.matching-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.matching-arrow {
+  font-size: 18px;
+  color: #666;
+}
+
+.remove-button-small {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-button-small:hover {
+  background: #cc0000;
+}
+
+.assignment-questions-list {
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.assignment-question-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.question-points {
+  color: #4F46E5;
+  font-weight: 600;
+}
+
+.question-text {
+  color: #333;
+  margin: 0;
+}
+
+.assignment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.assignment-preview {
+  padding: 15px;
+  background: #e8f5e9;
+  border: 1px solid #4caf50;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.assignment-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.add-button-inline {
+  padding: 8px 16px;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-button-inline:hover {
+  background: #3730a3;
+}
+
+.material-type-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.material-type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.material-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.material-item input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.add-button-small {
+  padding: 6px 12px;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.add-button-small:hover {
+  background: #3730a3;
+}
