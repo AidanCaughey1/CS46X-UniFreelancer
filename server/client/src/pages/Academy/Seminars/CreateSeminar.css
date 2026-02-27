@@ -236,6 +236,38 @@
   .create-seminar-primary-button,
   .create-seminar-secondary-button {
     width: 100%;
+    
   }
+  .create-seminar-camera {
+  margin-top: 12px;
+}
+
+.create-seminar-camera-panel {
+  margin-top: 10px;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.create-seminar-camera-preview {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 10px;
+  display: block;
+  background: #000;
+}
+
+.create-seminar-camera-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.create-seminar-camera-error {
+  margin-top: 8px;
+  color: #b00020;
+  font-size: 0.95rem;
+}
 }
   

@@ -36,6 +36,110 @@ const getScheduleTimes = ({ date, startTime, endTime }) => {
 function CreateSeminar() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("basic-info");
+    // Camera state for speaker avatar
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+
+  const videoRef = React.useRef(null);
+  const streamRef = React.useRef(null);
+
+  const stopCamera = () => {
+    const stream = streamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera API not supported in this browser.");
+      return;
+    }
+
+    try {
+      // If already open, reset cleanly
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+      });
+
+      streamRef.current = stream;
+      setIsCameraOpen(true); // <-- render the <video> first
+    } catch (err) {
+      console.error("Camera start failed:", err);
+      setCameraError(
+        err?.name === "NotAllowedError"
+          ? "Camera permission denied. Please allow camera access in your browser."
+          : "Unable to access camera. Make sure a camera is available and not in use."
+      );
+      stopCamera();
+    }
+  };
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!isCameraOpen || !video || !stream) return;
+
+    video.srcObject = stream;
+
+    const play = async () => {
+      try {
+        await video.play();
+      } catch (e) {
+        // Some browsers require user interaction; still OK
+        console.warn("Video play() blocked:", e);
+      }
+    };
+
+    // Wait for metadata so videoWidth/videoHeight are available
+    video.onloadedmetadata = play;
+
+    return () => {
+      if (video) video.onloadedmetadata = null;
+    };
+  }, [isCameraOpen]);
+
+  const captureSpeakerAvatar = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+
+    if (!w || !h) {
+      setCameraError("Camera not ready yet—try again in a moment.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, w, h);
+
+    const dataUrl = canvas.toDataURL("image/png");
+
+    setFormData((prev) => ({ ...prev, speakerAvatar: dataUrl }));
+    stopCamera();
+  };
+
+  // Cleanup if leaving the page
+  React.useEffect(() => {
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -282,11 +386,54 @@ function CreateSeminar() {
                 />
               </div>
 
-              <ImageUpload
+                            <ImageUpload
                 value={formData.speakerAvatar}
                 onChange={(url) => setFormData((prev) => ({ ...prev, speakerAvatar: url }))}
                 label="Speaker Avatar"
               />
+
+              {/* Camera controls (right under paste image url / ImageUpload) */}
+              <div className="create-seminar-camera">
+                {!isCameraOpen ? (
+                  <button
+                    type="button"
+                    className="create-seminar-secondary-button"
+                    onClick={startCamera}
+                  >
+                    Use Camera
+                  </button>
+                ) : (
+                  <div className="create-seminar-camera-panel">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="create-seminar-camera-preview"
+                    />
+
+                    <div className="create-seminar-camera-actions">
+                      <button
+                        type="button"
+                        className="create-seminar-primary-button"
+                        onClick={captureSpeakerAvatar}
+                      >
+                        Capture
+                      </button>
+
+                      <button
+                        type="button"
+                        className="create-seminar-secondary-button"
+                        onClick={stopCamera}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {cameraError ? <p className="create-seminar-camera-error">{cameraError}</p> : null}
+              </div>
             </div>
           )}
 
