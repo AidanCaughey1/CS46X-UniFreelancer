@@ -22,6 +22,23 @@ const formatTimeUntilStart = (milliseconds) => {
     return parts.join(" ");
 };
 
+const formatDuration = (duration) => {
+    if (!duration) return "Not specified";
+    const numMinutes = Number(duration);
+    if (isNaN(numMinutes)) return duration;
+
+    if (numMinutes < 60) return `${numMinutes} minutes`;
+
+    const hours = Math.floor(numMinutes / 60);
+    const mins = numMinutes % 60;
+
+    if (mins === 0) {
+        return `${hours} hour${hours > 1 ? 's' : ''}`;
+    }
+
+    return `${hours} hour${hours > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`;
+};
+
 function SeminarDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -125,7 +142,7 @@ function SeminarDetails() {
 
                                 <div className="seminar-details-meta-item">
                                     <span className="seminar-details-meta-label"><FiClock /> Duration</span>
-                                    <span>{seminar.duration || "Not specified"}</span>
+                                    <span>{formatDuration(seminar.duration)}</span>
                                 </div>
 
                                 {isFuture && startsIn ? (
