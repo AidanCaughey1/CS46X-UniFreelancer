@@ -77,7 +77,23 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
-  }
+  },
+
+  // AI
+  aiSuggestion: {
+    createdAt: { type: Date },
+    model: { type: String, default: "" },
+    grades: {
+      type: Map,
+      of: GradeSchema,
+      default: {}
+    },
+    overallFeedback: { type: String, default: "" },
+    totalScore: { type: Number, default: 0 },
+    maxScore: { type: Number, default: 0 },
+    percentage: { type: Number, default: 0 },
+    notes: { type: [String], default: [] }
+  },
 }, {
   timestamps: true
 });

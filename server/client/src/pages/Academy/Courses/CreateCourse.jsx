@@ -10,6 +10,7 @@ function CreateCourse() {
   const { courseId } = useParams(); 
   const [isEditMode, setIsEditMode] = useState(false); 
   const [currentStep, setCurrentStep] = useState(1);
+  const [aiOutcomesLoading, setAiOutcomesLoading] = useState(false);
 
   const [courseData, setCourseData] = useState({
     // Basic Info
@@ -434,6 +435,51 @@ useEffect(() => {
     return () => stopCamera();
   }, []);
 
+  const handleGenerateOutcomesForCurrentModule = async () => {
+    try {
+      if (!courseData.title?.trim() || !courseData.overview?.trim()) {
+        alert("Please fill in course title and overview first.");
+        return;
+      }
+      if (!currentModule.title?.trim()) {
+        alert("Please enter a module title first.");
+        return;
+      }
+
+      setAiOutcomesLoading(true);
+
+      const res = await fetch("/api/ai/learning-outcomes/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          course: { title: courseData.title, description: courseData.overview },
+          module: {
+            ...currentModule,
+            description: currentModule.overview || currentModule.description || "",
+          },
+          count: 6,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to generate outcomes");
+        return;
+      }
+
+      setCurrentModule(prev => ({
+        ...prev,
+        learningOutcomes: Array.isArray(data.learningOutcomes) ? data.learningOutcomes : [],
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to generate outcomes");
+    } finally {
+      setAiOutcomesLoading(false);
+    }
+  };
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -690,6 +736,8 @@ useEffect(() => {
               setNewOutcome={setNewOutcome}
               addLearningOutcome={addLearningOutcome}
               removeLearningOutcome={removeLearningOutcome}
+              onGenerateOutcomes={handleGenerateOutcomesForCurrentModule}
+              aiOutcomesLoading={aiOutcomesLoading}
             />
 
             {courseData.modules.length > 0 && (

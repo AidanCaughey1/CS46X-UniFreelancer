@@ -9,6 +9,7 @@ function GradingInterface() {
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Grades state: { partNumber: { points: number, comment: string } }
   const [grades, setGrades] = useState({});
@@ -138,6 +139,42 @@ function GradingInterface() {
     }
   };
 
+  const handleAiSuggestGrades = async () => {
+    try {
+      setAiLoading(true);
+
+      const res = await fetch(`/api/ai/submissions/${submissionId}/suggest-grade`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "AI grading failed");
+        return;
+      }
+
+      const nextGrades = {};
+      for (const [partNum, g] of Object.entries(data.grades || {})) {
+        nextGrades[Number(partNum)] = {
+          points: Number(g.points) || 0,
+          maxPoints: Number(g.maxPoints) || 0,
+          comment: g.comment || "",
+        };
+      }
+
+      setGrades(prev => ({ ...prev, ...nextGrades }));
+      if (typeof data.overallFeedback === "string") setOverallFeedback(data.overallFeedback);
+
+    } catch (err) {
+      console.error(err);
+      alert("AI grading failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="grading-interface-page">
@@ -166,6 +203,14 @@ function GradingInterface() {
         <div className="grading-header">
           <button className="back-button" onClick={handleCancel}>
             ← Back to Dashboard
+          </button>
+          <button
+            className="secondary-button"
+            onClick={handleAiSuggestGrades}
+            disabled={aiLoading || grading}
+            style={{ marginLeft: "auto" }}
+          >
+            {aiLoading ? "Thinking..." : "✨ AI Suggest Grades"}
           </button>
           <h1>Grade Assignment</h1>
         </div>
