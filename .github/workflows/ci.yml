@@ -3,12 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - main
-      - master
+      - react-main
   pull_request:
     branches:
-      - main
-      - master
+      - react-main
 
 jobs:
   build-test:
@@ -42,7 +40,7 @@ jobs:
         run: |
           cd backend
           npm start &
-          sleep 5  # give server time to start
+          sleep 5
 
       # 5. Install frontend dependencies and build
       - name: Install frontend dependencies
