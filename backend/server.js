@@ -11,7 +11,9 @@ const PORT = process.env.PORT || 5000;
 // ------------------------------
 // CONNECT TO MONGO
 // ------------------------------
-connectDB().catch((err) => console.error("MongoDB connection error:", err));
+if (process.env.NODE_ENV !== "test") {
+  connectDB().catch((err) => console.error("MongoDB connection error:", err));
+}
 
 // ------------------------------
 // STRIPE WEBHOOK (MUST BE BEFORE express.json())
