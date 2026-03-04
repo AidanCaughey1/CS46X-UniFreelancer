@@ -56,6 +56,7 @@ const paymentRoutes = require("./routes/payments");
 const courseProgressRoutes = require("./routes/courseProgress");
 const uploadRoutes = require("./routes/upload");
 const instructorRoutes = require('./routes/instructor')
+const adminRoutes = require("./routes/admin");
 
 app.use("/api/academy", academyRoutes);
 app.use("/api/academy/courses", coursesRoutes);
@@ -67,6 +68,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/courses", courseProgressRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/instructor", instructorRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ------------------------------
 // HEALTH CHECK

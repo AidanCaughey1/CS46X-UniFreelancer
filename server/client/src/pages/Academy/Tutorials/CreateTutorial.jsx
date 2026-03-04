@@ -1,13 +1,17 @@
 /* global process */
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "./CreateTutorial.css";
 import { FiArrowLeft } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
 
 function CreateTutorial() {
   const navigate = useNavigate();
+  const { id: tutorialId } = useParams();
+  const isEditMode = Boolean(tutorialId);
   const [currentStep, setCurrentStep] = useState('basic-info');
+  const [loadingTutorial, setLoadingTutorial] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -20,6 +24,50 @@ function CreateTutorial() {
     resources: [],
     instructorName: "",
   });
+
+  useEffect(() => {
+    const fetchTutorialForEdit = async () => {
+      if (!isEditMode) return;
+
+      try {
+        setLoadingTutorial(true);
+        const response = await fetch(`/api/academy/tutorials/${tutorialId}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load tutorial");
+        }
+
+        const tutorial = await response.json();
+
+        setFormData({
+          title: tutorial.title || "",
+          description: tutorial.description || "",
+          duration: tutorial.duration || "",
+          category: tutorial.category || "",
+          thumbnail: tutorial.thumbnail || "",
+          videoUrl: tutorial.videoUrl || "",
+          writtenContent: tutorial.writtenContent || "",
+          resources: Array.isArray(tutorial.resources)
+            ? tutorial.resources
+                .map((resource) => {
+                  if (typeof resource === "string") return resource;
+                  return resource?.url || "";
+                })
+                .filter(Boolean)
+            : [],
+          instructorName: tutorial.instructor?.name || "",
+        });
+      } catch (error) {
+        console.error("Error loading tutorial:", error);
+        alert("Failed to load tutorial for editing.");
+        navigate("/academy/tutorials");
+      } finally {
+        setLoadingTutorial(false);
+      }
+    };
+
+    fetchTutorialForEdit();
+  }, [isEditMode, tutorialId, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,40 +121,80 @@ function CreateTutorial() {
       return;
     }
 
+    const trimmedInstructor = formData.instructorName.trim();
+    if (!trimmedInstructor) {
+      alert("Instructor name is required.");
+      return;
+    }
+
     try {
-      const { instructorName, ...rest } = formData;
+      setIsSubmitting(true);
+      const rest = { ...formData };
+      delete rest.instructorName;
       const payload = {
         ...rest,
         duration: durationMinutes
       };
 
-      const trimmedInstructor = instructorName.trim();
-      if (!trimmedInstructor) {
-        alert("Instructor name is required.");
-        return;
-      }
-
       payload.instructor = { name: trimmedInstructor };
+      payload.resources = (formData.resources || [])
+        .map((resourceUrl) => String(resourceUrl).trim())
+        .filter(Boolean)
+        .map((resourceUrl) => ({ url: resourceUrl }));
 
       console.log("Submitting Tutorial:", payload);
 
-      const response = await fetch(`/api/academy/tutorials`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        isEditMode ? `/api/academy/tutorials/${tutorialId}` : `/api/academy/tutorials`,
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (response.ok) {
-        alert("Tutorial created successfully!");
-        navigate("/academy/tutorials");
+        alert(`Tutorial ${isEditMode ? "updated" : "created"} successfully!`);
+        navigate(isEditMode ? `/academy/tutorials/${tutorialId}` : "/academy/tutorials");
       } else {
         const errorData = await response.json();
-        console.error("Tutorial creation failed:", errorData);
-        alert("Failed to create tutorial. Check console for details.");
+        console.error("Tutorial save failed:", errorData);
+        alert(errorData.error || "Failed to save tutorial.");
       }
     } catch (error) {
-      console.error("Error creating tutorial:", error);
-      alert("An unexpected error occurred while creating the tutorial.");
+      console.error("Error saving tutorial:", error);
+      alert("An unexpected error occurred while saving the tutorial.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteTutorial = async () => {
+    if (!isEditMode) return;
+
+    const confirmed = window.confirm("Are you sure you want to delete this tutorial? This cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/academy/tutorials/${tutorialId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete tutorial");
+      }
+
+      alert("Tutorial deleted successfully.");
+      navigate("/academy/tutorials");
+    } catch (error) {
+      console.error("Error deleting tutorial:", error);
+      alert(error.message || "Failed to delete tutorial.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -161,12 +249,18 @@ function CreateTutorial() {
   return (
     <div className="create-tutorial-page">
       <div className="create-tutorial-container">
+        {loadingTutorial ? (
+          <div className="loading-message">Loading tutorial...</div>
+        ) : (
+          <>
         <button className="back-button" onClick={() => navigate(-1)}>
           <FiArrowLeft size={18} /> Back
         </button>
 
-        <h1>Create New Tutorial</h1>
-        <p className="page-subtitle">Fill in the details to create a new tutorial</p>
+        <h1>{isEditMode ? "Edit Tutorial" : "Create New Tutorial"}</h1>
+        <p className="page-subtitle">
+          {isEditMode ? "Update your tutorial details" : "Fill in the details to create a new tutorial"}
+        </p>
 
         <div className="steps-indicator">
           {steps.map((step, index) => (
@@ -354,11 +448,30 @@ function CreateTutorial() {
               Next
             </button>
           ) : (
-            <button type="button" onClick={handleSubmit} className="primary-button">
-              Create Tutorial
-            </button>
+            <>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleDeleteTutorial}
+                  className="secondary-button"
+                  disabled={isSubmitting}
+                >
+                  Delete Tutorial
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="primary-button"
+                disabled={isSubmitting}
+              >
+                {isEditMode ? "Update Tutorial" : "Create Tutorial"}
+              </button>
+            </>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

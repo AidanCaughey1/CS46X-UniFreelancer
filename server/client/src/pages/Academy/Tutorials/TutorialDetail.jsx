@@ -41,6 +41,7 @@ function TutorialDetail() {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -88,12 +89,14 @@ function TutorialDetail() {
 
         if (!response.ok) {
           setIsAuthenticated(false);
+          setIsAdmin(false);
           setIsBookmarked(false);
           return;
         }
 
         const data = await response.json();
         setIsAuthenticated(true);
+        setIsAdmin(data.accountType === "admin");
 
         const includesId = (collection, targetId) => {
           if (!Array.isArray(collection) || !targetId) return false;
@@ -107,6 +110,7 @@ function TutorialDetail() {
         setIsBookmarked(includesId(data.bookmarkedTutorials, id));
       } catch {
         setIsAuthenticated(false);
+        setIsAdmin(false);
         setIsBookmarked(false);
       } finally {
         setAuthChecked(true);
@@ -274,6 +278,16 @@ function TutorialDetail() {
                 </div>
 
                 <h1 className="tutorial-title">{tutorial.title}</h1>
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="resource-link"
+                    onClick={() => navigate(`/academy/tutorials/${id}/edit`)}
+                  >
+                    Edit Tutorial
+                  </button>
+                )}
 
                 <div className="tutorial-hero-bottom">
                   <div className="tutorial-meta">
