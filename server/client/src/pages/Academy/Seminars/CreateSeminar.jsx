@@ -4,16 +4,6 @@ import { FiArrowLeft } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
 import "./CreateSeminar.css";
 
-const parseDurationMinutes = (value) => {
-  if (!value) return "";
-  const normalized = String(value).trim();
-  const numberMatch = normalized.match(/^(\d+)$/);
-  if (!numberMatch) return null;
-  const minutes = Number(numberMatch[1]);
-  if (!Number.isFinite(minutes) || minutes <= 0) return null;
-  return String(minutes);
-};
-
 const getScheduleTimes = ({ date, startTime, endTime }) => {
   if (!date || !startTime || !endTime) {
     return { startAtLocal: null, endAtLocal: null, valid: false };
@@ -31,6 +21,15 @@ const getScheduleTimes = ({ date, startTime, endTime }) => {
     endAtLocal,
     valid: endAtLocal > startAtLocal
   };
+};
+
+const formatDurationLabel = (minutes) => {
+  if (!minutes || !Number.isFinite(minutes)) return "";
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (!remainder) return `${hours} hour${hours > 1 ? "s" : ""}`;
+  return `${hours} hour${hours > 1 ? "s" : ""} ${remainder} minute${remainder > 1 ? "s" : ""}`;
 };
 
 function CreateSeminar() {
@@ -143,7 +142,6 @@ function CreateSeminar() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    duration: "",
     thumbnail: "",
     speakerName: "",
     speakerBio: "",
@@ -155,6 +153,12 @@ function CreateSeminar() {
     zoomPassword: ""
   });
 
+  const scheduleTimes = getScheduleTimes(formData);
+  const calculatedDurationMinutes = scheduleTimes.valid
+    ? Math.round((scheduleTimes.endAtLocal.getTime() - scheduleTimes.startAtLocal.getTime()) / 60000)
+    : 0;
+  const calculatedDurationLabel = formatDurationLabel(calculatedDurationMinutes);
+
   const steps = [
     { id: "basic-info", label: "Basic Info" },
     { id: "speaker", label: "Speaker" },
@@ -165,13 +169,6 @@ function CreateSeminar() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
-    if (name === "duration") {
-      const digitsOnly = value.replace(/[^0-9]/g, "");
-      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
-      return;
-    }
-
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -219,17 +216,13 @@ function CreateSeminar() {
       event.preventDefault();
     }
 
-    const durationMinutes = parseDurationMinutes(formData.duration);
-    if (durationMinutes === null) {
-      alert("Duration must be a number of minutes (e.g., 45) or left blank.");
-      return;
-    }
-
     const { startAtLocal, endAtLocal, valid } = getScheduleTimes(formData);
     if (!valid || !startAtLocal || !endAtLocal) {
       alert("Please provide a valid date/time range. End time must be after start time.");
       return;
     }
+
+    const durationMinutes = String(Math.round((endAtLocal.getTime() - startAtLocal.getTime()) / 60000));
 
     const sourceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
@@ -323,31 +316,6 @@ function CreateSeminar() {
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                />
-              </div>
-
-              <div className="create-seminar-form-group">
-                <label>Duration (in Minutes)</label>
-                <input
-                  type="text"
-                  name="duration"
-                  placeholder="Minutes only (e.g., 45)"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  onKeyDown={(event) => {
-                    const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"];
-                    if (allowedKeys.includes(event.key)) return;
-                    if (/^[0-9]$/.test(event.key)) return;
-                    event.preventDefault();
-                  }}
-                  onPaste={(event) => {
-                    const paste = event.clipboardData.getData("text");
-                    if (!/^[0-9]*$/.test(paste)) {
-                      event.preventDefault();
-                    }
-                  }}
                 />
               </div>
 
@@ -457,6 +425,15 @@ function CreateSeminar() {
                   <label>End Time *</label>
                   <input type="time" name="endTime" value={formData.endTime} onChange={handleChange} />
                 </div>
+              </div>
+
+              <div className="create-seminar-form-group">
+                <label>Duration (Auto Calculated)</label>
+                <input
+                  type="text"
+                  value={calculatedDurationLabel || "Will be calculated from start/end time"}
+                  readOnly
+                />
               </div>
 
               <div className="create-seminar-form-group">

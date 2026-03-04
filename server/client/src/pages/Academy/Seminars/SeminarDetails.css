@@ -1,10 +1,7 @@
 .seminar-details-page {
   min-height: 100vh;
   padding: 36px 20px 64px;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(244, 102, 62, 0.18), transparent 30%),
-    radial-gradient(circle at 100% 100%, rgba(218, 112, 74, 0.22), transparent 34%),
-    linear-gradient(160deg, #f4f8ff 0%, #f7f7fb 55%, #eef4ff 100%);
+  background-color: #f5f5f5;
 }
 
 .seminar-details-container {

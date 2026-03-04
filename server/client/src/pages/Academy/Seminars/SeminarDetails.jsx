@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiCalendar, FiClock, FiExternalLink, FiVideo } from "react-icons/fi";
 import { getSeminarLocalScheduleLabel, getSeminarStatus } from "../../../utils/seminarStatus";
 import "./SeminarDetails.css";
@@ -106,7 +106,7 @@ function SeminarDetails() {
     return (
         <div className="seminar-details-page">
             <div className="seminar-details-container">
-                <button type="button" onClick={() => navigate(-1)} className="seminar-details-back-btn">
+                <button type="button" onClick={() => navigate("/academy/seminars")} className="seminar-details-back-btn">
                     <FiArrowLeft size={18} /> Back to Seminars
                 </button>
 
@@ -163,7 +163,7 @@ function SeminarDetails() {
                                 <button
                                     type="button"
                                     className="seminar-details-join-btn"
-                                    onClick={() => window.open(`/academy/seminars/${id}/join`, "_blank", "noopener,noreferrer")}
+                                    onClick={() => navigate(`/academy/seminars/${id}/join`)}
                                 >
                                     <FiExternalLink />
                                     <span>Join Live Session</span>

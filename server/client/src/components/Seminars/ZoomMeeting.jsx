@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { ZoomMtg } from "@zoom/meetingsdk";
 
 const ZOOM_SDK_VERSION = process.env.REACT_APP_ZOOM_SDK_VERSION || "5.1.2";
 const ZOOM_SDK_LIB = `https://source.zoom.us/${ZOOM_SDK_VERSION}/lib`;
 
-function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName, onLeave }) {
-  const [status, setStatus] = useState("Initializing Zoom...");
+function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName }) {
   const initializedRef = useRef(false);
+  const cleanupTimerRef = useRef(null);
 
   useEffect(() => {
     const suppressZoomCancelErrors = (event) => {
@@ -29,6 +29,11 @@ function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName, onLeave
   }, []);
 
   useEffect(() => {
+    if (cleanupTimerRef.current) {
+      window.clearTimeout(cleanupTimerRef.current);
+      cleanupTimerRef.current = null;
+    }
+
     const zoomRoot = document.getElementById("zmmtg-root");
     if (zoomRoot) {
       zoomRoot.style.display = "block";
@@ -43,11 +48,19 @@ function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName, onLeave
         ZoomMtg.preLoadWasm();
         ZoomMtg.prepareWebSDK();
 
-        setStatus("Fetching meeting signature...");
-
         const apiBase = process.env.REACT_APP_API_URL || "";
+        const videoWebRtcMode = Number(process.env.REACT_APP_ZOOM_VIDEO_WEBRTC_MODE ?? 1);
+        const params = new URLSearchParams({
+          role: "0",
+          meetingNumber: String(meetingNumber)
+        });
+
+        if ([0, 1].includes(videoWebRtcMode)) {
+          params.set("videoWebRtcMode", String(videoWebRtcMode));
+        }
+
         const signatureRes = await fetch(
-          `${apiBase}/api/academy/seminars/${seminarId}/zoom-signature?role=0&meetingNumber=${encodeURIComponent(meetingNumber)}`,
+          `${apiBase}/api/academy/seminars/${seminarId}/zoom-signature?${params.toString()}`,
           { credentials: "include" }
         );
 
@@ -61,10 +74,8 @@ function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName, onLeave
           throw new Error("Invalid signature response");
         }
 
-        setStatus("Joining seminar...");
-
         ZoomMtg.init({
-          leaveUrl: `${window.location.origin}/academy/seminars`,
+          leaveUrl: `${window.location.origin}/academy/seminars/${seminarId}`,
           patchJsMedia: true,
           leaveOnPageUnload: true,
           debug: false,
@@ -75,51 +86,47 @@ function ZoomMeeting({ seminarId, meetingNumber, passWord, userFullName, onLeave
               passWord: passWord || "",
               userName: userFullName || "Guest User",
               userEmail: "",
-              success: () => {
-                setStatus("Joined");
-              },
+              success: () => {},
               error: (error) => {
-                setStatus(`Join error: ${JSON.stringify(error)}`);
+                initializedRef.current = false;
+                console.error("Zoom join error", error);
               }
             });
           },
           error: (error) => {
-            setStatus(`Init error: ${JSON.stringify(error)}`);
+            initializedRef.current = false;
+            console.error("Zoom init error", error);
           }
         });
       } catch (error) {
-        setStatus(`Error: ${error.message}`);
+        initializedRef.current = false;
+        console.error("Zoom start error", error);
       }
     };
 
     initZoom();
 
     return () => {
-      const root = document.getElementById("zmmtg-root");
-      if (root) {
-        root.style.display = "none";
-      }
+      cleanupTimerRef.current = window.setTimeout(() => {
+        const root = document.getElementById("zmmtg-root");
+        if (root) {
+          root.style.display = "none";
+        }
 
-      try {
-        ZoomMtg.leaveMeeting({});
-      } catch (error) {
-        // Ignore cleanup errors from zoom sdk.
-      }
+        try {
+          ZoomMtg.leaveMeeting({});
+        } catch (error) {
+          // Ignore cleanup errors from zoom sdk.
+        }
 
-      document.body.style.overflow = "auto";
+        document.body.style.overflow = "auto";
+        initializedRef.current = false;
+      }, 150);
     };
   }, [seminarId, meetingNumber, passWord, userFullName]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000", color: "#fff", position: "relative" }}>
-      <div style={{ padding: "16px", textAlign: "center" }}>
-        <h2>Joining Zoom Seminar</h2>
-        <p>Status: {status}</p>
-        <button type="button" onClick={onLeave} style={{ padding: "10px 16px", marginTop: "8px" }}>
-          Leave
-        </button>
-      </div>
-    </div>
+    <div style={{ minHeight: "100vh", background: "#06080f" }} />
   );
 }
 

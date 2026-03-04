@@ -67,10 +67,6 @@ function SeminarZoomPage() {
       meetingNumber={seminar.schedule.zoomMeetingId}
       passWord={seminar.schedule.zoomPassword}
       userFullName={userFullName || "Guest User"}
-      onLeave={() => {
-        window.close();
-        navigate("/academy/seminars");
-      }}
     />
   );
 }

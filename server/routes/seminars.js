@@ -122,6 +122,14 @@ router.get("/:id/zoom-signature", protect, async (req, res) => {
       return res.status(400).json({ message: "Invalid role. Use 0 (attendee) or 1 (host)" });
     }
 
+    const videoWebRtcMode = req.query.videoWebRtcMode === undefined
+      ? undefined
+      : Number(req.query.videoWebRtcMode);
+
+    if (videoWebRtcMode !== undefined && ![0, 1].includes(videoWebRtcMode)) {
+      return res.status(400).json({ message: "Invalid videoWebRtcMode. Use 0 or 1" });
+    }
+
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 60 * 60 * 2;
 
@@ -134,6 +142,10 @@ router.get("/:id/zoom-signature", protect, async (req, res) => {
       exp,
       tokenExp: exp
     };
+
+    if (videoWebRtcMode !== undefined) {
+      payload.video_webrtc_mode = videoWebRtcMode;
+    }
 
     const signature = jwt.sign(payload, sdkSecret, { algorithm: "HS256" });
 
