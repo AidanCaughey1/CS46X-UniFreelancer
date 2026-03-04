@@ -428,10 +428,11 @@ function CreateSeminar() {
               </div>
 
               <div className="create-seminar-form-group">
-                <label>Duration (Auto Calculated)</label>
+                <label>Duration</label>
                 <input
                   type="text"
-                  value={calculatedDurationLabel || "Will be calculated from start/end time"}
+                  value={calculatedDurationLabel}
+                  placeholder="Set start and end time"
                   readOnly
                 />
               </div>
