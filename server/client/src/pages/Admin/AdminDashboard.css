@@ -194,6 +194,34 @@
   font-size: 0.84rem;
 }
 
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.admin-pagination button {
+  border: 1px solid #c8d0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2a3142;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-pagination span {
+  color: #5d6373;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 780px) {
   .admin-summary-grid {
     grid-template-columns: 1fr;

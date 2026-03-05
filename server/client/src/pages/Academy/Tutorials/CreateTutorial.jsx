@@ -184,6 +184,12 @@ function CreateTutorial() {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          alert("Tutorial was already deleted.");
+          navigate("/academy/tutorials");
+          return;
+        }
+
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to delete tutorial");
       }
@@ -261,6 +267,19 @@ function CreateTutorial() {
         <p className="page-subtitle">
           {isEditMode ? "Update your tutorial details" : "Fill in the details to create a new tutorial"}
         </p>
+
+        {isEditMode && (
+          <div className="form-actions" style={{ justifyContent: "flex-end", marginBottom: "1rem" }}>
+            <button
+              type="button"
+              onClick={handleDeleteTutorial}
+              className="secondary-button"
+              disabled={isSubmitting}
+            >
+              Delete Tutorial
+            </button>
+          </div>
+        )}
 
         <div className="steps-indicator">
           {steps.map((step, index) => (
@@ -449,16 +468,6 @@ function CreateTutorial() {
             </button>
           ) : (
             <>
-              {isEditMode && (
-                <button
-                  type="button"
-                  onClick={handleDeleteTutorial}
-                  className="secondary-button"
-                  disabled={isSubmitting}
-                >
-                  Delete Tutorial
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleSubmit}

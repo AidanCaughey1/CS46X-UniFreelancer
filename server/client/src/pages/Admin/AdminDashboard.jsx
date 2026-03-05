@@ -2,22 +2,30 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './AdminDashboard.css';
 
+const PAGE_SIZE = 25;
+
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [search, setSearch] = useState('');
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersPagination, setUsersPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsPagination, setLogsPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
   const [logsLoading, setLogsLoading] = useState(true);
   const [savingUserId, setSavingUserId] = useState(null);
   const [error, setError] = useState('');
   const [logsError, setLogsError] = useState('');
 
-  const fetchUsers = async (searchTerm = '') => {
+  const fetchUsers = async (page = 1, searchTerm = '') => {
     try {
       setLoading(true);
       setError('');
       const query = new URLSearchParams();
       if (searchTerm.trim()) query.set('search', searchTerm.trim());
+      query.set('page', String(page));
+      query.set('limit', String(PAGE_SIZE));
 
       const response = await fetch(`/api/admin/users?${query.toString()}`, {
         credentials: 'include'
@@ -29,6 +37,8 @@ function AdminDashboard() {
       }
 
       setUsers(data.users || []);
+      setUsersPagination(data.pagination || { page, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+      setUsersPage(page);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to load users');
@@ -38,16 +48,17 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchUsers();
-    fetchLogs();
+    fetchUsers(1, search);
+    fetchLogs(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (page = 1) => {
     try {
       setLogsLoading(true);
       setLogsError('');
 
-      const response = await fetch('/api/admin/audit-logs?limit=20', {
+      const response = await fetch(`/api/admin/audit-logs?page=${page}&limit=${PAGE_SIZE}`, {
         credentials: 'include'
       });
 
@@ -56,7 +67,9 @@ function AdminDashboard() {
         throw new Error(data.error || 'Failed to load admin activity');
       }
 
-      setLogs(data || []);
+      setLogs(data.logs || []);
+      setLogsPagination(data.pagination || { page, limit: PAGE_SIZE, total: 0, totalPages: 1 });
+      setLogsPage(page);
     } catch (err) {
       console.error(err);
       setLogsError(err.message || 'Failed to load admin activity');
@@ -67,7 +80,7 @@ function AdminDashboard() {
 
   const onSearch = async (event) => {
     event.preventDefault();
-    await fetchUsers(search);
+    await fetchUsers(1, search);
   };
 
   const roleCounts = useMemo(() => {
@@ -104,7 +117,7 @@ function AdminDashboard() {
       setUsers((prev) => prev.map((user) => (
         user._id === userId ? { ...user, accountType: data.user.accountType } : user
       )));
-      fetchLogs();
+      fetchLogs(1);
     } catch (err) {
       alert(err.message || 'Failed to update account type');
     } finally {
@@ -203,12 +216,32 @@ function AdminDashboard() {
               </table>
             </div>
           )}
+
+          <div className="admin-pagination">
+            <button
+              type="button"
+              onClick={() => fetchUsers(usersPage - 1, search)}
+              disabled={loading || usersPage <= 1}
+            >
+              Previous
+            </button>
+            <span>
+              Page {usersPagination.page} of {Math.max(usersPagination.totalPages || 1, 1)}
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchUsers(usersPage + 1, search)}
+              disabled={loading || usersPage >= (usersPagination.totalPages || 1)}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
         <div className="admin-card">
           <div className="admin-card-header">
             <h2>Admin Activity</h2>
-            <button type="button" className="refresh-activity-btn" onClick={fetchLogs}>
+            <button type="button" className="refresh-activity-btn" onClick={() => fetchLogs(logsPage)}>
               Refresh
             </button>
           </div>
@@ -243,6 +276,26 @@ function AdminDashboard() {
               })}
             </div>
           )}
+
+          <div className="admin-pagination">
+            <button
+              type="button"
+              onClick={() => fetchLogs(logsPage - 1)}
+              disabled={logsLoading || logsPage <= 1}
+            >
+              Previous
+            </button>
+            <span>
+              Page {logsPagination.page} of {Math.max(logsPagination.totalPages || 1, 1)}
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchLogs(logsPage + 1)}
+              disabled={logsLoading || logsPage >= (logsPagination.totalPages || 1)}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

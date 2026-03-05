@@ -9,13 +9,26 @@ router.use(protect, authorizeAccountTypes("admin"));
 
 router.get("/audit-logs", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
 
-    const logs = await AdminAuditLog.find()
-      .sort({ createdAt: -1 })
-      .limit(limit);
+    const [logs, total] = await Promise.all([
+      AdminAuditLog.find()
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      AdminAuditLog.countDocuments(),
+    ]);
 
-    res.json(logs);
+    res.json({
+      logs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -24,7 +37,7 @@ router.get("/audit-logs", async (req, res) => {
 router.get("/users", async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 50);
     const search = String(req.query.search || "").trim();
 
     const query = {};

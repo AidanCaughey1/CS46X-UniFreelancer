@@ -104,22 +104,30 @@ router.delete("/:id", protect, authorizeAccountTypes("admin"), async (req, res) 
     const deleted = await Tutorial.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Tutorial not found" });
 
-    await AdminAuditLog.create({
-      action: "DELETE_TUTORIAL",
-      actor: {
-        userId: req.user._id,
-        email: req.user.email,
-        username: req.user.username,
-        source: "api",
-      },
-      target: {
-        tutorialId: deleted._id,
-      },
-      before: {
-        title: deleted.title,
-      },
-      reason: String(req.body.auditReason || "").trim(),
-    });
+    const reason = typeof req.body?.auditReason === "string"
+      ? req.body.auditReason.trim()
+      : "";
+
+    try {
+      await AdminAuditLog.create({
+        action: "DELETE_TUTORIAL",
+        actor: {
+          userId: req.user._id,
+          email: req.user.email,
+          username: req.user.username,
+          source: "api",
+        },
+        target: {
+          tutorialId: deleted._id,
+        },
+        before: {
+          title: deleted.title,
+        },
+        reason,
+      });
+    } catch (auditErr) {
+      console.error("Audit log failed for tutorial delete:", auditErr.message);
+    }
 
     res.json({ message: "Tutorial deleted" });
   } catch (err) {

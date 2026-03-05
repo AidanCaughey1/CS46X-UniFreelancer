@@ -141,6 +141,7 @@ UserSchema.pre("save", async function (next) {
 
 // Fast lookups
 UserSchema.index({ accountType: 1 });
+UserSchema.index({ createdAt: -1 });
 UserSchema.index({ enrolledCourses: 1 });
 UserSchema.index({ completedCourses: 1 });
 UserSchema.index({ bookmarkedTutorials: 1 });
