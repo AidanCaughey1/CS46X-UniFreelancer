@@ -13,7 +13,9 @@ const PORT = process.env.PORT || 5000;
 // CONNECT TO MONGO
 // ------------------------------
 if (process.env.NODE_ENV !== "test") {
-  connectDB().catch((err) => console.error("MongoDB connection error:", err));
+  connectDB().catch((err) =>
+    console.error("MongoDB connection error:", err)
+  );
 }
 
 // ------------------------------

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import './CreateCourse.css';
 import ImageUpload from '../../../components/ImageUpload';
@@ -7,6 +7,8 @@ import ModuleBuilder from './ModuleBuilder';
 
 function CreateCourse() {
   const navigate = useNavigate();
+  const { courseId } = useParams(); 
+  const [isEditMode, setIsEditMode] = useState(false); 
   const [currentStep, setCurrentStep] = useState(1);
 
   const [courseData, setCourseData] = useState({
@@ -76,6 +78,85 @@ function CreateCourse() {
   });
 
   const steps = ['Basic Info', 'Instructor', 'Pricing', 'Modules', 'Final Test', 'Badge'];
+
+  const fetchCourseData = async () => {
+    console.log('=== FETCH COURSE DATA CALLED ===');
+  console.log('courseId from useParams:', courseId);
+  console.log('Full URL will be:', `/api/academy/courses/${courseId}`);
+    try {
+      const response = await fetch(`/api/academy/courses/${courseId}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch course');
+      }
+      
+      const course = await response.json();
+      
+      // Pre-populate the form with existing data
+      setCourseData({
+        title: course.title || '',
+        overview: course.description || '',
+        duration: course.duration || '',
+        difficulty: course.difficulty || 'Beginner',
+        category: course.category || '',
+        thumbnail: course.thumbnail || '',
+        isLiteVersion: course.isLiteVersion || false,
+        
+        instructor: {
+          _id: course.instructor?._id, 
+          name: course.instructor?.name || '',
+          title: course.instructor?.title || '',
+          bio: course.instructor?.bio || '',
+          avatar: course.instructor?.avatar || '',
+          email: course.instructor?.email || ''
+        },
+        
+        pricing: {
+          amount: course.pricing?.amount || 0,
+          currency: course.pricing?.currency || 'USD',
+          type: course.pricing?.type || 'one-time'
+        },
+        
+        modules: course.modules || [],
+        
+        finalTest: course.finalTest || {
+          title: 'Final Test',
+          description: '',
+          passingScore: 70,
+          timeLimit: 0,
+          questions: []
+        },
+        
+        badge: course.badge || {
+          name: '',
+          description: '',
+          color: '#4F46E5',
+          imageUrl: ''
+        }
+      });
+      
+      setIsEditMode(true);
+      
+    } catch (err) {
+      console.error('Error fetching course:', err);
+      alert('Failed to load course for editing');
+      navigate('/instructor/dashboard');
+    }
+  };
+
+    // Fetch course data if editing
+useEffect(() => {
+  console.log('=== USEFFECT RUNNING ===');
+  console.log('courseId:', courseId);
+  if (courseId) {
+    console.log('courseId exists, calling fetchCourseData');
+    fetchCourseData();
+  } else {
+    console.log('courseId is undefined or null');
+  }
+}, [courseId]);
 
   const handleNext = () => {
     if (currentStep < steps.length) setCurrentStep(currentStep + 1);
@@ -216,12 +297,12 @@ const handleSubmit = async () => {
       // Include ALL the new fields
       modules: courseData.modules.map(module => ({
         title: module.title,
-        description: module.overview,
+        description: module.overview || module.description,
         order: module.order,
         learningOutcomes: module.learningOutcomes,
         learningMaterials: module.learningMaterials,
         assignment: module.assignment,
-        lessons: []
+        lessons: module.lessons || []
       })),
       
       finalTest: courseData.finalTest.questions.length > 0 ? courseData.finalTest : null,
@@ -230,8 +311,12 @@ const handleSubmit = async () => {
 
     console.log('Sending course data:', JSON.stringify(backendData, null, 2));
 
-    const res = await fetch('/api/academy/courses', {
-      method: 'POST',
+    // Determine if creating or updating
+    const url = isEditMode ? `/api/academy/courses/${courseId}` : '/api/academy/courses';
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(backendData)
@@ -241,16 +326,16 @@ const handleSubmit = async () => {
     
     if (!res.ok) {
       console.error('Server error response:', responseData);
-      alert(`Failed to create course: ${responseData.error || 'Unknown error'}`);
+      alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
       return;
     }
 
-    alert('Course created successfully!');
-    navigate('/academy/courses');
+    alert(`Course ${isEditMode ? 'updated' : 'created'} successfully!`);
+    navigate('/instructor/dashboard');
 
   } catch (err) {
-    console.error('Error creating course:', err);
-    alert(`Failed to create course: ${err.message}`);
+    console.error('Error saving course:', err);
+    alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
   }
 };
 
@@ -832,7 +917,7 @@ useEffect(() => {
           <FiArrowLeft size={18} /> Back
         </button>
 
-        <h1>Create New Course</h1>
+        <h1>{isEditMode ? 'Edit Course' : 'Create New Course'}</h1>
         <p className="page-subtitle">Fill in the details to create a new course</p>
 
         <div className="steps-indicator">
@@ -877,7 +962,7 @@ useEffect(() => {
               onClick={handleSubmit}
               className="primary-button"
             >
-              Create Course
+              {isEditMode ? 'Update Course' : 'Create Course'}
             </button>
           )}
         </div>

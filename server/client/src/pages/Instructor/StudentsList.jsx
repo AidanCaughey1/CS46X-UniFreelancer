@@ -34,19 +34,21 @@ function StudentsList({ courseId }) {
   };
 
   // Sort students
-  const sortedStudents = [...students].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'submissions':
-        return b.totalSubmissions - a.totalSubmissions;
-      case 'grade':
-        return b.averageGrade - a.averageGrade;
-      default:
-        return 0;
-    }
-  });
-
+    const sortedStudents = [...students].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          const nameA = a.name || a.username || '';
+          const nameB = b.name || b.username || '';
+          return nameA.localeCompare(nameB);
+        case 'submissions':
+          return b.totalSubmissions - a.totalSubmissions;
+        case 'grade':
+          return b.averageGrade - a.averageGrade;
+        default:
+          return 0;
+      }
+    });
+    
   if (loading) {
     return (
       <div className="students-loading">
@@ -103,14 +105,14 @@ function StudentsList({ courseId }) {
                 <div className="student-cell">
                   <div className="student-avatar-small">
                     {student.avatar ? (
-                      <img src={student.avatar} alt={student.name} />
+                      <img src={student.avatar} alt={student.name || student.username} />
                     ) : (
                       <div className="avatar-placeholder-small">
-                        {student.name.charAt(0).toUpperCase()}
+                        {(student.name || student.username || 'U').charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <strong>{student.name}</strong>
+                  <strong>{student.name || student.username || 'Unknown'}</strong>
                 </div>
               </div>
 
