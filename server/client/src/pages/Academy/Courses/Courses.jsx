@@ -42,34 +42,30 @@ function Courses() {
   }, []);
 
   const fetchStats = async () => {
-  try {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return;
+    console.log("fetchStats called");
+    console.log("localStorage.user:", localStorage.getItem("user"));
+    try {
+      const meRes = await fetch("/api/users/me", { credentials: "include" });
+      if (!meRes.ok) {
+        console.log("fetchStats /api/users/me failed:", meRes.status);
+        return;
+      }
 
-    const user = JSON.parse(userStr);
-    if (!user._id) return;
+      const me = await meRes.json();
 
-    const meRes = await fetch("/api/users/me", { credentials: "include" });
-    if (!meRes.ok) return;
+      const enrolledCount = me.enrolledCourses?.length ?? 0;
+      const completedCount = me.completedCourses?.length ?? 0;
 
-    const me = await meRes.json();
+      const totalSeconds = Number(me.learning?.totalSeconds ?? 0);
+      const learningHours = Math.floor(totalSeconds / 3600);
 
-    const enrolledCount = me.enrolledCourses?.length ?? 0;
-    const completedCount = me.completedCourses?.length ?? 0;
+      setStats({ enrolledCount, completedCount, learningHours });
 
-    const totalSeconds = Number(me.learning?.totalSeconds ?? 0);
-
-    // matches your UI (integer hours)
-    const learningHours = Math.floor(totalSeconds / 3600);
-
-    setStats({ enrolledCount, completedCount, learningHours });
-
-    const enrolledIds = (me.enrolledCourses ?? []).map(c => c._id);
-    setEnrolledCourseIds(enrolledIds);
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-  }
-};
+      setEnrolledCourseIds((me.enrolledCourses ?? []).map(c => c._id));
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
