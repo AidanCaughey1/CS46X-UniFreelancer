@@ -33,36 +33,53 @@ function Courses() {
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) return;
-
-      const user = JSON.parse(userStr);
-      if (!user._id) return;
-
-      // Fetch user details including enrolled courses
-      const response = await fetch(`/api/academy/courses`);
-      if (response.ok) {
-        const userData = await response.json();
-
-        // Calculate stats
-        const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
-        const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
-        const learningHours = userData.completedCourses
-          ? Math.round(userData.completedCourses.reduce((acc, c) => acc + (c.estimatedMinutes || 0), 0) / 60)
-          : 0;
-
-        setStats({ enrolledCount, completedCount, learningHours });
-
-        // Set enrolled course IDs for filtering
-        const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
-        setEnrolledCourseIds(enrolledIds);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
+  useEffect(() => {
+  const onVis = () => {
+    if (document.visibilityState === "visible") fetchStats();
   };
+  document.addEventListener("visibilitychange", onVis);
+  return () => document.removeEventListener("visibilitychange", onVis);
+}, []);
+
+  const fetchStats = async () => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return;
+
+    const user = JSON.parse(userStr);
+    if (!user._id) return;
+
+    // 1) Get enrolled/completed counts from your existing user data source
+    // NOTE: your current code calls /api/academy/courses but expects userData.enrolledCourses
+    // If you actually have an endpoint like /api/users/me, use that instead.
+    const userRes = await fetch(`/api/academy/courses`, { credentials: 'include' });
+    if (!userRes.ok) return;
+
+    const userData = await userRes.json();
+
+    const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
+    const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
+
+    const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
+    setEnrolledCourseIds(enrolledIds);
+
+    // 2) Get learning time from the tracker
+    const learnRes = await fetch(`/api/learning/summary`, { credentials: 'include' });
+    let learningHours = 0;
+
+    if (learnRes.ok) {
+      const learnData = await learnRes.json();
+      const totalSeconds = Number(learnData.totalSeconds || 0);
+
+      // integer hours (matches your UI style)
+      learningHours = Math.floor(totalSeconds / 3600);
+    }
+
+    setStats({ enrolledCount, completedCount, learningHours });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+  }
+};
 
   const fetchCourses = async () => {
     try {

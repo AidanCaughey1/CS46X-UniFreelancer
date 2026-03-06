@@ -24,6 +24,65 @@ function CourseLearning() {
   const [showFinalTest, setShowFinalTest] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
+  // --- Learning time tracking (per-course + overall) ---
+  useEffect(() => {
+    let startMs = Date.now();
+    let flushed = false;
+
+    const flush = async (reason) => {
+      if (flushed) return;
+      flushed = true;
+
+      const elapsedSec = Math.floor((Date.now() - startMs) / 1000);
+      if (elapsedSec <= 0) return;
+
+      const payload = JSON.stringify({ courseId: id, elapsedSec, reason });
+
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(
+            "/api/learning/track",
+            new Blob([payload], { type: "application/json" })
+          );
+          return;
+        }
+      } catch (e) {
+        // fall through to fetch
+      }
+
+      try {
+        await fetch("/api/learning/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: payload
+        });
+      } catch (err) {
+        console.log("Failed to track time", err);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      // If user leaves tab while on this learning page, flush
+      if (document.visibilityState === "hidden") {
+        flush("hidden");
+      }
+    };
+
+    const onBeforeUnload = () => {
+      flush("unload");
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      flush("unmount"); // leaving CourseLearning route
+    };
+  }, [id]);
+
   // Convert academic structure to lessons
   const generateLessonsFromModule = (module) => {
     const lessons = [];
