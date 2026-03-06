@@ -114,19 +114,20 @@ router.get('/courses', protect, isInstructor, async (req, res) => {
 });
 
 // -------------------------------------
-// GET pending submissions
+// GET pending submissions (FIXED - only one now)
 // -------------------------------------
 router.get('/submissions/pending', protect, isInstructor, async (req, res) => {
   try {
-    const instructorId = req.user._id;
+    console.log('Fetching pending submissions for instructor:', req.user._id);
 
     const submissions = await AssignmentSubmission.find({
-      instructor: instructorId,
+      instructor: req.user._id,
       status: 'pending'
     })
-      .sort({ submittedAt: -1 })
-      .populate('student', 'name email avatar')
-      .populate('course', 'title thumbnail');
+    .populate('student', 'firstName lastName email avatar')
+    .sort({ submittedAt: -1 });
+
+    console.log('Found pending submissions:', submissions.length);
 
     res.json(submissions);
 
@@ -150,7 +151,7 @@ router.get('/submissions', protect, isInstructor, async (req, res) => {
 
     const submissions = await AssignmentSubmission.find(query)
       .sort({ submittedAt: -1 })
-      .populate('student', 'name email avatar')
+      .populate('student', 'firstName lastName email avatar')
       .populate('course', 'title thumbnail');
 
     res.json(submissions);
@@ -164,25 +165,44 @@ router.get('/submissions', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // GET single submission for grading
 // -------------------------------------
+// GET single submission for grading
 router.get('/submissions/:id', protect, isInstructor, async (req, res) => {
   try {
+    console.log('\n=== FETCHING SUBMISSION ===');
+    console.log('Submission ID:', req.params.id);
+    
     const submission = await AssignmentSubmission.findById(req.params.id)
-      .populate('student', 'name email avatar')
+      .populate('student', 'firstName lastName email avatar')
       .populate('course', 'title');
 
+    console.log('Submission found:', submission ? 'YES' : 'NO');
+
     if (!submission) {
+      console.log('❌ Submission not found');
       return res.status(404).json({ error: 'Submission not found' });
     }
 
+    console.log('Submission data:', {
+      student: submission.student,
+      course: submission.course,
+      assignmentType: submission.assignmentType,
+      hasAnswers: !!submission.answers,
+      hasPartAnswers: !!submission.partAnswers
+    });
+
     // Verify this submission belongs to this instructor
     if (submission.instructor.toString() !== req.user._id.toString()) {
+      console.log('❌ Access denied - wrong instructor');
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    console.log('✅ Returning submission to frontend');
     res.json(submission);
 
   } catch (err) {
-    console.error('Error fetching submission:', err);
+    console.error('\n❌ ERROR FETCHING SUBMISSION:');
+    console.error('Message:', err.message);
+    console.error('Stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 });
@@ -276,11 +296,10 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
           ...student.toObject(),
           name: student.firstName && student.lastName 
             ? `${student.firstName} ${student.lastName}` 
-            : student.username,  // Create name from firstName + lastName
+            : student.username,
           totalSubmissions,
           gradedSubmissions: gradedSubmissions.length,
           averageGrade: avgGrade
-
         };
       })
     );

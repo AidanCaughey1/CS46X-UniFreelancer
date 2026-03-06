@@ -33,6 +33,13 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
   // Assignment Details
   lessonId: { type: String, required: true }, // The generated lesson ID
   assignmentTitle: { type: String, required: true },
+  assignmentType: {
+    type: String,
+    enum: ['question-based', 'part-based'],
+    default: 'part-based'
+  },
+  
+  // OLD: Part-based assignment data
   assignmentData: {
     parts: [{
       partNumber: Number,
@@ -47,11 +54,21 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
 
   // Student Submission
   submittedAt: { type: Date, default: Date.now },
+  
+  // OLD: Part-based answers
   partAnswers: {
     type: Map,
     of: String,
     default: {}
   },
+  
+  // NEW: Question-based answers
+  answers: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  
   fileUrl: { type: String, default: '' },
 
   // Grading

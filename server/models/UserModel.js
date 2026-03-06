@@ -32,14 +32,14 @@ const CourseProgressSchema = new mongoose.Schema({
     required: true
   },
   
-  // Tracking completed lessons
+  // Tracking completed lessons (can be ObjectIds OR custom strings like "podcast-0")
   completedLessons: [{
-    type: mongoose.Schema.Types.ObjectId
+    type: mongoose.Schema.Types.Mixed  // ← CHANGED from ObjectId to Mixed
   }],
   
-  // Current position in course
-  currentModuleId: { type: mongoose.Schema.Types.ObjectId },
-  currentLessonId: { type: mongoose.Schema.Types.ObjectId },
+  // Current position in course (can be ObjectIds OR custom strings)
+  currentModuleId: { type: mongoose.Schema.Types.Mixed },  
+  currentLessonId: { type: mongoose.Schema.Types.Mixed },
   
   // Assignment submissions
   assignmentSubmissions: [AssignmentSubmissionSchema],
