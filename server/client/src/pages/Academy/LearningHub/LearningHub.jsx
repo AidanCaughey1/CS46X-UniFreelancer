@@ -12,6 +12,7 @@ import {
   FiSearch
 } from 'react-icons/fi';
 import './LearningHub.css';
+import { getSeminarLocalScheduleLabel, getSeminarStatus } from '../../../utils/seminarStatus';
 
 
 function LearningHub() {
@@ -49,7 +50,6 @@ function LearningHub() {
   });
 
   const [seminarFilters, setSeminarFilters] = useState({
-    type: [],
     duration: [],
     status: []
   });
@@ -244,10 +244,6 @@ function LearningHub() {
       );
     }
 
-    if (seminarFilters.type.length > 0) {
-      filtered = filtered.filter(s => seminarFilters.type.includes(s.type));
-    }
-
     if (seminarFilters.duration.length > 0) {
       filtered = filtered.filter(s => {
         const mins = parseInt(s.duration) || 0;
@@ -262,8 +258,8 @@ function LearningHub() {
 
     if (seminarFilters.status.length > 0) {
       filtered = filtered.filter(s => {
-        const watched = s.watched ? 'Watched' : 'Not Watched';
-        return seminarFilters.status.includes(watched);
+        const status = getSeminarStatus(s);
+        return seminarFilters.status.includes(status);
       });
     }
 
@@ -397,6 +393,10 @@ function LearningHub() {
 
   const handleBackToAcademy = () => {
     navigate('/academy');
+  };
+
+  const handleViewSeminar = (seminarId) => {
+    navigate(`/academy/seminars/${seminarId}`);
   };
 
   return (
@@ -606,21 +606,6 @@ function LearningHub() {
                 </>
               ) : activeTab === 'seminars' ? (
                 <>
-                  {/* Type Filter */}
-                  <div className="filter-section">
-                    <h4 className="filter-heading">Type</h4>
-                    {['Live', 'Recorded', 'Podcast'].map(type => (
-                      <label key={type} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={seminarFilters.type.includes(type)}
-                          onChange={() => handleSeminarFilterChange('type', type)}
-                        />
-                        <span>{type}</span>
-                      </label>
-                    ))}
-                  </div>
-
                   {/* Duration Filter */}
                   <div className="filter-section">
                     <h4 className="filter-heading">Duration</h4>
@@ -643,7 +628,7 @@ function LearningHub() {
                   {/* Status Filter */}
                   <div className="filter-section">
                     <h4 className="filter-heading">Status</h4>
-                    {['Watched', 'Not Watched'].map(status => (
+                    {['Future', 'Live Now', 'Past'].map(status => (
                       <label key={status} className="filter-option">
                         <input
                           type="checkbox"
@@ -739,7 +724,7 @@ function LearningHub() {
                     if (activeTab === 'courses' || activeTab === 'continue-learning') {
                       setCourseFilters({ level: [], language: [], duration: [], price: [] });
                     } else if (activeTab === 'seminars') {
-                      setSeminarFilters({ type: [], duration: [], status: [] });
+                      setSeminarFilters({ duration: [], status: [] });
                     } else if (activeTab === 'tutorials') {
                       setTutorialFilters({ type: [], topic: [], duration: [] });
                     }
@@ -801,7 +786,19 @@ function LearningHub() {
                 ))
               ) : activeTab === 'seminars' ? (
                 filteredSeminars.map(seminar => (
-                  <div key={seminar._id} className="seminar-card">
+                  <div
+                    key={seminar._id}
+                    className="seminar-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleViewSeminar(seminar._id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleViewSeminar(seminar._id);
+                      }
+                    }}
+                  >
                     <div className="seminar-image">
                       {seminar.thumbnail ? (
                         <img src={seminar.thumbnail} alt={seminar.title} />
@@ -821,15 +818,25 @@ function LearningHub() {
                         </div>
                         <div className="seminar-detail">
                           <FiCalendar className="detail-icon" />
-                          <span>{seminar.schedule?.date || 'TBD'}</span>
+                          <span>{getSeminarLocalScheduleLabel(seminar)}</span>
                         </div>
                         <div className="seminar-detail">
                           <FiHeadphones className="detail-icon" />
-                          <span>{seminar.type}</span>
+                          <span>{getSeminarStatus(seminar)}</span>
                         </div>
                       </div>
                       <div className="seminar-footer">
-                        <button className="view-details-btn">View Details →</button>
+                        <button
+                          className="view-details-btn"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewSeminar(seminar._id);
+                          }}
+                          title='View seminar details'
+                        >
+                          View Details →
+                        </button>
                       </div>
                     </div>
                   </div>

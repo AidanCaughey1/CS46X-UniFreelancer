@@ -23,9 +23,14 @@ const SeminarSchema = new mongoose.Schema({
 
   // Scheduling info
   schedule: {
-    date: { type: String },  // YYYY-MM-DD
-    time: { type: String },  // HH:MM
-    joinUrl: { type: String }
+    date: { type: String },  // Legacy: YYYY-MM-DD
+    time: { type: String },  // Legacy: HH:MM
+    joinUrl: { type: String },
+    startAt: { type: Date },
+    endAt: { type: Date },
+    sourceTimezone: { type: String },
+    zoomMeetingId: { type: String },
+    zoomPassword: { type: String }
   },
 
   createdAt: { type: Date, default: Date.now }

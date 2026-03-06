@@ -8,6 +8,8 @@ import CreateContent from './pages/Academy/CreateContent/CreateContent';
 import CreateCourse from './pages/Academy/Courses/CreateCourse';
 import CourseDetail from './pages/Academy/Courses/CourseDetail';
 import CreateSeminar from './pages/Academy/Seminars/CreateSeminar';
+import SeminarDetails from './pages/Academy/Seminars/SeminarDetails';
+import SeminarZoomPage from './pages/Academy/Seminars/SeminarZoomPage';
 import CreateTutorial from './pages/Academy/Tutorials/CreateTutorial';
 import TutorialDetail from './pages/Academy/Tutorials/TutorialDetail';
 import Login from './pages/Auth/Login';
@@ -66,6 +68,8 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/academy/create/seminar" element={<CreateSeminar />} />
+          <Route path="/academy/seminars/:id" element={<SeminarDetails />} />
+          <Route path="/academy/seminars/:id/join" element={<SeminarZoomPage />} />
           <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
           <Route path="/academy/payment-success" element={<PaymentSuccess />} />
           <Route path="/academy/courses/:id/learn" element={<CourseLearning />} />
@@ -79,6 +83,11 @@ function App() {
 
 function Header({ user }) {
   const location = useLocation();
+  const isSeminarJoinRoute = /^\/academy\/seminars\/[^/]+\/join$/.test(location.pathname);
+
+  if (isSeminarJoinRoute) {
+    return null;
+  }
 
   // Function to check if link is active
   const isActive = (path) => {
