@@ -117,30 +117,26 @@ function LearningHub() {
   }, []);
 
   const fetchStats = async () => {
-    try {
-      // Use configured API URL and new profile endpoint
-      // eslint-disable-next-line no-undef
-      const response = await fetch(`/api/users/profile`, {
-        credentials: 'include' // Use cookies!
-      });
+  try {
+    const response = await fetch(`/api/users/me`, {
+      credentials: 'include'
+    });
 
-      if (response.ok) {
-        const userData = await response.json();
-        const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
-        const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
-        const learningHours = userData.completedCourses
-          ? Math.round(userData.completedCourses.reduce((acc, c) => acc + (c.estimatedMinutes || 0), 0) / 60)
-          : 0;
+    if (!response.ok) return;
 
-        setStats({ enrolledCount, completedCount, learningHours });
-        const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
-        setEnrolledCourseIds(enrolledIds);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
+    const userData = await response.json();
 
+    const enrolledCount = userData.enrolledCourses?.length ?? 0;
+    const completedCount = userData.completedCourses?.length ?? 0;
+    const totalSeconds = Number(userData.learning?.totalSeconds ?? 0);
+    const learningHours = Math.floor(totalSeconds / 3600); 
+
+    setStats({ enrolledCount, completedCount, learningHours });
+    setEnrolledCourseIds(userData.enrolledCourses ?? []);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+  }
+};
   const fetchCourses = async () => {
     try {
       const response = await fetch('/api/academy/courses');
