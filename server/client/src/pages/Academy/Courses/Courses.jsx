@@ -33,40 +33,36 @@ function Courses() {
     fetchStats();
   }, []);
 
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") fetchStats();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, []);
-
   const fetchStats = async () => {
-  try {
-    console.log("fetchStats: start");
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
 
-    const meRes = await fetch("/api/users/me", { credentials: "include" });
-    console.log("fetchStats: /api/users/me status", meRes.status);
+      const user = JSON.parse(userStr);
+      if (!user._id) return;
 
-    const me = await meRes.json();
-    console.log("fetchStats: totalSeconds", me.learning?.totalSeconds);
+      // Fetch user details including enrolled courses
+      const response = await fetch(`/api/academy/courses`);
+      if (response.ok) {
+        const userData = await response.json();
 
-    const totalSeconds = Number(me.learning?.totalSeconds ?? 0);
-    const learningHours = Math.floor(totalSeconds / 3600);
+        // Calculate stats
+        const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
+        const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
+        const learningHours = userData.completedCourses
+          ? Math.round(userData.completedCourses.reduce((acc, c) => acc + (c.estimatedMinutes || 0), 0) / 60)
+          : 0;
 
-    console.log("fetchStats: computed learningHours", learningHours);
+        setStats({ enrolledCount, completedCount, learningHours });
 
-    setStats({
-      enrolledCount: me.enrolledCourses?.length ?? 0,
-      completedCount: me.completedCourses?.length ?? 0,
-      learningHours
-    });
-
-    console.log("fetchStats: setStats called");
-  } catch (e) {
-    console.error("fetchStats error", e);
-  }
-};
+        // Set enrolled course IDs for filtering
+        const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
+        setEnrolledCourseIds(enrolledIds);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
