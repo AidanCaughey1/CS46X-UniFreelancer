@@ -67,7 +67,7 @@ const CourseProgressSchema = new mongoose.Schema({
 const LearningByCourseSchema = new mongoose.Schema(
   {
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
-    totalSeconds: { type: Number, default: 0, min: 0 },
+    courseSeconds: { type: Number, default: 0, min: 0 },
     lastTrackedAt: { type: Date, default: Date.now }
   },
   { _id: false }

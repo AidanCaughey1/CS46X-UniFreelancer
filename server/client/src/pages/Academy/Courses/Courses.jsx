@@ -34,12 +34,12 @@ function Courses() {
   }, []);
 
   useEffect(() => {
-  const onVis = () => {
-    if (document.visibilityState === "visible") fetchStats();
-  };
-  document.addEventListener("visibilitychange", onVis);
-  return () => document.removeEventListener("visibilitychange", onVis);
-}, []);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchStats();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   const fetchStats = async () => {
   try {
@@ -49,33 +49,23 @@ function Courses() {
     const user = JSON.parse(userStr);
     if (!user._id) return;
 
-    // 1) Get enrolled/completed counts from your existing user data source
-    // NOTE: your current code calls /api/academy/courses but expects userData.enrolledCourses
-    // If you actually have an endpoint like /api/users/me, use that instead.
-    const userRes = await fetch(`/api/academy/courses`, { credentials: 'include' });
-    if (!userRes.ok) return;
+    const meRes = await fetch("/api/users/me", { credentials: "include" });
+    if (!meRes.ok) return;
 
-    const userData = await userRes.json();
+    const me = await meRes.json();
 
-    const enrolledCount = userData.enrolledCourses ? userData.enrolledCourses.length : 0;
-    const completedCount = userData.completedCourses ? userData.completedCourses.length : 0;
+    const enrolledCount = me.enrolledCourses?.length ?? 0;
+    const completedCount = me.completedCourses?.length ?? 0;
 
-    const enrolledIds = userData.enrolledCourses ? userData.enrolledCourses.map(c => c._id) : [];
-    setEnrolledCourseIds(enrolledIds);
+    const totalSeconds = Number(me.learning?.totalSeconds ?? 0);
 
-    // 2) Get learning time from the tracker
-    const learnRes = await fetch(`/api/learning/summary`, { credentials: 'include' });
-    let learningHours = 0;
-
-    if (learnRes.ok) {
-      const learnData = await learnRes.json();
-      const totalSeconds = Number(learnData.totalSeconds || 0);
-
-      // integer hours (matches your UI style)
-      learningHours = Math.floor(totalSeconds / 3600);
-    }
+    // matches your UI (integer hours)
+    const learningHours = Math.floor(totalSeconds / 3600);
 
     setStats({ enrolledCount, completedCount, learningHours });
+
+    const enrolledIds = (me.enrolledCourses ?? []).map(c => c._id);
+    setEnrolledCourseIds(enrolledIds);
   } catch (error) {
     console.error('Error fetching stats:', error);
   }
