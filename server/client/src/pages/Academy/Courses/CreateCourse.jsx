@@ -384,27 +384,49 @@ const handleSubmit = async () => {
     setCameraOpen(false);
   };
 
-  const captureInstructorAvatar = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+  const captureInstructorAvatar = async () => {
+  const video = videoRef.current;
+  const canvas = canvasRef.current;
+  if (!video || !canvas) return;
 
-    const w = video.videoWidth || 640;
-    const h = video.videoHeight || 480;
+  const w = video.videoWidth || 640;
+  const h = video.videoHeight || 480;
 
-    canvas.width = w;
-    canvas.height = h;
+  canvas.width = w;
+  canvas.height = h;
 
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, w, h);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, w, h);
 
-    // data URL works with <img src="..."> and your existing "avatar" string field
-    const dataUrl = canvas.toDataURL('image/png');
+  canvas.toBlob(async (blob) => {
+    try {
+      if (!blob) throw new Error("Failed to capture image");
 
-    handleInputChange('instructor', 'avatar', dataUrl);
+      const form = new FormData();
+      form.append("image", blob, "instructor-avatar.png");
 
-    stopCamera();
-  };
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: form,
+        credentials: "include"
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      // Store Cloudinary URL (not base64)
+      handleInputChange("instructor", "avatar", data.url);
+
+      stopCamera();
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      setCameraError(err.message || "Failed to upload image");
+    }
+  }, "image/png", 0.92);
+};
 
   // If camera is open and we switch cameras, restart stream
 useEffect(() => {
@@ -620,7 +642,6 @@ useEffect(() => {
                       borderRadius: 12
                     }}
                   />
-                  <canvas ref={canvasRef} style={{ display: 'none' }} />
                   <canvas ref={canvasRef} style={{ display: 'none' }} />
                 </div>
               )}
