@@ -32,14 +32,14 @@ const CourseProgressSchema = new mongoose.Schema({
     required: true
   },
   
-  // Tracking completed lessons
+  // Tracking completed lessons (can be ObjectIds OR custom strings like "podcast-0")
   completedLessons: [{
-    type: mongoose.Schema.Types.ObjectId
+    type: mongoose.Schema.Types.Mixed  // ← CHANGED from ObjectId to Mixed
   }],
   
-  // Current position in course
-  currentModuleId: { type: mongoose.Schema.Types.ObjectId },
-  currentLessonId: { type: mongoose.Schema.Types.ObjectId },
+  // Current position in course (can be ObjectIds OR custom strings)
+  currentModuleId: { type: mongoose.Schema.Types.Mixed },  
+  currentLessonId: { type: mongoose.Schema.Types.Mixed },
   
   // Assignment submissions
   assignmentSubmissions: [AssignmentSubmissionSchema],
@@ -64,18 +64,14 @@ const CourseProgressSchema = new mongoose.Schema({
 }, { _id: true });
 
 // Learning Time Tracker (overall + per-course)
-const LearningByCourseSchema = new mongoose.Schema({
-  courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
-  totalSeconds: { type: Number, default: 0, min: 0 },
-  lastTrackedAt: { type: Date, default: Date.now }
-}, { _id: false });
-
-const LearningSessionSchema = new mongoose.Schema({
-  // If you want to track current session server-side (optional)
-  isActive: { type: Boolean, default: false },
-  startedAt: { type: Date, default: null },
-  courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", default: null }
-}, { _id: false });
+const LearningByCourseSchema = new mongoose.Schema(
+  {
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
+    totalSeconds: { type: Number, default: 0, min: 0 },
+    lastTrackedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema({
   // Basic Identity
@@ -135,16 +131,10 @@ const UserSchema = new mongoose.Schema({
     { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
   ],
 
-    // Total Learning Time Tracker (store seconds; convert to hours in UI)
+  // Total Learning Time Tracker (store seconds; convert to hours in UI)
   learning: {
     totalSeconds: { type: Number, default: 0, min: 0 },
-
-    // Per-course totals
-    byCourse: [LearningByCourseSchema],
-
-    // Optional: track an active learning session
-    activeSession: { type: LearningSessionSchema, default: () => ({}) },
-
+    byCourse: { type: [LearningByCourseSchema], default: [] },
     updatedAt: { type: Date, default: Date.now }
   },
 },

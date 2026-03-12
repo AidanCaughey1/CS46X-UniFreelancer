@@ -38,6 +38,7 @@ function CreateSeminar() {
     // Camera state for speaker avatar
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
@@ -110,29 +111,56 @@ function CreateSeminar() {
   }, [isCameraOpen]);
 
   const captureSpeakerAvatar = () => {
-    const video = videoRef.current;
-    if (!video) return;
+  const video = videoRef.current;
+  if (!video) return;
 
-    const w = video.videoWidth;
-    const h = video.videoHeight;
+  const w = video.videoWidth;
+  const h = video.videoHeight;
 
-    if (!w || !h) {
-      setCameraError("Camera not ready yet—try again in a moment.");
-      return;
+  if (!w || !h) {
+    setCameraError("Camera not ready yet—try again in a moment.");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, w, h);
+
+  canvas.toBlob(async (blob) => {
+    try {
+      if (!blob) throw new Error("Failed to capture image");
+
+      setIsUploadingAvatar(true);
+      setCameraError("");
+
+      const form = new FormData();
+      form.append("image", blob, "speaker-avatar.png");
+
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: form,
+        credentials: "include" // safe even if not required
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+      setFormData((prev) => ({ ...prev, speakerAvatar: data.url }));
+
+      stopCamera();
+    } catch (err) {
+      console.error("Speaker avatar upload failed:", err);
+      setCameraError(err.message || "Failed to upload image");
+    } finally {
+      setIsUploadingAvatar(false);
     }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, w, h);
-
-    const dataUrl = canvas.toDataURL("image/png");
-
-    setFormData((prev) => ({ ...prev, speakerAvatar: dataUrl }));
-    stopCamera();
-  };
+  }, "image/png", 0.92);
+};
 
   // Cleanup if leaving the page
   React.useEffect(() => {
@@ -388,7 +416,7 @@ function CreateSeminar() {
                       >
                         Capture
                       </button>
-
+                    
                       <button
                         type="button"
                         className="create-seminar-secondary-button"

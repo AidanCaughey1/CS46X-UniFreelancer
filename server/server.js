@@ -45,7 +45,7 @@ app.use(cookieParser());
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  //res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
   next();
 });
 
@@ -61,7 +61,9 @@ const userRoutes = require("./routes/users");
 const paymentRoutes = require("./routes/payments");
 const courseProgressRoutes = require("./routes/courseProgress");
 const uploadRoutes = require("./routes/upload");
-const instructorRoutes = require('./routes/instructor')
+const instructorRoutes = require('./routes/instructor');
+const assignmentRoutes = require('./routes/assignments');
+const learningRoutes = require("./routes/learningRoutes");
 const adminRoutes = require("./routes/admin");
 
 app.use("/api/academy", academyRoutes);
@@ -75,6 +77,8 @@ app.use("/api/courses", courseProgressRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/instructor", instructorRoutes);
 app.use("/api/admin", adminRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use("/api/learning", learningRoutes);
 
 // ------------------------------
 // HEALTH CHECK
