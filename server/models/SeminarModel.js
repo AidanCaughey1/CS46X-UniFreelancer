@@ -21,6 +21,16 @@ const SeminarSchema = new mongoose.Schema({
     avatar: { type: String }
   },
 
+  // Up to 3 creator-defined highlights shown as bullet points
+  highlights: {
+    type: [{ type: String, trim: true, maxlength: 160 }],
+    default: [],
+    validate: {
+      validator: (items) => Array.isArray(items) && items.length <= 3,
+      message: "A seminar can have at most 3 highlights"
+    }
+  },
+
   // Scheduling info
   schedule: {
     date: { type: String },  // Legacy: YYYY-MM-DD

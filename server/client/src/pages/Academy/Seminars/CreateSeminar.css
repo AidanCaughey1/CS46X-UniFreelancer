@@ -157,6 +157,58 @@
   resize: vertical;
 }
 
+.create-seminar-highlight-entry-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.create-seminar-highlight-add-btn {
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.create-seminar-highlight-list {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.create-seminar-highlight-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.create-seminar-highlight-item span {
+  color: #374151;
+  line-height: 1.4;
+}
+
+.create-seminar-highlight-remove-btn {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.create-seminar-highlight-remove-btn:hover {
+  text-decoration: underline;
+}
+
+.create-seminar-highlight-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
 .create-seminar-form-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -219,6 +271,11 @@
 
   .create-seminar-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .create-seminar-highlight-entry-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .create-seminar-steps-indicator {

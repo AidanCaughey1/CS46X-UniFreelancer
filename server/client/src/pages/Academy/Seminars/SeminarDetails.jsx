@@ -4,6 +4,12 @@ import { FiArrowLeft, FiCalendar, FiClock, FiExternalLink, FiVideo } from "react
 import { getSeminarLocalScheduleLabel, getSeminarStatus } from "../../../utils/seminarStatus";
 import "./SeminarDetails.css";
 
+const defaultExpectHighlights = [
+    "Interactive Q&A with the speaker",
+    "Live discussion and practical examples",
+    "Clear takeaways you can apply immediately"
+];
+
 const formatTimeUntilStart = (milliseconds) => {
     if (!Number.isFinite(milliseconds) || milliseconds <= 0) {
         return "Starting soon";
@@ -78,6 +84,16 @@ function SeminarDetails() {
 
     const status = useMemo(() => getSeminarStatus(seminar, now), [seminar, now]);
     const canJoinZoom = status === "Live Now" && Boolean(seminar?.schedule?.zoomMeetingId) && Boolean(seminar?.schedule?.zoomPassword);
+    const expectHighlights = useMemo(() => {
+        const customHighlights = Array.isArray(seminar?.highlights)
+            ? seminar.highlights
+                .map((item) => (typeof item === "string" ? item.trim() : ""))
+                .filter(Boolean)
+                .slice(0, 3)
+            : [];
+
+        return customHighlights.length > 0 ? customHighlights : defaultExpectHighlights;
+    }, [seminar]);
 
     const startsIn = useMemo(() => {
         if (status !== "Future") return "";
@@ -194,9 +210,9 @@ function SeminarDetails() {
                         <div className="seminar-details-card">
                             <h3>What to Expect</h3>
                             <div className="seminar-expect-list">
-                                <p>Interactive Q&A with the speaker</p>
-                                <p>Live discussion and practical examples</p>
-                                <p>Clear takeaways you can apply immediately</p>
+                                {expectHighlights.map((highlight, index) => (
+                                    <p key={`${highlight}-${index}`}>{highlight}</p>
+                                ))}
                             </div>
                         </div>
                     </aside>
