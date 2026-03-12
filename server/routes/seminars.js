@@ -46,6 +46,19 @@ const normalizeSchedule = (schedule = {}) => {
   return normalized;
 };
 
+const normalizeHighlights = (highlights) => {
+  if (!Array.isArray(highlights)) {
+    return [];
+  }
+
+  const normalized = highlights
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return normalized;
+};
+
 // Get all seminars
 router.get("/", async (req, res) => {
   try {
@@ -63,6 +76,7 @@ router.post("/", async (req, res) => {
 
     const payload = {
       ...req.body,
+      highlights: normalizeHighlights(req.body.highlights),
       ...(req.body.schedule ? { schedule: normalizeSchedule(req.body.schedule) } : {})
     };
 
@@ -161,6 +175,7 @@ router.put("/:id", async (req, res) => {
   try {
     const payload = {
       ...req.body,
+      highlights: normalizeHighlights(req.body.highlights),
       ...(req.body.schedule ? { schedule: normalizeSchedule(req.body.schedule) } : {})
     };
 

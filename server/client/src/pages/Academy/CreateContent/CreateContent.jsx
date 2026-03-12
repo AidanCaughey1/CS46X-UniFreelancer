@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import './CreateContent.css';
 
-function CreateContent() {
+function CreateContent({ user }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('course');
+  const isAdmin = user?.accountType === 'admin';
 
   const handleBackToAcademy = () => {
     navigate('/academy');
@@ -49,12 +51,14 @@ function CreateContent() {
           >
             Seminar
           </button>
-          <button 
-            className={`content-tab ${activeTab === 'tutorial' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tutorial')}
-          >
-            Tutorial
-          </button>
+          {isAdmin && (
+            <button 
+              className={`content-tab ${activeTab === 'tutorial' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tutorial')}
+            >
+              Tutorial
+            </button>
+          )}
         </div>
 
         {/* Tab Content Area */}
@@ -115,7 +119,7 @@ function CreateContent() {
             </div>
           )}
 
-          {activeTab === 'tutorial' && (
+          {isAdmin && activeTab === 'tutorial' && (
             <div className="tab-content">
               <div className="content-info">
                 <h2 className="content-type-heading">Create a Tutorial</h2>
@@ -148,5 +152,11 @@ function CreateContent() {
     </div>
   );
 }
+
+CreateContent.propTypes = {
+  user: PropTypes.shape({
+    accountType: PropTypes.string
+  })
+};
 
 export default CreateContent;

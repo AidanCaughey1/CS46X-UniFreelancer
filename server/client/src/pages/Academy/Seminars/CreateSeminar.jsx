@@ -35,6 +35,7 @@ const formatDurationLabel = (minutes) => {
 function CreateSeminar() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("basic-info");
+  const [highlightDraft, setHighlightDraft] = useState("");
     // Camera state for speaker avatar
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
@@ -170,6 +171,7 @@ function CreateSeminar() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    highlights: [],
     thumbnail: "",
     speakerName: "",
     speakerBio: "",
@@ -198,6 +200,25 @@ function CreateSeminar() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddHighlight = () => {
+    const nextHighlight = highlightDraft.trim();
+    if (!nextHighlight) return;
+
+    setFormData((prev) => {
+      if (prev.highlights.length >= 3) return prev;
+      return { ...prev, highlights: [...prev.highlights, nextHighlight] };
+    });
+
+    setHighlightDraft("");
+  };
+
+  const handleRemoveHighlight = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   const isStepValid = (stepId) => {
@@ -257,6 +278,7 @@ function CreateSeminar() {
     const payload = {
       title: formData.title.trim(),
       description: formData.description.trim(),
+      highlights: formData.highlights.map((item) => item.trim()).filter(Boolean).slice(0, 3),
       duration: durationMinutes,
       thumbnail: formData.thumbnail,
       speaker: {
@@ -345,6 +367,55 @@ function CreateSeminar() {
                   onChange={handleChange}
                   rows={4}
                 />
+              </div>
+
+              <div className="create-seminar-form-group">
+                <label>What to Expect (up to 3 bullet points)</label>
+                <div className="create-seminar-highlight-entry-row">
+                  <input
+                    type="text"
+                    placeholder="Enter a highlight"
+                    value={highlightDraft}
+                    onChange={(event) => setHighlightDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleAddHighlight();
+                      }
+                    }}
+                    maxLength={160}
+                    disabled={formData.highlights.length >= 3}
+                  />
+                  <button
+                    type="button"
+                    className="create-seminar-secondary-button create-seminar-highlight-add-btn"
+                    onClick={handleAddHighlight}
+                    disabled={!highlightDraft.trim() || formData.highlights.length >= 3}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {formData.highlights.length > 0 ? (
+                  <div className="create-seminar-highlight-list" role="list">
+                    {formData.highlights.map((highlight, index) => (
+                      <div className="create-seminar-highlight-item" key={`${highlight}-${index}`} role="listitem">
+                        <span>{highlight}</span>
+                        <button
+                          type="button"
+                          className="create-seminar-highlight-remove-btn"
+                          onClick={() => handleRemoveHighlight(index)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                <p className="create-seminar-highlight-hint">
+                  {formData.highlights.length}/3 added
+                </p>
               </div>
 
               <ImageUpload

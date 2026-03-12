@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import './App.css';
 import Academy from './pages/Academy/Academy';
@@ -20,9 +20,11 @@ import MyCourses from './pages/Academy/Courses/MyCourses';
 import CourseLearning from './pages/Academy/Courses/CourseLearning';
 import InstructorDashboard from './pages/Instructor/InstructorDashboard';
 import GradingInterface from './pages/Instructor/GradingInterface';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,9 +36,13 @@ function App() {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
+        } else {
+          setUser(null);
         }
       } catch (error) {
         console.error('Failed to fetch user', error);
+      } finally {
+        setAuthLoading(false);
       }
     };
 
@@ -57,7 +63,7 @@ function App() {
           <Route path="/academy" element={<Academy />} />
           <Route path="/academy/courses" element={<LearningHub />} />
           <Route path="/academy/my-courses" element={<MyCourses />} />
-          <Route path="/academy/create" element={<CreateContent />} />
+          <Route path="/academy/create" element={<CreateContent user={user} />} />
           <Route path="/academy/seminars" element={<LearningHub />} />
           <Route path="/academy/tutorials" element={<LearningHub />} />
           <Route path="/academy/tutorials/:id" element={<TutorialDetail />} />
@@ -70,15 +76,56 @@ function App() {
           <Route path="/academy/create/seminar" element={<CreateSeminar />} />
           <Route path="/academy/seminars/:id" element={<SeminarDetails />} />
           <Route path="/academy/seminars/:id/join" element={<SeminarZoomPage />} />
-          <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
+          <Route
+            path="/academy/create/tutorial"
+            element={(
+              <AdminRoute user={user} authLoading={authLoading}>
+                <CreateTutorial />
+              </AdminRoute>
+            )}
+          />
+          <Route
+            path="/academy/tutorials/:id/edit"
+            element={(
+              <AdminRoute user={user} authLoading={authLoading}>
+                <CreateTutorial />
+              </AdminRoute>
+            )}
+          />
           <Route path="/academy/payment-success" element={<PaymentSuccess />} />
           <Route path="/academy/courses/:id/learn" element={<CourseLearning />} />
           <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
           <Route path="/instructor/grade/:submissionId" element={<GradingInterface />} />
+          <Route
+            path="/admin"
+            element={(
+              <AdminRoute user={user} authLoading={authLoading}>
+                <AdminDashboard />
+              </AdminRoute>
+            )}
+          />
         </Routes>
       </div>
     </Router>
   );
+}
+
+function AdminRoute({ user, authLoading, children }) {
+  const location = useLocation();
+
+  if (authLoading) {
+    return <div style={{ padding: '2rem' }}>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  }
+
+  if (user.accountType !== 'admin') {
+    return <Navigate to="/academy/tutorials" replace />;
+  }
+
+  return children;
 }
 
 function Header({ user }) {
@@ -115,11 +162,20 @@ function Header({ user }) {
 
           {/* Instructor Dashboard Link - Only for instructors */}
           {user && user.accountType === 'instructor' && (
-            <Link 
-              to="/instructor/dashboard" 
+            <Link
+              to="/instructor/dashboard"
               className={`instructor-dashboard-link ${isActive('/instructor/dashboard')}`}
             >
               📊 Dashboard
+            </Link>
+          )}
+
+          {user && user.accountType === 'admin' && (
+            <Link
+              to="/admin"
+              className={`instructor-dashboard-link ${isActive('/admin')}`}
+            >
+              🛡️ Admin
             </Link>
           )}
 
@@ -152,6 +208,14 @@ Header.propTypes = {
     _id: PropTypes.string,
     accountType: PropTypes.string
   })
+};
+
+AdminRoute.propTypes = {
+  user: PropTypes.shape({
+    accountType: PropTypes.string
+  }),
+  authLoading: PropTypes.bool.isRequired,
+  children: PropTypes.node.isRequired
 };
 
 export default App;
