@@ -10,6 +10,7 @@ const Signup = () => {
         lastName: '',
         username: '',
         email: '',
+        accountType: 'student',
         password: '',
         confirmPassword: ''
     });
@@ -44,7 +45,6 @@ const Signup = () => {
         }
 
         try {
-            // eslint-disable-next-line no-undef
             const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
             const response = await fetch(`${apiUrl}/api/users/register`, {
                 method: 'POST',
@@ -56,6 +56,7 @@ const Signup = () => {
                     lastName: formData.lastName,
                     username: formData.username,
                     email: formData.email,
+                    accountType: formData.accountType,
                     password: formData.password
                 }),
                 credentials: 'include', // Important for cookies
@@ -147,6 +148,20 @@ const Signup = () => {
                             required
                             className={inputClasses}
                         />
+                    </div>
+
+                    <div className="text-left">
+                        <label htmlFor="accountType" className={labelClasses}>Account Type</label>
+                        <select
+                            id="accountType"
+                            name="accountType"
+                            value={formData.accountType}
+                            onChange={handleChange}
+                            className={inputClasses}
+                        >
+                            <option value="student">Student</option>
+                            <option value="instructor">Instructor</option>
+                        </select>
                     </div>
 
                     <div className="text-left">

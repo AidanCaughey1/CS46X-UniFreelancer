@@ -1,0 +1,945 @@
+/* ================================================
+   GRADING INTERFACE - MAIN LAYOUT
+   ================================================ */
+
+.grading-interface-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem;
+}
+
+.grading-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ================================================
+   HEADER
+   ================================================ */
+
+.grading-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  background: white;
+  border: 2px solid #e5e7eb;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  border-color: #4F46E5;
+  color: #4F46E5;
+  background: #f9fafb;
+}
+
+.grading-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #1a1a1a;
+}
+
+/* ================================================
+   SUBMISSION INFO CARD
+   ================================================ */
+
+.submission-info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.info-section h3 {
+  margin: 0 0 1rem;
+  color: #1a1a1a;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+}
+
+.info-row {
+  margin-top: 1rem;
+}
+
+.student-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.student-avatar-large {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e5e7eb;
+}
+
+.student-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder-large {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.student-name {
+  display: block;
+  font-size: 1.25rem;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+.student-email {
+  display: block;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 100px;
+}
+
+.detail-value {
+  color: #1a1a1a;
+}
+
+/* ================================================
+   GRADING CONTENT
+   ================================================ */
+
+.grading-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ================================================
+   GRADING PART CARD
+   ================================================ */
+
+.grading-part-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #4F46E5;
+}
+
+.part-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.part-header h3 {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 1.25rem;
+}
+
+.max-points-badge {
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.part-instructions {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.part-instructions strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.part-instructions p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* ================================================
+   STUDENT ANSWER SECTION
+   ================================================ */
+
+.student-answer-section {
+  margin-bottom: 1.5rem;
+}
+
+.student-answer-section strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.student-answer-box {
+  background: #fffbeb;
+  border: 2px solid #fbbf24;
+  padding: 1.25rem;
+  border-radius: 8px;
+  min-height: 100px;
+  color: #1a1a1a;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.no-answer {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ================================================
+   FILE URL SECTION
+   ================================================ */
+
+.file-url-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+}
+
+.file-url-section strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.file-link {
+  color: #4F46E5;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.file-link:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}
+
+/* ================================================
+   GRADING INPUTS
+   ================================================ */
+
+.grading-inputs {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+}
+
+.points-input-section label,
+.comment-input-section label {
+  display: block;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.points-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.points-input {
+  width: 100px;
+  padding: 0.75rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.points-input:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.points-max {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: 0.875rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.comment-textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* ================================================
+   OVERALL FEEDBACK CARD
+   ================================================ */
+
+.overall-feedback-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.overall-feedback-card h3 {
+  margin: 0 0 1rem;
+  color: #1a1a1a;
+  font-size: 1.25rem;
+}
+
+.overall-feedback-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.overall-feedback-textarea:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* ================================================
+   SCORE SUMMARY CARD
+   ================================================ */
+
+.score-summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e5e7eb;
+}
+
+.score-summary-card h3 {
+  margin: 0 0 1.5rem;
+  color: #1a1a1a;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+}
+
+.score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.score-value {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.score-total {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+}
+
+.total-row,
+.percentage-row,
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-value {
+  font-size: 1.5rem;
+  color: #1a1a1a;
+}
+
+.percentage-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.percentage-value.passed {
+  color: #10b981;
+}
+
+.percentage-value.failed {
+  color: #ef4444;
+}
+
+.status-badge {
+  padding: 0.625rem 1.25rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.status-badge.passed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ================================================
+   GRADING ACTIONS
+   ================================================ */
+
+.grading-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+}
+
+.cancel-button,
+.submit-grade-button {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button {
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+}
+
+.cancel-button:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.submit-grade-button {
+  background: #4F46E5;
+  color: white;
+}
+
+.submit-grade-button:hover:not(:disabled) {
+  background: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.cancel-button:disabled,
+.submit-grade-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================================
+   LOADING & ERROR STATES
+   ================================================ */
+
+.loading,
+.error {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6b7280;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #ef4444;
+}
+
+/* ================================================
+   RESPONSIVE
+   ================================================ */
+
+@media (max-width: 1024px) {
+  .submission-info-card {
+    grid-template-columns: 1fr;
+  }
+
+  .grading-inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grading-interface-page {
+    padding: 1rem;
+  }
+
+  .grading-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .grading-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .back-button {
+    width: 100%;
+  }
+
+  .submission-info-card {
+    padding: 1.5rem;
+  }
+
+  .student-avatar-large {
+    width: 50px;
+    height: 50px;
+  }
+
+  .avatar-placeholder-large {
+    font-size: 1.5rem;
+  }
+
+  .student-name {
+    font-size: 1.125rem;
+  }
+
+  .grading-part-card {
+    padding: 1.5rem;
+  }
+
+  .part-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .points-input-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .points-input {
+    flex: 1;
+    max-width: 150px;
+  }
+
+  .grading-actions {
+    flex-direction: column;
+  }
+
+  .cancel-button,
+  .submit-grade-button {
+    width: 100%;
+  }
+
+  .score-total {
+    padding: 1rem;
+  }
+
+  .total-value,
+  .percentage-value {
+    font-size: 1.25rem;
+  }
+}
+
+/* Question-Based Assignment Styles */
+.assignment-type-badge {
+  background: #10b981;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.grading-question-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.question-header-grade {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.question-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.question-type-badge-grade {
+  background: #4F46E5;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.auto-graded-badge {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.question-text-grade {
+  margin-bottom: 20px;
+}
+
+.question-text-grade p {
+  margin: 8px 0 0 0;
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* Multiple Choice Answer Display */
+.mc-answer-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.mc-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.mc-option.selected {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.mc-option.correct {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.mc-option.incorrect {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.option-letter {
+  font-weight: 600;
+  color: #374151;
+  min-width: 24px;
+}
+
+.correct-badge {
+  margin-left: auto;
+  background: #10b981;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.incorrect-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.selected-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* True/False Answer Display */
+.tf-answer-display {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.tf-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.tf-option.selected {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.tf-option.correct {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.tf-option.incorrect {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+/* Written Answer Display */
+.written-answer-display {
+  margin-top: 12px;
+}
+
+.answer-text {
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.word-count-info {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.rubric-display {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff9e6;
+  border-left: 4px solid #ffc107;
+  border-radius: 6px;
+}
+
+.rubric-display strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #856404;
+}
+
+.rubric-display p {
+  margin: 0;
+  color: #856404;
+  font-size: 14px;
+}
+
+/* Matching Answer Display */
+.matching-answer-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.matching-pair {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.matching-pair.correct {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.matching-pair.incorrect {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.match-left,
+.match-right {
+  font-weight: 500;
+  color: #374151;
+}
+
+.match-arrow {
+  color: #6b7280;
+  font-size: 18px;
+}
+
+.incorrect-info {
+  margin-left: auto;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* PDF Answer Display */
+.pdf-answer-display {
+  margin-top: 12px;
+}
+
+.file-link {
+  display: inline-block;
+  padding: 12px 20px;
+  background: #4F46E5;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.file-link:hover {
+  background: #4338ca;
+}
+
+.file-requirements-display {
+  margin-top: 16px;
+  padding: 12px;
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+}
+
+.file-requirements-display strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #1e40af;
+}
+
+.file-requirements-display p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 14px;
+}
+
+/* Auto-grade note */
+.auto-grade-note {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.auto-badge-small {
+  margin-left: 6px;
+  font-size: 10px;
+}
+
+/* Score Summary Updates */
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.score-item:last-child {
+  border-bottom: none;
+}

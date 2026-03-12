@@ -6,10 +6,15 @@ import LearningHub from './pages/Academy/LearningHub/LearningHub';
 import CreateContent from './pages/Academy/CreateContent/CreateContent';
 import CreateCourse from './pages/Academy/Courses/CreateCourse';
 import CourseDetail from './pages/Academy/Courses/CourseDetail';
+import MyCourses from './pages/Academy/Courses/MyCourses';
+import CourseLearning from './pages/Academy/Courses/CourseLearning';
 import CreateSeminar from './pages/Academy/Seminars/CreateSeminar';
-import SeminarDetail from './pages/Academy/Seminars/SeminarSingle';
+import SeminarDetails from './pages/Academy/Seminars/SeminarDetails';
+import SeminarZoomPage from './pages/Academy/Seminars/SeminarZoomPage';
 import CreateTutorial from './pages/Academy/Tutorials/CreateTutorial';
 import TutorialDetail from './pages/Academy/Tutorials/TutorialDetail';
+import InstructorDashboard from './pages/Instructor/InstructorDashboard';
+import GradingInterface from './pages/Instructor/GradingInterface';
 import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
 import Profile from './pages/Auth/Profile';
@@ -21,8 +26,7 @@ function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // eslint-disable-next-line no-undef
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.REACT_APP_API_URL || '';
         const response = await fetch(`${apiUrl}/api/users/me`, {
           credentials: 'include',
         });
@@ -51,19 +55,25 @@ function App() {
           <Route path="/" element={<Academy />} />
           <Route path="/academy" element={<Academy />} />
           <Route path="/academy/courses" element={<LearningHub />} />
+          <Route path="/academy/my-courses" element={<MyCourses />} />
           <Route path="/academy/create" element={<CreateContent />} />
           <Route path="/academy/seminars" element={<LearningHub />} />
           <Route path="/academy/tutorials" element={<LearningHub />} />
           <Route path="/academy/tutorials/:id" element={<TutorialDetail />} />
           <Route path="/academy/create/course" element={<CreateCourse />} />
+          <Route path="/academy/create/:courseId" element={<CreateCourse />} />
           <Route path="/academy/courses/:id" element={<CourseDetail />} />
+          <Route path="/academy/courses/:id/learn" element={<CourseLearning />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/academy/seminars/:id" element={<SeminarDetail />} />
+          <Route path="/academy/seminars/:id" element={<SeminarDetails />} />
+          <Route path="/academy/seminars/:id/join" element={<SeminarZoomPage />} />
           <Route path="/academy/create/seminar" element={<CreateSeminar />} />
           <Route path="/academy/create/tutorial" element={<CreateTutorial />} />
           <Route path="/academy/payment-success" element={<PaymentSuccess />} />
+          <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+          <Route path="/instructor/grade/:submissionId" element={<GradingInterface />} />
         </Routes>
       </div>
     </Router>
@@ -95,6 +105,11 @@ NavLink.propTypes = {
 
 function Header({ user }) {
   const location = useLocation();
+  const isSeminarJoinRoute = /^\/academy\/seminars\/[^/]+\/join$/.test(location.pathname);
+
+  if (isSeminarJoinRoute) {
+    return null;
+  }
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -119,6 +134,9 @@ function Header({ user }) {
           <NavLink to="/social" isActive={isActive}>UF Social</NavLink>
           <NavLink to="/about" isActive={isActive}>About Us</NavLink>
           <NavLink to="/inbox" isActive={isActive}>Inbox</NavLink>
+          {user?.accountType === 'instructor' && (
+            <NavLink to="/instructor/dashboard" isActive={isActive}>Dashboard</NavLink>
+          )}
 
           {user ? (
             <div className="flex items-center gap-4">
@@ -146,7 +164,8 @@ Header.propTypes = {
     lastName: PropTypes.string,
     username: PropTypes.string,
     email: PropTypes.string,
-    _id: PropTypes.string
+    _id: PropTypes.string,
+    accountType: PropTypes.string,
   })
 };
 

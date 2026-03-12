@@ -1,11 +1,15 @@
 // config/db.js
 const mongoose = require("mongoose");
 
-if (!process.env.MONGO_URI) {
-  throw new Error("Missing MONGO_URI environment variable");
-}
-
 const connectDB = async () => {
+  if (!process.env.MONGO_URI) {
+    if (process.env.NODE_ENV === "test") {
+      return;
+    }
+
+    throw new Error("Missing MONGO_URI environment variable");
+  }
+
   let retries = 1;
   const delay = 1000; // 1s backoff if you want to bump retries later
 

@@ -1,7 +1,8 @@
-/* global process */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiUpload } from "react-icons/fi";
+import "./CreateTutorial.css";
+import { FiArrowLeft } from "react-icons/fi";
+import ImageUpload from "../../../components/ImageUpload";
 
 function CreateTutorial() {
   const navigate = useNavigate();
@@ -12,16 +13,28 @@ function CreateTutorial() {
     description: "",
     duration: "",
     category: "",
-    thumbnailUrl: "",
+    thumbnail: "",
     videoUrl: "",
     writtenContent: "",
     resources: [],
+    instructorName: "",
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "duration") {
+      const digitsOnly = value.replace(/[^0-9]/g, "");
+      setFormData({
+        ...formData,
+        [name]: digitsOnly,
+      });
+      return;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
@@ -38,17 +51,48 @@ function CreateTutorial() {
     setFormData({ ...formData, resources: updated });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const parseDurationMinutes = (value) => {
+    if (!value) return "";
+    const normalized = String(value).trim();
+    const numberMatch = normalized.match(/^(\d+)$/);
+    if (!numberMatch) return null;
+    const minutes = Number(numberMatch[1]);
+    if (!Number.isFinite(minutes) || minutes <= 0) return null;
+    return String(minutes);
+  };
+
+  const handleSubmit = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const durationMinutes = parseDurationMinutes(formData.duration);
+    if (durationMinutes === null) {
+      alert("Duration must be a number of minutes (e.g., 15) or left blank for self-paced.");
+      return;
+    }
 
     try {
-      console.log("Submitting Tutorial:", formData);
+      const { instructorName, ...rest } = formData;
+      const payload = {
+        ...rest,
+        duration: durationMinutes
+      };
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/api/academy/tutorials`, {
+      const trimmedInstructor = instructorName.trim();
+      if (!trimmedInstructor) {
+        alert("Instructor name is required.");
+        return;
+      }
+
+      payload.instructor = { name: trimmedInstructor };
+
+      console.log("Submitting Tutorial:", payload);
+
+      const response = await fetch(`/api/academy/tutorials`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -68,180 +112,251 @@ function CreateTutorial() {
   const steps = [
     { id: 'basic-info', label: 'Basic Info' },
     { id: 'content', label: 'Content' },
-    { id: 'resources', label: 'Resources' },
+    { id: 'resources', label: 'Resources' }
   ];
 
-  return (
-    <div className="min-h-screen bg-main-bg pt-[100px] px-[40px] max-md:px-5">
-      <div className="max-w-narrow mx-auto">
+  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
-        {/* Back Button */}
-        <button className="bg-transparent border-none text-dark text-base cursor-pointer mb-5 py-2 inline-flex items-center transition-colors hover:text-dark-secondary" onClick={() => navigate(-1)}>
+  const isStepValid = (stepId) => {
+    if (stepId === "basic-info") {
+      return (
+        formData.title.trim() !== "" &&
+        formData.description.trim() !== "" &&
+        formData.category.trim() !== ""
+      );
+    }
+
+    if (stepId === "content") {
+      return (
+        formData.videoUrl.trim() !== "" ||
+        formData.writtenContent.trim() !== ""
+      );
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!isStepValid(currentStep)) {
+      if (currentStep === "basic-info") {
+        alert("Please fill in all required fields before continuing.");
+      } else if (currentStep === "content") {
+        alert("Please add a video URL or written content before continuing.");
+      }
+      return;
+    }
+
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStep(steps[currentStepIndex + 1].id);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(steps[currentStepIndex - 1].id);
+    }
+  };
+
+  return (
+    <div className="create-tutorial-page">
+      <div className="create-tutorial-container">
+        <button className="back-button" onClick={() => navigate(-1)}>
           <FiArrowLeft size={18} /> Back
         </button>
 
-        <h1 className="text-5xl font-bold text-dark mb-3">Create New Tutorial</h1>
-        <p className="text-base text-dark-secondary mb-8">
-          Fill in the details to create a new tutorial
-        </p>
+        <h1>Create New Tutorial</h1>
+        <p className="page-subtitle">Fill in the details to create a new tutorial</p>
 
-        <div className="flex flex-wrap">
-          {steps.map((step) => (
-            <button
+        <div className="steps-indicator">
+          {steps.map((step, index) => (
+            <div
               key={step.id}
-              className={`py-3 px-5 text-base font-semibold cursor-pointer border-none transition-colors ${
-                currentStep === step.id
-                  ? "bg-light-tertiary text-dark"
-                  : "bg-light-primary text-dark-tertiary hover:bg-light-secondary"
+              className={`step ${currentStepIndex === index ? "active" : ""} ${
+                currentStepIndex > index ? "completed" : ""
               }`}
-              onClick={() => setCurrentStep(step.id)}
             >
-              {step.label}
-            </button>
+              <div className="step-number">{index + 1}</div>
+              <div className="step-label">{step.label}</div>
+            </div>
           ))}
         </div>
 
-        {currentStep === 'basic-info' && (
-          <div className="bg-light-tertiary p-8 mb-3 rounded">
-            <h2 className="text-2xl font-semibold text-dark mb-2">Tutorial Information</h2>
-            <p className="text-md text-dark-secondary mb-8">Basic details about your tutorial</p>
+        <div className="form-container">
+          {currentStep === "basic-info" && (
+            <div className="form-section">
+              <h2>Tutorial Information</h2>
+              <p className="section-subtitle">Basic details about your tutorial</p>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark mb-2">
-                Tutorial Title <span className="text-accent">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary"
-                placeholder="e.g., How to Create a Portfolio Website"
-                value={formData.title}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="form-group">
+                <label>Tutorial Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="e.g., How to Create a Portfolio Website"
+                  value={formData.title}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark mb-2">
-                Description <span className="text-accent">*</span>
-              </label>
-              <textarea
-                name="description"
-                className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors resize-y min-h-[120px] focus:outline-none focus:border-dark placeholder:text-light-primary"
-                placeholder="Describe what students will learn..."
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  name="description"
+                  placeholder="Describe what students will learn..."
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark mb-2">Duration</label>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Duration (in Minutes)</label>
                 <input
                   type="text"
                   name="duration"
-                  className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary"
-                  placeholder="e.g., 15 min"
+                  placeholder="Minutes only (e.g., 15)"
                   value={formData.duration}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  onKeyDown={(event) => {
+                    const allowedKeys = [
+                      "Backspace",
+                      "Delete",
+                      "ArrowLeft",
+                      "ArrowRight",
+                      "Tab",
+                      "Home",
+                      "End"
+                    ];
+
+                    if (allowedKeys.includes(event.key)) return;
+                    if (/^[0-9]$/.test(event.key)) return;
+                    event.preventDefault();
+                  }}
+                  onPaste={(event) => {
+                    const paste = event.clipboardData.getData("text");
+                    if (!/^[0-9]*$/.test(paste)) {
+                      event.preventDefault();
+                    }
+                  }}
+                />
+                </div>
+
+                <div className="form-group">
+                  <label>Category *</label>
+                  <input
+                    type="text"
+                    name="category"
+                    placeholder="e.g., Web Development"
+                    value={formData.category}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Instructor *</label>
+                <input
+                  type="text"
+                  name="instructorName"
+                  placeholder="e.g., Jane Doe"
+                  value={formData.instructorName}
+                  onChange={handleChange}
+                  required
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark mb-2">Category *</label>
+              <ImageUpload
+                value={formData.thumbnail}
+                onChange={(url) => setFormData({ ...formData, thumbnail: url })}
+                label="Tutorial Thumbnail"
+              />
+            </div>
+          )}
+
+          {currentStep === "content" && (
+            <div className="form-section">
+              <h2>Tutorial Content</h2>
+              <p className="section-subtitle">Video and written content</p>
+
+              <div className="form-group">
+                <label>Video URL</label>
                 <input
                   type="text"
-                  name="category"
-                  className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary"
-                  placeholder="e.g., Web Development"
-                  value={formData.category}
+                  name="videoUrl"
+                  placeholder="https://youtube.com/watch?v=..."
+                  value={formData.videoUrl}
                   onChange={handleChange}
                 />
               </div>
-            </div>
 
-            {/* Thumbnail */}
-            <div className="mb-6 relative">
-              <label className="block text-base font-semibold text-dark mb-2">Thumbnail URL</label>
-              <input
-                type="text"
-                name="thumbnailUrl"
-                className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary"
-                placeholder="https://example.com/thumbnail.jpg"
-                value={formData.thumbnailUrl}
-                onChange={handleChange}
-              />
-              <FiUpload className="absolute right-[15px] top-1/2 -translate-y-1/2 text-lg text-dark-secondary cursor-pointer" />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'content' && (
-          <div className="bg-light-tertiary p-8 mb-3 rounded">
-            <h2 className="text-2xl font-semibold text-dark mb-2">Tutorial Content</h2>
-            <p className="text-md text-dark-secondary mb-8">Video and written content</p>
-
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark mb-2">Video URL</label>
-              <input
-                type="text"
-                name="videoUrl"
-                className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary"
-                placeholder="https://youtube.com/watch?v=..."
-                value={formData.videoUrl}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark mb-2">Written Content</label>
-              <textarea
-                name="writtenContent"
-                className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors resize-y min-h-[120px] focus:outline-none focus:border-dark placeholder:text-light-primary"
-                placeholder="Step-by-step instructions..."
-                value={formData.writtenContent}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'resources' && (
-          <div className="bg-light-tertiary p-8 mb-3 rounded">
-            <h2 className="text-2xl font-semibold text-dark mb-2">Downloadable Resources</h2>
-            <p className="text-md text-dark-secondary mb-8">Optional supporting materials</p>
-
-            <div className="py-[10px] mb-[15px]">
-              {formData.resources.length === 0 && (
-                <p className="text-dark-secondary text-base">No downloadable resources added yet.</p>
-              )}
-
-              {formData.resources.map((res, index) => (
-                <input
-                  key={index}
-                  className="w-full px-4 py-3 rounded-sm border border-light-secondary text-base text-dark bg-white font-[inherit] transition-colors focus:outline-none focus:border-dark placeholder:text-light-primary mb-[15px]"
-                  placeholder="Resource URL..."
-                  value={res}
-                  onChange={(e) =>
-                    handleResourceChange(index, e.target.value)
-                  }
+              <div className="form-group">
+                <label>Written Content</label>
+                <textarea
+                  name="writtenContent"
+                  placeholder="Step-by-step instructions..."
+                  value={formData.writtenContent}
+                  onChange={handleChange}
+                  rows={4}
                 />
-              ))}
+              </div>
             </div>
+          )}
 
-            <button className="py-[10px] px-[15px] bg-white text-dark border border-[#ccc] rounded-sm text-base cursor-pointer transition-colors hover:bg-[#f3f3f3]" onClick={addResource}>
-              + Add Downloadable Resource
+          {currentStep === "resources" && (
+            <div className="form-section">
+              <h2>Downloadable Resources</h2>
+              <p className="section-subtitle">Optional supporting materials</p>
+
+              <div className="resource-list">
+                {formData.resources.length === 0 && (
+                  <p className="empty-state">No downloadable resources added yet.</p>
+                )}
+
+                {formData.resources.map((res, index) => (
+                  <input
+                    key={index}
+                    className="resource-input"
+                    placeholder="Resource URL..."
+                    value={res}
+                    onChange={(e) => handleResourceChange(index, e.target.value)}
+                  />
+                ))}
+              </div>
+
+              <button type="button" className="add-button" onClick={addResource}>
+                + Add Downloadable Resource
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentStepIndex === 0}
+            className="secondary-button"
+          >
+            Previous
+          </button>
+
+          {currentStepIndex < steps.length - 1 ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="primary-button"
+              disabled={!isStepValid(currentStep)}
+            >
+              Next
             </button>
-          </div>
-        )}
-
-        {/* ===================== ACTION BUTTONS ===================== */}
-        <div className="flex justify-end gap-4 pt-5">
-          <button className="py-3 px-8 bg-transparent text-dark-secondary border-none rounded-sm text-md font-medium cursor-pointer transition-colors hover:text-dark" onClick={() => navigate(-1)}>
-            Cancel
-          </button>
-          <button className="py-3 px-8 bg-accent text-white border-none rounded-sm text-md font-semibold cursor-pointer inline-flex items-center gap-2 transition-colors hover:bg-accent-tertiary" onClick={handleSubmit}>
-            Create Tutorial
-          </button>
+          ) : (
+            <button type="button" onClick={handleSubmit} className="primary-button">
+              Create Tutorial
+            </button>
+          )}
         </div>
       </div>
     </div>

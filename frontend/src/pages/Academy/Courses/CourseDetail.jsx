@@ -1,4 +1,3 @@
-/* global process */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -25,11 +24,6 @@ import CheckoutForm from "../../../components/Shared/CheckoutForm";
 // ------------------------------
 // Must be outside component to avoid re-creating Stripe on every render
 const stripePromise = loadStripe(
-  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
-);
-
-console.log(
-  "Stripe publishable key:",
   process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
 );
 
@@ -109,8 +103,10 @@ function CourseDetail() {
     const fetchCourse = async () => {
       try {
         setLoading(true);
-
-        const response = await fetch(`http://localhost:5000/api/academy/courses/${id}`);
+        const apiBase = process.env.REACT_APP_API_URL || '';
+        const response = await fetch(`${apiBase}/api/academy/courses/${id}`, {
+          credentials: 'include',
+        });
 
         if (!response.ok) {
           throw new Error('Course not found');
@@ -148,18 +144,24 @@ function CourseDetail() {
 
     try {
       setEnrolling(true);
+      const apiBase = process.env.REACT_APP_API_URL || '';
 
       const res = await fetch(
-        "http://localhost:5000/api/payments/create-payment-intent",
+        `${apiBase}/api/payments/create-payment-intent`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify({
             courseId: course._id,
-            userId: "TEMP_USER_ID", // replace with real auth user later
           }),
         }
       );
+
+      if (res.status === 401) {
+        navigate(`/login?returnTo=${encodeURIComponent(`/academy/courses/${course._id}`)}`);
+        return;
+      }
 
       const data = await res.json();
 
