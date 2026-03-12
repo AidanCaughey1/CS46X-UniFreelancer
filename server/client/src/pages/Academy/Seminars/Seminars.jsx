@@ -1,8 +1,10 @@
 /* global process */
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Seminars.css";
 
 function Seminars() {
+  const navigate = useNavigate();
   const [seminars, setSeminars] = useState([]);
   const [filteredSeminars, setFilteredSeminars] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,6 +90,10 @@ function Seminars() {
 
       return { ...prev, [category]: updated };
     });
+  };
+
+  const handleViewSeminar = (seminarId) => {
+    navigate(`/academy/seminars/${seminarId}`);
   };
 
   return (
@@ -203,8 +209,20 @@ function Seminars() {
                 </button>
               </div>
             ) : (
-              filteredSeminars.map((seminar) => (
-                <div key={seminar._id} className="seminar-card">
+                filteredSeminars.map((seminar) => (
+                <div
+                  key={seminar._id}
+                  className="seminar-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleViewSeminar(seminar._id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleViewSeminar(seminar._id);
+                    }
+                  }}
+                >
                   <div className="seminar-image">
                     {seminar.thumbnail ? (
                       <img src={seminar.thumbnail} alt={seminar.title} />
@@ -238,7 +256,14 @@ function Seminars() {
                     </div>
 
                     <div className="seminar-footer">
-                      <button className="view-details-btn">
+                      <button
+                        type="button"
+                        className="view-details-btn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleViewSeminar(seminar._id);
+                        }}
+                      >
                         View Details →
                       </button>
                     </div>
