@@ -28,21 +28,21 @@ function InstructorDashboard() {
         credentials: 'include'
       });
       const statsData = await statsRes.json();
-      setStats(statsData);
+      setStats(statsData || {});
 
       // Fetch courses
       const coursesRes = await fetch('/api/instructor/courses', {
         credentials: 'include'
       });
       const coursesData = await coursesRes.json();
-      setCourses(coursesData);
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
 
       // Fetch pending submissions
       const pendingRes = await fetch('/api/instructor/submissions/pending', {
         credentials: 'include'
       });
       const pendingData = await pendingRes.json();
-      setPendingSubmissions(pendingData);
+      setPendingSubmissions(Array.isArray(pendingData) ? pendingData : []);
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);

@@ -17,7 +17,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
 
   // Check if already submitted
   const existingSubmission = progress?.assignmentSubmissions?.find(
-    sub => sub.lessonId === lesson._id
+    sub => sub.lessonId?.toString() === lesson._id?.toString()
   );
 
   const handlePartChange = (partNumber, value) => {
@@ -28,9 +28,8 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
   };
 
   const handleSubmit = async () => {
-    // Validate all parts are filled
     const allPartsFilled = Object.values(partAnswers).every(answer => answer.trim());
-    
+
     if (!allPartsFilled) {
       alert('Please complete all parts of the assignment');
       return;
@@ -39,10 +38,16 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
     try {
       setSubmitting(true);
 
-      // Combine all part answers into submission text
       const combinedSubmission = Object.entries(partAnswers)
         .map(([partNum, answer]) => `Part ${partNum}: ${answer}`)
         .join('\n\n');
+
+      console.log("Submitting assignment with lesson._id:", lesson._id);
+      console.log("Submitting assignment payload:", {
+        textSubmission: combinedSubmission,
+        fileUrl,
+        partAnswers
+      });
 
       const res = await fetch(
         `/api/courses/${courseId}/progress/assignment/${lesson._id}/submit`,
@@ -53,16 +58,19 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
           body: JSON.stringify({
             textSubmission: combinedSubmission,
             fileUrl,
-            partAnswers // Also send individual part answers
+            partAnswers
           })
         }
       );
+
+      const data = await res.json();
+      console.log("Assignment submit response:", data);
 
       if (res.ok) {
         alert('Assignment submitted successfully!');
         onComplete();
       } else {
-        alert('Failed to submit assignment');
+        alert(data.error || 'Failed to submit assignment');
       }
 
     } catch (err) {

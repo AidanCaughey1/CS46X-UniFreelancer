@@ -101,22 +101,85 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
     const { courseId, lessonId } = req.params;
     const { textSubmission, fileUrl, partAnswers } = req.body;
 
+    console.log("=== ASSIGNMENT SUBMIT START ===");
+    console.log("courseId:", courseId);
+    console.log("lessonId:", lessonId);
+    console.log("req.user._id:", req.user?._id);
+    console.log("body:", JSON.stringify(req.body, null, 2));
+
     const user = await User.findById(req.user._id);
     const course = await Course.findById(courseId);
 
     if (!course) {
+      console.log("Course not found");
       return res.status(404).json({ error: "Course not found" });
     }
 
-    // Find the module and assignment
+    console.log("Course found:", course.title);
+    console.log("Course modules:");
+    course.modules.forEach((module, idx) => {
+      console.log(`  Module ${idx}:`, {
+        moduleId: module._id?.toString(),
+        title: module.title,
+        syntheticAssignmentLessonId: `${module._id}-assignment`,
+        hasModuleAssignment: !!module.assignment,
+        lessonIds: (module.lessons || []).map(l => ({
+          id: l._id?.toString(),
+          type: l.type,
+          title: l.title
+        }))
+      });
+    });
+
     let assignmentData = null;
-    let moduleName = '';
+    let moduleName = "";
     let moduleId = null;
 
     for (const module of course.modules) {
-      // Check if this module has an assignment and if the lessonId matches
-      if (module.assignment && `${module._id}-assignment` === lessonId) {
+      const syntheticAssignmentLessonId = `${module._id}-assignment`;
+
+      // Case 1: module-level academic assignment
+      if (
+        module.assignment &&
+        (
+          syntheticAssignmentLessonId === lessonId ||
+          module._id.toString() === lessonId
+        )
+      ) {
         assignmentData = module.assignment;
+        moduleName = module.title;
+        moduleId = module._id;
+        console.log("Matched module.assignment");
+        break;
+      }
+
+      // Case 2: actual lesson entry of type assignment
+      const lessonMatch = (module.lessons || []).find(
+        l => l.type === "assignment" && l._id?.toString() === lessonId
+      );
+
+      if (lessonMatch) {
+        console.log("Matched module.lessons assignment lesson:", lessonMatch.title);
+
+        // Convert lesson into assignmentData shape expected by AssignmentSubmission
+        assignmentData = {
+          title: lessonMatch.title || "Assignment",
+          instructions: lessonMatch.instructions || "",
+          parts: [
+            {
+              partNumber: 1,
+              title: lessonMatch.title || "Assignment Response",
+              instructions: lessonMatch.instructions || "Complete this assignment."
+            }
+          ],
+          gradingCriteria: [
+            {
+              name: "Part 1",
+              points: 100
+            }
+          ]
+        };
+
         moduleName = module.title;
         moduleId = module._id;
         break;
@@ -124,13 +187,30 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
     }
 
     if (!assignmentData) {
-      return res.status(404).json({ error: "Assignment not found" });
+      console.log("Assignment not found for lessonId:", lessonId);
+      return res.status(404).json({
+        error: "Assignment not found",
+        lessonId
+      });
     }
 
-    // Calculate max score
-    const maxScore = assignmentData.gradingCriteria.reduce((sum, criteria) => sum + criteria.points, 0);
+    console.log("Resolved assignmentData:", JSON.stringify(assignmentData, null, 2));
 
-    // Check if student already submitted this assignment
+    const studentName =
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+      user.username ||
+      user.email ||
+      "Student";
+
+    const normalizedParts = Array.isArray(assignmentData.parts) ? assignmentData.parts : [];
+    const normalizedGradingCriteria = Array.isArray(assignmentData.gradingCriteria)
+      ? assignmentData.gradingCriteria
+      : [];
+
+    const maxScore = normalizedGradingCriteria.reduce((sum, criteria) => {
+      return sum + (Number(criteria.points) || 0);
+    }, 0);
+
     const existingSubmission = await AssignmentSubmission.findOne({
       student: user._id,
       course: courseId,
@@ -138,36 +218,46 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
     });
 
     if (existingSubmission) {
-      return res.status(400).json({ 
-        error: "You have already submitted this assignment. It is pending grading." 
+      console.log("Existing submission found");
+      return res.status(400).json({
+        error: "You have already submitted this assignment. It is pending grading."
       });
     }
 
-    // Create new submission document
     const submission = new AssignmentSubmission({
       student: user._id,
-      studentName: user.name,
-      studentEmail: user.email,
+      studentName,
+      studentEmail: user.email || "",
       course: courseId,
       courseName: course.title,
       module: moduleId,
-      moduleName: moduleName,
-      lessonId: lessonId,
-      assignmentTitle: assignmentData.title,
+      moduleName,
+      lessonId,
+      assignmentTitle: assignmentData.title || "Assignment",
       assignmentData: {
-        parts: assignmentData.parts,
-        gradingCriteria: assignmentData.gradingCriteria
+        parts: normalizedParts,
+        gradingCriteria: normalizedGradingCriteria
       },
-      partAnswers: partAnswers,
-      fileUrl: fileUrl || '',
-      maxScore: maxScore,
-      passingScore: 70, // Default passing score
+      partAnswers: partAnswers || {},
+      fileUrl: fileUrl || "",
+      maxScore: maxScore || 100,
+      passingScore: 70,
       instructor: course.instructor._id || course.instructor
     });
 
-    await submission.save();
+    console.log("About to save submission:", {
+      student: submission.student,
+      studentName: submission.studentName,
+      course: submission.course,
+      module: submission.module,
+      lessonId: submission.lessonId,
+      instructor: submission.instructor,
+      maxScore: submission.maxScore
+    });
 
-    // Update user progress
+    await submission.save();
+    console.log("Submission saved successfully:", submission._id.toString());
+
     let progress = user.courseProgress.find(
       p => p.courseId.toString() === courseId
     );
@@ -183,7 +273,6 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
       user.courseProgress.push(progress);
     }
 
-    // Add to assignmentSubmissions array (keep for backward compatibility)
     const progressSubmission = {
       lessonId,
       textSubmission: textSubmission || "",
@@ -192,7 +281,7 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
     };
 
     const existingIndex = progress.assignmentSubmissions.findIndex(
-      sub => sub.lessonId.toString() === lessonId
+      sub => sub.lessonId?.toString() === lessonId
     );
 
     if (existingIndex >= 0) {
@@ -201,24 +290,26 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
       progress.assignmentSubmissions.push(progressSubmission);
     }
 
-    // Mark lesson as complete
     if (!progress.completedLessons.includes(lessonId)) {
       progress.completedLessons.push(lessonId);
     }
 
     progress.lastAccessedAt = new Date();
-
     await user.save();
+    console.log("User progress saved");
 
     res.json({
       message: "Assignment submitted successfully. Your instructor will grade it soon.",
-      submission: submission,
-      progress: progress
+      submission,
+      progress
     });
 
   } catch (err) {
     console.error("Error submitting assignment:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+    });
   }
 });
 

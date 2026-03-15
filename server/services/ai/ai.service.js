@@ -1,8 +1,6 @@
 // server/services/ai/ai.service.js
 const crypto = require("crypto");
 const { callRemoteLlamaJson } = require("./providers/remoteLlama");
-const { callOpenAIJsonSchema, DEFAULT_MODEL } = require("./providers/openai");
-const { mockLearningOutcomes, mockGrades } = require("./providers/mock");
 
 function t(s) {
   return (s || "").toString().trim();
@@ -31,17 +29,10 @@ function getProvider() {
 async function callLLMJson({ system, user, schemaName, schema }) {
   const provider = getProvider();
 
-  if (provider === "mock") {
-    throw new Error("mock provider does not support generic callLLMJson()");
-  }
-
   if (provider === "remote_llama") {
     // Remote llama gateway returns JSON directly (no schema enforcement).
     return callRemoteLlamaJson({ system, user, schemaName });
   }
-
-  // OpenAI (schema enforced)
-  return callOpenAIJsonSchema({ schemaName, schema, system, user });
 }
 
 // ------------------------------
@@ -59,13 +50,6 @@ async function generateLearningOutcomesForDraftModule({ course, module, count = 
   const assignment = module.assignment || null;
 
   const provider = getProvider();
-  if (provider === "mock") {
-    return {
-      requestId,
-      model: "mock",
-      learningOutcomes: mockLearningOutcomes(safeCount),
-    };
-  }
 
   const system = `
 You are an expert instructional designer.
@@ -153,25 +137,6 @@ async function suggestGradesForSubmission({ submission }) {
         (p.title && (c.name || "").includes(p.title))
     );
     partMax[String(pn)] = crit?.points ?? 0;
-  }
-
-  if (provider === "mock") {
-    const mg = mockGrades(parts);
-    const grades = mg.grades;
-    const totalScore = Object.values(grades).reduce((s, g) => s + (g.points || 0), 0);
-    const maxScore = Object.values(grades).reduce((s, g) => s + (g.maxPoints || 0), 0);
-    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-
-    return {
-      requestId,
-      model: "mock",
-      grades,
-      overallFeedback: mg.overallFeedback,
-      notes: [],
-      totalScore,
-      maxScore,
-      percentage,
-    };
   }
 
   const system = `
