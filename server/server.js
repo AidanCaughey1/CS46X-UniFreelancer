@@ -28,10 +28,9 @@ app.use(
 // ------------------------------
 // NORMAL MIDDLEWARE
 // ------------------------------
-// Only use CORS in development
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: "http://localhost:3000",
     credentials: true
   }));
 }
@@ -40,7 +39,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // ------------------------------
-// API ROUTES (MUST COME BEFORE STATIC FILES)
+// API ROUTES
 // ------------------------------
 const academyRoutes = require("./routes/academy");
 const coursesRoutes = require("./routes/courses");
@@ -51,7 +50,8 @@ const userRoutes = require("./routes/users");
 const paymentRoutes = require("./routes/payments");
 const courseProgressRoutes = require("./routes/courseProgress");
 const uploadRoutes = require("./routes/upload");
-const instructorRoutes = require('./routes/instructor')
+const instructorRoutes = require("./routes/instructor");
+const assignmentRoutes = require("./routes/assignments");
 const aiRoutes = require("./routes/ai");
 
 app.use("/api/academy", academyRoutes);
@@ -64,6 +64,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/courses", courseProgressRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/instructor", instructorRoutes);
+app.use("/api/assignments", assignmentRoutes);
 app.use("/api/ai", aiRoutes);
 
 // ------------------------------
@@ -79,17 +80,14 @@ app.get("/api/health", (req, res) => {
 // ------------------------------
 // SERVE REACT APP IN PRODUCTION
 // ------------------------------
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  
-  // Handle React routing - send all non-API requests to React
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "client/build")));
+
   app.use((req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api')) {
+    if (req.path.startsWith("/api")) {
       return next();
     }
-    // Send everything else to React
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    res.sendFile(path.join(__dirname, "client/build", "index.html"));
   });
 }
 
@@ -101,7 +99,7 @@ let server;
 if (process.env.NODE_ENV !== "test") {
   server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
   });
 }
 

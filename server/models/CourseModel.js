@@ -47,7 +47,7 @@ const AssignmentQuestionSchema = new mongoose.Schema({
   questionNumber: { type: Number, required: true },
   type: { 
     type: String, 
-    enum: ['multiple-choice', 'written', 'matching', 'pdf-upload'],
+    enum: ['multiple-choice', 'written', 'matching', 'pdf-upload', 'true-false'],
     required: true 
   },
   

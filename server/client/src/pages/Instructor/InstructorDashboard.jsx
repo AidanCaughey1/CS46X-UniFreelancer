@@ -23,21 +23,18 @@ function InstructorDashboard() {
     try {
       setLoading(true);
 
-      // Fetch stats
       const statsRes = await fetch('/api/instructor/dashboard/stats', {
         credentials: 'include'
       });
       const statsData = await statsRes.json();
-      setStats(statsData || {});
+      setStats(statsData);
 
-      // Fetch courses
       const coursesRes = await fetch('/api/instructor/courses', {
         credentials: 'include'
       });
       const coursesData = await coursesRes.json();
       setCourses(Array.isArray(coursesData) ? coursesData : []);
 
-      // Fetch pending submissions
       const pendingRes = await fetch('/api/instructor/submissions/pending', {
         credentials: 'include'
       });
@@ -47,6 +44,8 @@ function InstructorDashboard() {
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       alert('Failed to load dashboard');
+      setCourses([]);
+      setPendingSubmissions([]);
     } finally {
       setLoading(false);
     }
@@ -75,10 +74,9 @@ function InstructorDashboard() {
   return (
     <div className="instructor-dashboard-page">
       <div className="instructor-dashboard-container">
-        {/* Header */}
         <div className="dashboard-header">
           <h1>Instructor Dashboard</h1>
-          <button 
+          <button
             className="create-course-button"
             onClick={() => navigate('/academy/create')}
           >
@@ -86,7 +84,6 @@ function InstructorDashboard() {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="dashboard-tabs">
           <button
             className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
@@ -105,7 +102,7 @@ function InstructorDashboard() {
             onClick={() => setActiveTab('submissions')}
           >
             📝 Submissions
-            {pendingSubmissions.length > 0 && (
+            {pendingSubmissions && pendingSubmissions.length > 0 && (
               <span className="badge">{pendingSubmissions.length}</span>
             )}
           </button>
@@ -117,23 +114,20 @@ function InstructorDashboard() {
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="dashboard-content">
-          {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="overview-tab">
               <InstructorStats stats={stats} />
 
-              {/* Recent Activity */}
               <div className="recent-activity-section">
                 <h2>Recent Submissions</h2>
-                {pendingSubmissions.length === 0 ? (
+                {!pendingSubmissions || pendingSubmissions.length === 0 ? (
                   <div className="empty-state">
                     <p>No pending submissions. Great job! 🎉</p>
                   </div>
                 ) : (
                   <div className="submissions-preview">
-                    {pendingSubmissions.slice(0, 5).map((submission) => (
+                    {(pendingSubmissions || []).slice(0, 5).map((submission) => (
                       <div key={submission._id} className="submission-preview-item">
                         <div className="submission-info">
                           <strong>{submission.studentName}</strong>
@@ -164,11 +158,10 @@ function InstructorDashboard() {
                 )}
               </div>
 
-              {/* Courses Preview */}
               <div className="courses-preview-section">
                 <h2>My Courses</h2>
                 <div className="courses-grid">
-                  {courses.slice(0, 3).map((course) => (
+                  {(courses || []).slice(0, 3).map((course) => (
                     <InstructorCourseCard
                       key={course._id}
                       course={course}
@@ -177,7 +170,7 @@ function InstructorDashboard() {
                     />
                   ))}
                 </div>
-                {courses.length > 3 && (
+                {courses && courses.length > 3 && (
                   <button
                     className="view-all-button"
                     onClick={() => setActiveTab('courses')}
@@ -189,11 +182,10 @@ function InstructorDashboard() {
             </div>
           )}
 
-          {/* My Courses Tab */}
           {activeTab === 'courses' && (
             <div className="courses-tab">
               <div className="tab-header">
-                <h2>My Courses ({courses.length})</h2>
+                <h2>My Courses ({courses ? courses.length : 0})</h2>
                 <button
                   className="create-course-button-secondary"
                   onClick={() => navigate('/academy/create')}
@@ -202,7 +194,7 @@ function InstructorDashboard() {
                 </button>
               </div>
 
-              {courses.length === 0 ? (
+              {!courses || courses.length === 0 ? (
                 <div className="empty-state">
                   <h3>No courses yet</h3>
                   <p>Create your first course to start teaching!</p>
@@ -215,7 +207,7 @@ function InstructorDashboard() {
                 </div>
               ) : (
                 <div className="courses-grid">
-                  {courses.map((course) => (
+                  {(courses || []).map((course) => (
                     <InstructorCourseCard
                       key={course._id}
                       course={course}
@@ -228,18 +220,16 @@ function InstructorDashboard() {
             </div>
           )}
 
-          {/* Submissions Tab */}
           {activeTab === 'submissions' && (
             <div className="submissions-tab">
               <PendingSubmissions
-                submissions={pendingSubmissions}
+                submissions={pendingSubmissions || []}
                 onGrade={handleGradeSubmission}
                 onRefresh={fetchDashboardData}
               />
             </div>
           )}
 
-          {/* Students Tab */}
           {activeTab === 'students' && (
             <div className="students-tab">
               <div className="tab-header">
@@ -250,7 +240,7 @@ function InstructorDashboard() {
                   onChange={(e) => setSelectedCourse(e.target.value || null)}
                 >
                   <option value="">All Courses</option>
-                  {courses.map((course) => (
+                  {(courses || []).map((course) => (
                     <option key={course._id} value={course._id}>
                       {course.title}
                     </option>
@@ -266,14 +256,14 @@ function InstructorDashboard() {
                     Select a course above to view enrolled students and their progress.
                   </p>
                   <div className="courses-list-simple">
-                    {courses.map((course) => (
+                    {(courses || []).map((course) => (
                       <div
                         key={course._id}
                         className="course-item-simple"
                         onClick={() => setSelectedCourse(course._id)}
                       >
                         <strong>{course.title}</strong>
-                        <span>{course.enrolledCount} students</span>
+                        <span>{course.enrolledCount || 0} students</span>
                       </div>
                     ))}
                   </div>

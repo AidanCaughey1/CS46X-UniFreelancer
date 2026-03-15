@@ -2,6 +2,8 @@
 const crypto = require("crypto");
 const { callRemoteLlamaJson } = require("./providers/remoteLlama");
 
+const DEFAULT_MODEL = process.env.AI_MODEL || "remote_llama";
+
 function t(s) {
   return (s || "").toString().trim();
 }
@@ -126,6 +128,8 @@ async function suggestGradesForSubmission({ submission }) {
     : [];
 
   const partAnswers = mapToPlainObject(submission.partAnswers);
+  const rawAnswers = mapToPlainObject(submission.answers);
+  const effectiveAnswers = Object.keys(partAnswers).length > 0 ? partAnswers : rawAnswers;
 
   // Compute max points per part (best-effort, matches your GradingInterface logic)
   const partMax = {};
@@ -154,8 +158,11 @@ ${JSON.stringify(parts, null, 2)}
 Max points per partNumber:
 ${JSON.stringify(partMax, null, 2)}
 
+Grading criteria:
+${JSON.stringify(criteria, null, 2)}
+
 Student answers by partNumber:
-${JSON.stringify(partAnswers, null, 2)}
+${JSON.stringify(effectiveAnswers, null, 2)}
 
 Return JSON in this shape:
 {
@@ -168,7 +175,12 @@ Return JSON in this shape:
 }
 
 Rules:
+- Return one grade entry for EVERY partNumber listed in "Max points per partNumber"
 - points must be integer 0..maxPoints
+- points are required and must reflect the quality of the student's answer, not just whether an answer exists
+- If an answer is missing or clearly does not satisfy the instructions, assign 0 points for that part
+- If an answer partially satisfies the instructions, assign partial credit
+- Use the full scoring range when justified; do not default everything to 0 or full credit
 - comment 1-3 sentences
 - overallFeedback concise and actionable
 `.trim();
@@ -218,13 +230,19 @@ Rules:
   const totalScore = Object.values(cleaned).reduce((s, g) => s + (g.points || 0), 0);
   const maxScore = Object.values(cleaned).reduce((s, g) => s + (g.maxPoints || 0), 0);
   const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  const missingPartGrades = Object.keys(partMax).filter((partNum) => !cleaned[partNum]);
 
   return {
     requestId,
     model: provider === "openai" ? DEFAULT_MODEL : "remote_llama",
     grades: cleaned,
     overallFeedback: t(out.overallFeedback),
-    notes: Array.isArray(out.notes) ? out.notes.map(t).filter(Boolean) : [],
+    notes: [
+      ...(Array.isArray(out.notes) ? out.notes.map(t).filter(Boolean) : []),
+      ...(missingPartGrades.length > 0
+        ? [`Missing numeric grades for part(s): ${missingPartGrades.join(", ")}`]
+        : []),
+    ],
     totalScore,
     maxScore,
     percentage,

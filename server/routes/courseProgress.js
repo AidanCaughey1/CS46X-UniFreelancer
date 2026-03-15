@@ -99,7 +99,7 @@ router.post("/:courseId/progress/lesson/:lessonId/complete", protect, async (req
 router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (req, res) => {
   try {
     const { courseId, lessonId } = req.params;
-    const { textSubmission, fileUrl, partAnswers } = req.body;
+    const { textSubmission, fileUrl, partAnswers, answers } = req.body;
 
     console.log("=== ASSIGNMENT SUBMIT START ===");
     console.log("courseId:", courseId);
@@ -202,10 +202,54 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
       user.email ||
       "Student";
 
-    const normalizedParts = Array.isArray(assignmentData.parts) ? assignmentData.parts : [];
-    const normalizedGradingCriteria = Array.isArray(assignmentData.gradingCriteria)
+    const hasPartBasedData = Array.isArray(assignmentData.parts) && assignmentData.parts.length > 0;
+    const hasQuestionBasedData = Array.isArray(assignmentData.questions) && assignmentData.questions.length > 0;
+
+    const normalizedParts = hasPartBasedData
+      ? assignmentData.parts
+      : (hasQuestionBasedData
+        ? assignmentData.questions.map((question, index) => ({
+            partNumber: Number(question.questionNumber) || index + 1,
+            title: question.question || `Question ${index + 1}`,
+            instructions:
+              question.rubric ||
+              question.fileRequirements ||
+              `Answer the following ${question.type || 'assignment'} question.`,
+          }))
+        : []);
+
+    const normalizedGradingCriteria = Array.isArray(assignmentData.gradingCriteria) && assignmentData.gradingCriteria.length > 0
       ? assignmentData.gradingCriteria
-      : [];
+      : (hasQuestionBasedData
+        ? assignmentData.questions.map((question, index) => ({
+            name: `Part ${Number(question.questionNumber) || index + 1}`,
+            points: Number(question.points) || 0,
+          }))
+        : []);
+
+    const normalizedAnswerMap = hasQuestionBasedData
+      ? normalizedParts.reduce((acc, part) => {
+          const key = String(part.partNumber);
+          const explicitPartAnswer = partAnswers?.[key] ?? partAnswers?.[part.partNumber];
+          const rawAnswer = answers?.[key] ?? answers?.[part.partNumber];
+
+          if (explicitPartAnswer !== undefined && explicitPartAnswer !== null && explicitPartAnswer !== "") {
+            acc[key] = explicitPartAnswer;
+          } else if (rawAnswer === undefined || rawAnswer === null) {
+            acc[key] = "";
+          } else if (typeof rawAnswer === "string") {
+            acc[key] = rawAnswer;
+          } else {
+            acc[key] = JSON.stringify(rawAnswer, null, 2);
+          }
+
+          return acc;
+        }, {})
+      : (partAnswers || {});
+
+    const normalizedTextSubmission = textSubmission || Object.entries(normalizedAnswerMap)
+      .map(([partNum, answer]) => `Part ${partNum}: ${answer}`)
+      .join("\n\n");
 
     const maxScore = normalizedGradingCriteria.reduce((sum, criteria) => {
       return sum + (Number(criteria.points) || 0);
@@ -234,11 +278,13 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
       moduleName,
       lessonId,
       assignmentTitle: assignmentData.title || "Assignment",
+      assignmentType: hasQuestionBasedData ? "question-based" : "part-based",
       assignmentData: {
         parts: normalizedParts,
         gradingCriteria: normalizedGradingCriteria
       },
-      partAnswers: partAnswers || {},
+      partAnswers: normalizedAnswerMap,
+      answers: answers || {},
       fileUrl: fileUrl || "",
       maxScore: maxScore || 100,
       passingScore: 70,
@@ -275,7 +321,7 @@ router.post("/:courseId/progress/assignment/:lessonId/submit", protect, async (r
 
     const progressSubmission = {
       lessonId,
-      textSubmission: textSubmission || "",
+      textSubmission: normalizedTextSubmission,
       fileUrl: fileUrl || "",
       submittedAt: new Date()
     };

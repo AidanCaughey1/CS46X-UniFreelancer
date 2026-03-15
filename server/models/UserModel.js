@@ -5,7 +5,7 @@ const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 
 // Assignment Submission Schema
 const AssignmentSubmissionSchema = new mongoose.Schema({
-  lessonId: { type: String, required: true },
+  lessonId: { type: mongoose.Schema.Types.Mixed, required: true },
   textSubmission: { type: String, default: "" },
   fileUrl: { type: String, default: "" },
   submittedAt: { type: Date, default: Date.now },
@@ -15,7 +15,7 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
 
 // Quiz Result Schema
 const QuizResultSchema = new mongoose.Schema({
-  lessonId: { type: String, required: true },
+  lessonId: { type: mongoose.Schema.Types.Mixed, required: true },
   score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   correctAnswers: { type: Number, required: true },
@@ -32,12 +32,13 @@ const CourseProgressSchema = new mongoose.Schema({
     required: true
   },
 
+  // Can be ObjectIds OR custom lesson strings
   completedLessons: [{
-    type: String
+    type: mongoose.Schema.Types.Mixed
   }],
 
-  currentModuleId: { type: String, default: null },
-  currentLessonId: { type: String, default: null },
+  currentModuleId: { type: mongoose.Schema.Types.Mixed },
+  currentLessonId: { type: mongoose.Schema.Types.Mixed },
 
   assignmentSubmissions: [AssignmentSubmissionSchema],
   quizResults: [QuizResultSchema],
@@ -108,8 +109,7 @@ const UserSchema = new mongoose.Schema({
   savedPodcasts: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
   ],
-},
-{
+}, {
   timestamps: true,
 });
 
@@ -125,7 +125,7 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
-UserSchema.index({ role: 1 });
+UserSchema.index({ accountType: 1 });
 UserSchema.index({ enrolledCourses: 1 });
 UserSchema.index({ completedCourses: 1 });
 UserSchema.index({ bookmarkedTutorials: 1 });

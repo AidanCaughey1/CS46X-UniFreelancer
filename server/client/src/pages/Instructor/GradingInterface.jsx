@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './GradingInterface.css';
 
@@ -15,11 +15,23 @@ function GradingInterface() {
   const [grades, setGrades] = useState({});
   const [overallFeedback, setOverallFeedback] = useState('');
 
-  useEffect(() => {
-    fetchSubmission();
-  }, [submissionId]);
+  const getPartAnswer = (partNumber) => {
+    if (!submission?.partAnswers && !submission?.answers) return '';
 
-  const fetchSubmission = async () => {
+    if (submission?.partAnswers && typeof submission.partAnswers.get === 'function') {
+      return submission.partAnswers.get(String(partNumber)) || submission.partAnswers.get(partNumber) || '';
+    }
+
+    return (
+      submission?.partAnswers?.[String(partNumber)] ||
+      submission?.partAnswers?.[partNumber] ||
+      submission?.answers?.[String(partNumber)] ||
+      submission?.answers?.[partNumber] ||
+      ''
+    );
+  };
+
+  const fetchSubmission = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/instructor/submissions/${submissionId}`, {
@@ -57,7 +69,11 @@ function GradingInterface() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, submissionId]);
+
+  useEffect(() => {
+    fetchSubmission();
+  }, [fetchSubmission]);
 
   const handleGradeChange = (partNumber, field, value) => {
     setGrades(prev => ({
@@ -164,8 +180,29 @@ function GradingInterface() {
         };
       }
 
-      setGrades(prev => ({ ...prev, ...nextGrades }));
+      if (Object.keys(nextGrades).length === 0) {
+        alert('AI returned feedback, but no usable numeric grades. This provider may not be reliably returning structured scores yet.');
+        return;
+      }
+
+      setGrades(prev => {
+        const merged = { ...prev };
+
+        for (const [partNum, grade] of Object.entries(nextGrades)) {
+          merged[partNum] = {
+            ...prev[partNum],
+            ...grade,
+            maxPoints: grade.maxPoints || prev[partNum]?.maxPoints || 0,
+          };
+        }
+
+        return merged;
+      });
       if (typeof data.overallFeedback === "string") setOverallFeedback(data.overallFeedback);
+
+      if (Array.isArray(data.notes) && data.notes.length > 0) {
+        console.warn('AI grading notes:', data.notes);
+      }
 
     } catch (err) {
       console.error(err);
@@ -268,8 +305,7 @@ function GradingInterface() {
           {/* Assignment Parts */}
           {submission.assignmentData?.parts?.map((part, index) => {
             const partNumber = part.partNumber;
-            const studentAnswer = submission.partAnswers.get(partNumber.toString()) || 
-                                 submission.partAnswers[partNumber];
+            const studentAnswer = getPartAnswer(partNumber);
             const grade = grades[partNumber] || { points: 0, maxPoints: 0, comment: '' };
 
             return (
