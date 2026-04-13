@@ -1,7 +1,6 @@
 const express = require("express");
 const User = require("../models/UserModel");
 const Course = require("../models/CourseModel");
-const AssignmentSubmission = require("../models/AssignmentSubmission");
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -98,60 +97,6 @@ router.post("/:courseId/progress/lesson/:lessonId/complete", protect, async (req
 
   } catch (err) {
     console.error("Error marking lesson complete:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ============================================
-// UPDATE current position (for "continue where you left off")
-// ============================================
-router.post("/:courseId/progress/position", protect, async (req, res) => {
-  try {
-    const { courseId } = req.params;
-    const { moduleId, lessonId } = req.body;
-
-    console.log('\n=== UPDATE POSITION REQUEST ===');
-    console.log('Course ID:', courseId);
-    console.log('Module ID:', moduleId);
-    console.log('Lesson ID:', lessonId);
-
-    const user = await User.findById(req.user._id);
-
-    let progress = user.courseProgress.find(
-      p => p.courseId.toString() === courseId
-    );
-
-    if (!progress) {
-      // Create new progress entry
-      progress = {
-        courseId,
-        completedLessons: [],
-        assignmentSubmissions: [],
-        quizResults: [],
-        currentModuleId: moduleId || null,
-        currentLessonId: lessonId || null,
-        lastAccessedAt: new Date()
-      };
-      user.courseProgress.push(progress);
-      console.log('Created new progress entry');
-    } else {
-      // Update existing progress
-      // Store as strings since lessonId might be custom IDs like "podcast-0"
-      progress.currentModuleId = moduleId || progress.currentModuleId;
-      progress.currentLessonId = lessonId || progress.currentLessonId;
-      progress.lastAccessedAt = new Date();
-      console.log('Updated existing progress');
-    }
-
-    await user.save();
-    console.log('Position saved successfully');
-
-    res.json({ message: "Position updated", progress });
-
-  } catch (err) {
-    console.error('\n❌ ERROR updating position:');
-    console.error('Message:', err.message);
-    console.error('Stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 });
@@ -325,5 +270,61 @@ router.post("/:courseId/progress/test/submit", protect, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ============================================
+// UPDATE current position (for "continue where you left off")
+// ============================================
+router.post("/:courseId/progress/position", protect, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { moduleId, lessonId } = req.body;
+
+    console.log('\n=== UPDATE POSITION REQUEST ===');
+    console.log('Course ID:', courseId);
+    console.log('Module ID:', moduleId);
+    console.log('Lesson ID:', lessonId);
+
+    const user = await User.findById(req.user._id);
+
+    let progress = user.courseProgress.find(
+      p => p.courseId.toString() === courseId
+    );
+
+    if (!progress) {
+      // Create new progress entry
+      progress = {
+        courseId,
+        completedLessons: [],
+        assignmentSubmissions: [],
+        quizResults: [],
+        currentModuleId: moduleId || null,
+        currentLessonId: lessonId || null,
+        lastAccessedAt: new Date()
+      };
+      user.courseProgress.push(progress);
+      console.log('Created new progress entry');
+    } else {
+      // Update existing progress
+      // Store as strings since lessonId might be custom IDs like "podcast-0"
+      progress.currentModuleId = moduleId || progress.currentModuleId;
+      progress.currentLessonId = lessonId || progress.currentLessonId;
+      progress.lastAccessedAt = new Date();
+      console.log('Updated existing progress');
+    }
+
+    await user.save();
+    console.log('Position saved successfully');
+
+    res.json({ message: "Position updated", progress });
+
+  } catch (err) {
+    console.error('\n❌ ERROR updating position:');
+    console.error('Message:', err.message);
+    console.error('Stack:', err.stack);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;

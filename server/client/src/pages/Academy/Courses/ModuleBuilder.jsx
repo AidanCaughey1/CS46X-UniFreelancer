@@ -11,7 +11,9 @@ function ModuleBuilder({
   newOutcome,
   setNewOutcome,
   addLearningOutcome,
-  removeLearningOutcome
+  removeLearningOutcome,
+  onGenerateOutcomes,
+  aiOutcomesLoading
 }) {
 
   /* ===============================
@@ -127,6 +129,16 @@ function ModuleBuilder({
       =============================== */}
       <div className="builder-section">
         <h3>Learning Outcomes</h3>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onGenerateOutcomes}
+          disabled={aiOutcomesLoading}
+          style={{ marginBottom: 12 }}
+        >
+          {aiOutcomesLoading ? "Generating..." : "✨ Generate Outcomes"}
+        </button>
 
         <div className="form-group">
           <div className="add-item-container">

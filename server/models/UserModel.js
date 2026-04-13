@@ -5,7 +5,7 @@ const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
 
 // Assignment Submission Schema
 const AssignmentSubmissionSchema = new mongoose.Schema({
-  lessonId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  lessonId: { type: mongoose.Schema.Types.Mixed, required: true },
   textSubmission: { type: String, default: "" },
   fileUrl: { type: String, default: "" },
   submittedAt: { type: Date, default: Date.now },
@@ -15,11 +15,11 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
 
 // Quiz Result Schema
 const QuizResultSchema = new mongoose.Schema({
-  lessonId: { type: mongoose.Schema.Types.ObjectId, required: true },
-  score: { type: Number, required: true }, // percentage
+  lessonId: { type: mongoose.Schema.Types.Mixed, required: true },
+  score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   correctAnswers: { type: Number, required: true },
-  answers: [{ type: mongoose.Schema.Types.Mixed }], // user's answers
+  answers: [{ type: mongoose.Schema.Types.Mixed }],
   passed: { type: Boolean, required: true },
   attemptedAt: { type: Date, default: Date.now }
 }, { _id: false });
@@ -31,35 +31,27 @@ const CourseProgressSchema = new mongoose.Schema({
     ref: "Course",
     required: true
   },
-  
-  // Tracking completed lessons (can be ObjectIds OR custom strings like "podcast-0")
+
+  // Can be ObjectIds OR custom lesson strings
   completedLessons: [{
-    type: mongoose.Schema.Types.Mixed  // ← CHANGED from ObjectId to Mixed
+    type: mongoose.Schema.Types.Mixed
   }],
-  
-  // Current position in course (can be ObjectIds OR custom strings)
-  currentModuleId: { type: mongoose.Schema.Types.Mixed },  
+
+  currentModuleId: { type: mongoose.Schema.Types.Mixed },
   currentLessonId: { type: mongoose.Schema.Types.Mixed },
-  
-  // Assignment submissions
+
   assignmentSubmissions: [AssignmentSubmissionSchema],
-  
-  // Quiz results
   quizResults: [QuizResultSchema],
-  
-  // Final test
+
   finalTestScore: { type: Number, default: null },
   finalTestPassed: { type: Boolean, default: false },
   finalTestAttempts: { type: Number, default: 0 },
-  
-  // Completion tracking
+
   isCompleted: { type: Boolean, default: false },
   completedAt: { type: Date, default: null },
   badgeEarned: { type: Boolean, default: false },
-  
-  // Progress percentage
+
   progressPercentage: { type: Number, default: 0 },
-  
   lastAccessedAt: { type: Date, default: Date.now }
 }, { _id: true });
 
@@ -74,7 +66,6 @@ const LearningByCourseSchema = new mongoose.Schema(
 );
 
 const UserSchema = new mongoose.Schema({
-  // Basic Identity
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
 
@@ -96,14 +87,12 @@ const UserSchema = new mongoose.Schema({
 
   password: { type: String, required: true },
 
-  // User Permissions
   accountType: {
     type: String,
     enum: ["student", "instructor", "admin"],
     default: "student",
   },
 
-  // Learning relationships
   enrolledCourses: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
   ],
@@ -112,7 +101,6 @@ const UserSchema = new mongoose.Schema({
     { type: mongoose.Schema.Types.ObjectId, ref: "Course" }
   ],
 
-  // Detailed course progress tracking
   courseProgress: [CourseProgressSchema],
 
   registeredSeminars: [
@@ -131,6 +119,10 @@ const UserSchema = new mongoose.Schema({
     { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
   ],
 
+  savedPodcasts: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
+  ],
+
   // Total Learning Time Tracker (store seconds; convert to hours in UI)
   learning: {
     totalSeconds: { type: Number, default: 0, min: 0 },
@@ -143,7 +135,6 @@ const UserSchema = new mongoose.Schema({
   }
 );
 
-// Password hashing
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 

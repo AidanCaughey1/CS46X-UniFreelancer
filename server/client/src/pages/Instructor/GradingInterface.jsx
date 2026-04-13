@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './GradingInterface.css';
 
@@ -10,19 +10,30 @@ function GradingInterface() {
   const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // For question-based: { questionNumber: { points: number, comment: string, autoGraded: boolean } }
   // For part-based: { partNumber: { points: number, maxPoints: number, comment: string } }
   const [grades, setGrades] = useState({});
   const [overallFeedback, setOverallFeedback] = useState('');
 
-  const isQuestionBased = submission?.assignmentType === 'question-based';
+  const getPartAnswer = (partNumber) => {
+    if (!submission?.partAnswers && !submission?.answers) return '';
 
-  useEffect(() => {
-    fetchSubmission();
-  }, [submissionId]);
+    if (submission?.partAnswers && typeof submission.partAnswers.get === 'function') {
+      return submission.partAnswers.get(String(partNumber)) || submission.partAnswers.get(partNumber) || '';
+    }
 
-  const fetchSubmission = async () => {
+    return (
+      submission?.partAnswers?.[String(partNumber)] ||
+      submission?.partAnswers?.[partNumber] ||
+      submission?.answers?.[String(partNumber)] ||
+      submission?.answers?.[partNumber] ||
+      ''
+    );
+  };
+
+  const fetchSubmission = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/instructor/submissions/${submissionId}`, {
@@ -101,7 +112,11 @@ function GradingInterface() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, submissionId]);
+
+  useEffect(() => {
+    fetchSubmission();
+  }, [fetchSubmission]);
 
   const handleGradeChange = (itemNumber, field, value) => {
     setGrades(prev => ({
@@ -183,6 +198,61 @@ function GradingInterface() {
     }
   };
 
+  const handleAiSuggestGrades = async () => {
+    try {
+      setAiLoading(true);
+
+      const res = await fetch(`/api/ai/submissions/${submissionId}/suggest-grade`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "AI grading failed");
+        return;
+      }
+
+      const nextGrades = {};
+      for (const [partNum, g] of Object.entries(data.grades || {})) {
+        nextGrades[Number(partNum)] = {
+          points: Number(g.points) || 0,
+          maxPoints: Number(g.maxPoints) || 0,
+          comment: g.comment || "",
+        };
+      }
+
+      if (Object.keys(nextGrades).length === 0) {
+        alert('AI returned feedback, but no usable numeric grades. This provider may not be reliably returning structured scores yet.');
+        return;
+      }
+
+      setGrades(prev => {
+        const merged = { ...prev };
+
+        for (const [partNum, grade] of Object.entries(nextGrades)) {
+          merged[partNum] = {
+            ...prev[partNum],
+            ...grade,
+            maxPoints: grade.maxPoints || prev[partNum]?.maxPoints || 0,
+          };
+        }
+
+        return merged;
+      });
+      if (typeof data.overallFeedback === "string") setOverallFeedback(data.overallFeedback);
+
+      if (Array.isArray(data.notes) && data.notes.length > 0) {
+        console.warn('AI grading notes:', data.notes);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("AI grading failed");
+    } finally {
+      setAiLoading(false);
+      
   const renderQuestionAnswer = (question, studentAnswer) => {
     switch (question.type) {
       case 'multiple-choice':
@@ -333,6 +403,14 @@ function GradingInterface() {
           <button className="back-button" onClick={handleCancel}>
             ← Back to Dashboard
           </button>
+          <button
+            className="secondary-button"
+            onClick={handleAiSuggestGrades}
+            disabled={aiLoading || grading}
+            style={{ marginLeft: "auto" }}
+          >
+            {aiLoading ? "Thinking..." : "✨ AI Suggest Grades"}
+          </button>
           <h1>Grade Assignment</h1>
           {isQuestionBased && (
             <span className="assignment-type-badge">Question-Based Assignment</span>
@@ -459,8 +537,7 @@ function GradingInterface() {
           {/* PART-BASED ASSIGNMENT (OLD) */}
           {!isQuestionBased && submission.assignmentData?.parts?.map((part, index) => {
             const partNumber = part.partNumber;
-            const studentAnswer = submission.partAnswers?.get?.(partNumber.toString()) || 
-                                 submission.partAnswers?.[partNumber];
+            const studentAnswer = getPartAnswer(partNumber);
             const grade = grades[partNumber] || { points: 0, maxPoints: 0, comment: '' };
 
             return (

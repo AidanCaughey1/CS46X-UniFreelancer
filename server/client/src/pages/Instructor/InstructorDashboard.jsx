@@ -23,21 +23,18 @@ function InstructorDashboard() {
     try {
       setLoading(true);
 
-      // Fetch stats
       const statsRes = await fetch('/api/instructor/dashboard/stats', {
         credentials: 'include'
       });
       const statsData = await statsRes.json();
       setStats(statsData);
 
-      // Fetch courses
       const coursesRes = await fetch('/api/instructor/courses', {
         credentials: 'include'
       });
       const coursesData = await coursesRes.json();
       setCourses(Array.isArray(coursesData) ? coursesData : []);
 
-      // Fetch pending submissions
       const pendingRes = await fetch('/api/instructor/submissions/pending', {
         credentials: 'include'
       });
@@ -79,10 +76,9 @@ function InstructorDashboard() {
   return (
     <div className="instructor-dashboard-page">
       <div className="instructor-dashboard-container">
-        {/* Header */}
         <div className="dashboard-header">
           <h1>Instructor Dashboard</h1>
-          <button 
+          <button
             className="create-course-button"
             onClick={() => navigate('/academy/create')}
           >
@@ -90,7 +86,6 @@ function InstructorDashboard() {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="dashboard-tabs">
           <button
             className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
@@ -121,14 +116,11 @@ function InstructorDashboard() {
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="dashboard-content">
-          {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="overview-tab">
               <InstructorStats stats={stats} />
 
-              {/* Recent Activity */}
               <div className="recent-activity-section">
                 <h2>Recent Submissions</h2>
                 {!pendingSubmissions || pendingSubmissions.length === 0 ? (
@@ -168,7 +160,6 @@ function InstructorDashboard() {
                 )}
               </div>
 
-              {/* Courses Preview */}
               <div className="courses-preview-section">
                 <h2>My Courses</h2>
                 <div className="courses-grid">
@@ -193,7 +184,6 @@ function InstructorDashboard() {
             </div>
           )}
 
-          {/* My Courses Tab */}
           {activeTab === 'courses' && (
             <div className="courses-tab">
               <div className="tab-header">
@@ -219,7 +209,7 @@ function InstructorDashboard() {
                 </div>
               ) : (
                 <div className="courses-grid">
-                  {courses.map((course) => (
+                  {(courses || []).map((course) => (
                     <InstructorCourseCard
                       key={course._id}
                       course={course}
@@ -232,7 +222,6 @@ function InstructorDashboard() {
             </div>
           )}
 
-          {/* Submissions Tab */}
           {activeTab === 'submissions' && (
             <div className="submissions-tab">
               <PendingSubmissions
@@ -243,7 +232,6 @@ function InstructorDashboard() {
             </div>
           )}
 
-          {/* Students Tab */}
           {activeTab === 'students' && (
             <div className="students-tab">
               <div className="tab-header">

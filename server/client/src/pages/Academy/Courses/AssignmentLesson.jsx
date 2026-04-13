@@ -11,8 +11,14 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
   const isQuestionBased = assignment?.questions && assignment.questions.length > 0;
 
   useEffect(() => {
-    // Check if already submitted
-    if (progress?.completedLessons?.includes(lesson._id)) {
+    const existingSubmission = progress?.assignmentSubmissions?.find(
+      sub => sub.lessonId?.toString() === lesson._id?.toString()
+    );
+
+    if (
+      existingSubmission ||
+      progress?.completedLessons?.some(id => id?.toString() === lesson._id?.toString())
+    ) {
       setSubmitted(true);
     }
   }, [progress, lesson._id]);
@@ -35,18 +41,62 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
     });
   };
 
+  const buildQuestionSubmission = () => {
+    const normalizedPartAnswers = assignment.questions.reduce((acc, question, index) => {
+      const partNumber = question.questionNumber || index + 1;
+      const rawAnswer = answers[partNumber];
+
+      if (rawAnswer === undefined || rawAnswer === null) {
+        acc[partNumber] = '';
+        return acc;
+      }
+
+      if (question.type === 'multiple-choice') {
+        acc[partNumber] = question.options?.[rawAnswer] ?? String(rawAnswer);
+        return acc;
+      }
+
+      if (question.type === 'true-false') {
+        acc[partNumber] = rawAnswer === 0 ? 'True' : 'False';
+        return acc;
+      }
+
+      if (question.type === 'matching') {
+        acc[partNumber] = Object.entries(rawAnswer)
+          .map(([pairIndex, selectedValue]) => {
+            const leftLabel = question.matchPairs?.[Number(pairIndex)]?.left || `Item ${Number(pairIndex) + 1}`;
+            return `${leftLabel} -> ${selectedValue}`;
+          })
+          .join('\n');
+        return acc;
+      }
+
+      acc[partNumber] = typeof rawAnswer === 'string'
+        ? rawAnswer
+        : JSON.stringify(rawAnswer, null, 2);
+
+      return acc;
+    }, {});
+
+    return {
+      answers,
+      partAnswers: normalizedPartAnswers,
+      textSubmission: Object.entries(normalizedPartAnswers)
+        .map(([partNum, answer]) => `Part ${partNum}: ${answer}`)
+        .join('\n\n')
+    };
+  };
+
   const handleSubmit = async () => {
     if (!isQuestionBased) {
-      // Old part-based assignment
       if (!fileUrl.trim()) {
         alert('Please provide a file URL or link to your submission');
         return;
       }
     } else {
-      // Question-based assignment - validate all questions answered
       const unansweredQuestions = assignment.questions.filter(q => {
         const answer = answers[q.questionNumber];
-        
+
         if (q.type === 'multiple-choice' || q.type === 'true-false') {
           return answer === undefined || answer === null;
         }
@@ -72,12 +122,16 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
     try {
       setSubmitting(true);
 
+      const questionSubmission = isQuestionBased ? buildQuestionSubmission() : null;
+
       const submissionData = isQuestionBased
         ? {
             courseId,
             moduleId: lesson._id.split('-')[0],
             assignmentId: lesson._id,
-            answers,
+            answers: questionSubmission.answers,
+            partAnswers: questionSubmission.partAnswers,
+            textSubmission: questionSubmission.textSubmission,
             submittedAt: new Date()
           }
         : {
@@ -95,8 +149,10 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         body: JSON.stringify(submissionData)
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error('Submission failed');
+        throw new Error(data.error || 'Submission failed');
       }
 
       alert('Assignment submitted successfully!');
@@ -105,7 +161,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
 
     } catch (err) {
       console.error('Error submitting assignment:', err);
-      alert('Failed to submit assignment. Please try again.');
+      alert(err.message || 'Failed to submit assignment. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -130,13 +186,11 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
       <h2>{lesson.title}</h2>
 
       <div className="assignment-content-wrapper">
-        {/* Instructions */}
         <div className="assignment-instructions">
           <h3>Assignment Instructions:</h3>
           <p>{assignment?.instructions || assignment?.purpose || 'Complete all questions below'}</p>
         </div>
 
-        {/* Question-Based Assignment */}
         {isQuestionBased && (
           <div className="assignment-questions">
             {assignment.questions.map((question, index) => (
@@ -149,7 +203,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
 
                 <p className="question-text">{question.question}</p>
 
-                {/* Multiple Choice */}
                 {question.type === 'multiple-choice' && (
                   <div className="question-options">
                     {question.options.map((option, optIndex) => (
@@ -167,7 +220,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
                   </div>
                 )}
 
-                {/* True/False */}
                 {question.type === 'true-false' && (
                   <div className="question-options">
                     <label className="option-label">
@@ -193,7 +245,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
                   </div>
                 )}
 
-                {/* Written Response */}
                 {question.type === 'written' && (
                   <div className="written-response">
                     <textarea
@@ -220,7 +271,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
                   </div>
                 )}
 
-                {/* Matching */}
                 {question.type === 'matching' && (
                   <div className="matching-question">
                     <p className="matching-instructions">Match each item on the left with the correct item on the right:</p>
@@ -243,7 +293,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
                   </div>
                 )}
 
-                {/* PDF Upload */}
                 {question.type === 'pdf-upload' && (
                   <div className="pdf-upload">
                     {question.fileRequirements && (
@@ -267,7 +316,6 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
           </div>
         )}
 
-        {/* Part-Based Assignment (Old Structure) */}
         {!isQuestionBased && (
           <div className="part-based-assignment">
             {assignment.parts && assignment.parts.map((part, index) => (
@@ -290,8 +338,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
             </div>
           </div>
         )}
-      </div>
-              {/* Submit Button */}
+
         <button
           onClick={handleSubmit}
           disabled={submitting}
@@ -299,8 +346,8 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         >
           {submitting ? 'Submitting...' : 'Submit Assignment'}
         </button>
+      </div>
     </div>
-    
   );
 }
 

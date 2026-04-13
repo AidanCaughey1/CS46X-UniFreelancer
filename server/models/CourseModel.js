@@ -255,7 +255,8 @@ CourseSchema.virtual("isFree").get(function () {
 });
 
 CourseSchema.virtual("totalLessons").get(function () {
-  return this.modules.reduce((total, module) => {
+  const modules = Array.isArray(this.modules) ? this.modules : [];
+  return modules.reduce((total, module) => {
     return total + (module.lessons?.length || 0);
   }, 0);
 });

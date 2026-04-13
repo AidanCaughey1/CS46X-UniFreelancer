@@ -1,16 +1,15 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Course = require('../models/CourseModel');
-const AssignmentSubmission = require('../models/AssignmentSubmission');
-const User = require('../models/UserModel');
-const { protect } = require('../middleware/authMiddleware');
+const Course = require("../models/CourseModel");
+const AssignmentSubmission = require("../models/AssignmentSubmission");
+const User = require("../models/UserModel");
+const { protect } = require("../middleware/authMiddleware");
 
 // Middleware to check if user is an instructor
 const isInstructor = async (req, res, next) => {
   try {
-    // req.user is already set by the protect middleware
-    if (!req.user || req.user.accountType !== 'instructor') {
-      return res.status(403).json({ error: 'Access denied. Instructor account required.' });
+    if (!req.user || req.user.accountType !== "instructor") {
+      return res.status(403).json({ error: "Access denied. Instructor account required." });
     }
     next();
   } catch (err) {
@@ -21,36 +20,31 @@ const isInstructor = async (req, res, next) => {
 // -------------------------------------
 // GET instructor dashboard stats
 // -------------------------------------
-router.get('/dashboard/stats', protect, isInstructor, async (req, res) => {
+router.get("/dashboard/stats", protect, isInstructor, async (req, res) => {
   try {
     const instructorId = req.user._id;
 
-    // Get all courses by this instructor
-    const courses = await Course.find({ 'instructor._id': instructorId });
+    const courses = await Course.find({ "instructor._id": instructorId });
     const courseIds = courses.map(c => c._id);
 
-    // Count total students (unique enrollments across all courses)
     const allEnrolledUsers = await User.find({
       enrolledCourses: { $in: courseIds }
     });
     const totalStudents = allEnrolledUsers.length;
 
-    // Count pending submissions
     const pendingCount = await AssignmentSubmission.countDocuments({
       instructor: instructorId,
-      status: 'pending'
+      status: "pending"
     });
 
-    // Count total graded submissions
     const gradedCount = await AssignmentSubmission.countDocuments({
       instructor: instructorId,
-      status: 'graded'
+      status: "graded"
     });
 
-    // Calculate average grade across all graded submissions
     const gradedSubmissions = await AssignmentSubmission.find({
       instructor: instructorId,
-      status: 'graded'
+      status: "graded"
     });
 
     let avgGrade = 0;
@@ -70,7 +64,7 @@ router.get('/dashboard/stats', protect, isInstructor, async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Error fetching dashboard stats:', err);
+    console.error("Error fetching dashboard stats:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -78,14 +72,13 @@ router.get('/dashboard/stats', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // GET all instructor's courses
 // -------------------------------------
-router.get('/courses', protect, isInstructor, async (req, res) => {
+router.get("/courses", protect, isInstructor, async (req, res) => {
   try {
     const instructorId = req.user._id;
 
-    const courses = await Course.find({ 'instructor._id': instructorId })
+    const courses = await Course.find({ "instructor._id": instructorId })
       .sort({ createdAt: -1 });
 
-    // For each course, get enrollment count and pending submissions
     const coursesWithStats = await Promise.all(
       courses.map(async (course) => {
         const enrolledCount = await User.countDocuments({
@@ -94,7 +87,7 @@ router.get('/courses', protect, isInstructor, async (req, res) => {
 
         const pendingCount = await AssignmentSubmission.countDocuments({
           course: course._id,
-          status: 'pending'
+          status: "pending"
         });
 
         return {
@@ -108,7 +101,7 @@ router.get('/courses', protect, isInstructor, async (req, res) => {
     res.json(coursesWithStats);
 
   } catch (err) {
-    console.error('Error fetching instructor courses:', err);
+    console.error("Error fetching instructor courses:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -116,23 +109,22 @@ router.get('/courses', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // GET pending submissions (FIXED - only one now)
 // -------------------------------------
-router.get('/submissions/pending', protect, isInstructor, async (req, res) => {
+router.get("/submissions/pending", protect, isInstructor, async (req, res) => {
   try {
     console.log('Fetching pending submissions for instructor:', req.user._id);
 
     const submissions = await AssignmentSubmission.find({
       instructor: req.user._id,
-      status: 'pending'
+      status: "pending"
     })
-    .populate('student', 'firstName lastName email avatar')
+    .populate("student", "firstName lastName email avatar")
     .sort({ submittedAt: -1 });
 
-    console.log('Found pending submissions:', submissions.length);
-
+    console.log("Found pending submissions:", submissions.length);
     res.json(submissions);
 
   } catch (err) {
-    console.error('Error fetching pending submissions:', err);
+    console.error("Error fetching pending submissions:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -140,7 +132,7 @@ router.get('/submissions/pending', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // GET all submissions (graded + pending)
 // -------------------------------------
-router.get('/submissions', protect, isInstructor, async (req, res) => {
+router.get("/submissions", protect, isInstructor, async (req, res) => {
   try {
     const instructorId = req.user._id;
     const { courseId, status } = req.query;
@@ -151,13 +143,13 @@ router.get('/submissions', protect, isInstructor, async (req, res) => {
 
     const submissions = await AssignmentSubmission.find(query)
       .sort({ submittedAt: -1 })
-      .populate('student', 'firstName lastName email avatar')
-      .populate('course', 'title thumbnail');
+      .populate("student", 'firstName lastName email avatar')
+      .populate("course", 'title thumbnail');
 
     res.json(submissions);
 
   } catch (err) {
-    console.error('Error fetching submissions:', err);
+    console.error("Error fetching submissions:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -165,24 +157,23 @@ router.get('/submissions', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // GET single submission for grading
 // -------------------------------------
-// GET single submission for grading
-router.get('/submissions/:id', protect, isInstructor, async (req, res) => {
+router.get("/submissions/:id", protect, isInstructor, async (req, res) => {
   try {
-    console.log('\n=== FETCHING SUBMISSION ===');
-    console.log('Submission ID:', req.params.id);
-    
-    const submission = await AssignmentSubmission.findById(req.params.id)
-      .populate('student', 'firstName lastName email avatar')
-      .populate('course', 'title');
+    console.log("\n=== FETCHING SUBMISSION ===");
+    console.log("Submission ID:", req.params.id);
 
-    console.log('Submission found:', submission ? 'YES' : 'NO');
+    const submission = await AssignmentSubmission.findById(req.params.id)
+      .populate("student", "firstName lastName email avatar")
+      .populate("course", "title");
+
+    console.log("Submission found:", submission ? "YES" : "NO");
 
     if (!submission) {
-      console.log('❌ Submission not found');
-      return res.status(404).json({ error: 'Submission not found' });
+      console.log("❌ Submission not found");
+      return res.status(404).json({ error: "Submission not found" });
     }
 
-    console.log('Submission data:', {
+    console.log("Submission data:", {
       student: submission.student,
       course: submission.course,
       assignmentType: submission.assignmentType,
@@ -190,19 +181,18 @@ router.get('/submissions/:id', protect, isInstructor, async (req, res) => {
       hasPartAnswers: !!submission.partAnswers
     });
 
-    // Verify this submission belongs to this instructor
     if (submission.instructor.toString() !== req.user._id.toString()) {
-      console.log('❌ Access denied - wrong instructor');
-      return res.status(403).json({ error: 'Access denied' });
+      console.log("❌ Access denied - wrong instructor");
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    console.log('✅ Returning submission to frontend');
+    console.log("✅ Returning submission to frontend");
     res.json(submission);
 
   } catch (err) {
-    console.error('\n❌ ERROR FETCHING SUBMISSION:');
-    console.error('Message:', err.message);
-    console.error('Stack:', err.stack);
+    console.error("\n❌ ERROR FETCHING SUBMISSION:");
+    console.error("Message:", err.message);
+    console.error("Stack:", err.stack);
     res.status(500).json({ error: err.message });
   }
 });
@@ -210,48 +200,44 @@ router.get('/submissions/:id', protect, isInstructor, async (req, res) => {
 // -------------------------------------
 // POST grade submission
 // -------------------------------------
-router.post('/submissions/:id/grade', protect, isInstructor, async (req, res) => {
+router.post("/submissions/:id/grade", protect, isInstructor, async (req, res) => {
   try {
     const { grades, overallFeedback } = req.body;
 
     const submission = await AssignmentSubmission.findById(req.params.id);
 
     if (!submission) {
-      return res.status(404).json({ error: 'Submission not found' });
+      return res.status(404).json({ error: "Submission not found" });
     }
 
-    // Verify this submission belongs to this instructor
     if (submission.instructor.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    // Calculate total score
     let totalScore = 0;
     Object.values(grades).forEach(grade => {
       totalScore += grade.points;
     });
 
-    // Calculate if passed (based on percentage)
     const percentage = (totalScore / submission.maxScore) * 100;
     const passed = percentage >= submission.passingScore;
 
-    // Update submission
     submission.grades = grades;
     submission.totalScore = totalScore;
     submission.passed = passed;
     submission.overallFeedback = overallFeedback;
-    submission.status = 'graded';
+    submission.status = "graded";
     submission.gradedAt = new Date();
 
     await submission.save();
 
     res.json({
-      message: 'Submission graded successfully',
+      message: "Submission graded successfully",
       submission
     });
 
   } catch (err) {
-    console.error('Error grading submission:', err);
+    console.error("Error grading submission:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -259,44 +245,31 @@ router.post('/submissions/:id/grade', protect, isInstructor, async (req, res) =>
 // -------------------------------------
 // GET students for a specific course
 // -------------------------------------
-router.get('/courses/:courseId/students', protect, isInstructor, async (req, res) => {
+router.get("/courses/:courseId/students", protect, isInstructor, async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    // Verify the course belongs to this instructor
     const course = await Course.findById(courseId);
     if (!course || course.instructor._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    // Get all enrolled students
     const students = await User.find({
-    enrolledCourses: courseId
-    }).select('firstName lastName username email avatar enrolledAt learning');
+      enrolledCourses: courseId
+    }).select("firstName lastName username email avatar enrolledAt");
 
-    // For each student, get their progress
     const studentsWithProgress = await Promise.all(
       students.map(async (student) => {
-
-        // Get their submissions for this course
         const submissions = await AssignmentSubmission.find({
           student: student._id,
           course: courseId
-        });
-        console.log("CourseId from params:", courseId);
-
-        console.log("Student:", student._id);
-        console.log("Learning byCourse:", student.learning?.byCourse);
-
-        student.learning?.byCourse?.forEach(entry => {
-          console.log("Entry courseId:", entry.courseId.toString());
         });
 
         const totalSubmissions = submissions.length;
         const gradedSubmissions = submissions.filter(s => s.status === 'graded');
         const avgGrade = gradedSubmissions.length > 0
           ? Math.round(
-              gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) / 
+              gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) /
               gradedSubmissions.length
             )
           : 0;
@@ -304,16 +277,15 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
         const learningEntry = student.learning?.byCourse?.find(
           entry => entry.courseId.equals(courseId)
         );
-        
+
         const totalSeconds = learningEntry?.totalSeconds || 0;
         const learningHours = totalSeconds / 3600;
-        
+
         return {
           ...student.toObject(),
           name: student.firstName && student.lastName
             ? `${student.firstName} ${student.lastName}`
             : student.username,
-
           totalSubmissions,
           gradedSubmissions: gradedSubmissions.length,
           averageGrade: avgGrade,
@@ -326,7 +298,7 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
     res.json(studentsWithProgress);
 
   } catch (err) {
-    console.error('Error fetching students:', err);
+    console.error("Error fetching students:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -334,13 +306,13 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
 // -------------------------------------
 // GET course stats
 // -------------------------------------
-router.get('/courses/:courseId/stats', protect, isInstructor, async (req, res) => {
+router.get("/courses/:courseId/stats", protect, isInstructor, async (req, res) => {
   try {
     const { courseId } = req.params;
 
     const course = await Course.findById(courseId);
     if (!course || course.instructor._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: "Access denied" });
     }
 
     const enrolledCount = await User.countDocuments({
@@ -351,13 +323,13 @@ router.get('/courses/:courseId/stats', protect, isInstructor, async (req, res) =
       course: courseId
     });
 
-    const pendingCount = submissions.filter(s => s.status === 'pending').length;
-    const gradedCount = submissions.filter(s => s.status === 'graded').length;
-    
-    const gradedSubmissions = submissions.filter(s => s.status === 'graded');
+    const pendingCount = submissions.filter(s => s.status === "pending").length;
+    const gradedCount = submissions.filter(s => s.status === "graded").length;
+
+    const gradedSubmissions = submissions.filter(s => s.status === "graded");
     const avgGrade = gradedSubmissions.length > 0
       ? Math.round(
-          gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) / 
+          gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) /
           gradedSubmissions.length
         )
       : 0;
@@ -374,7 +346,7 @@ router.get('/courses/:courseId/stats', protect, isInstructor, async (req, res) =
     });
 
   } catch (err) {
-    console.error('Error fetching course stats:', err);
+    console.error("Error fetching course stats:", err);
     res.status(500).json({ error: err.message });
   }
 });
