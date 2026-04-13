@@ -129,7 +129,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
     <div className="assignment-lesson">
       <h2>{lesson.title}</h2>
 
-      <div className="lesson-content">
+      <div className="assignment-content-wrapper">
         {/* Instructions */}
         <div className="assignment-instructions">
           <h3>Assignment Instructions:</h3>
@@ -290,8 +290,8 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
             </div>
           </div>
         )}
-
-        {/* Submit Button */}
+      </div>
+              {/* Submit Button */}
         <button
           onClick={handleSubmit}
           disabled={submitting}
@@ -299,8 +299,8 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         >
           {submitting ? 'Submitting...' : 'Submit Assignment'}
         </button>
-      </div>
     </div>
+    
   );
 }
 

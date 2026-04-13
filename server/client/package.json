@@ -7,7 +7,6 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.1",
-    "@zoom/meetingsdk": "^5.1.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
