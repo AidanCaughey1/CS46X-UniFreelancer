@@ -1,29 +1,34 @@
-import React, { useState } from 'react';
-import './LearningMaterialsInput.css';
+import React, { useState } from "react";
+
+const inputClasses =
+  "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
+const primaryButtonClasses =
+  "inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryButtonClasses =
+  "inline-flex items-center justify-center rounded-full border border-border px-4 py-3 text-sm font-semibold transition";
+const removeButtonClasses =
+  "inline-flex items-center justify-center rounded-full border border-error/20 bg-[#fff2f2] px-4 py-2 text-sm font-semibold text-error transition hover:bg-[#ffe8e6]";
 
 function LearningMaterialsInput({ materials, setMaterials }) {
-  const [activeTab, setActiveTab] = useState('readings');
-  
+  const [activeTab, setActiveTab] = useState("readings");
   const [newReading, setNewReading] = useState({
-    title: '',
-    author: '',
-    citation: '',
-    link: ''
+    title: "",
+    author: "",
+    citation: "",
+    link: ""
   });
-
   const [newPodcast, setNewPodcast] = useState({
-    title: '',
-    link: ''
+    title: "",
+    link: ""
   });
-
   const [newVideo, setNewVideo] = useState({
-    title: '',
-    link: ''
+    title: "",
+    link: ""
   });
 
   const addReading = () => {
     if (!newReading.title || !newReading.citation) {
-      alert('Please fill in at least title and citation');
+      alert("Please fill in at least title and citation");
       return;
     }
 
@@ -32,12 +37,12 @@ function LearningMaterialsInput({ materials, setMaterials }) {
       readings: [...materials.readings, newReading]
     });
 
-    setNewReading({ title: '', author: '', citation: '', link: '' });
+    setNewReading({ title: "", author: "", citation: "", link: "" });
   };
 
   const addPodcast = () => {
     if (!newPodcast.link) {
-      alert('Please enter a podcast link');
+      alert("Please enter a podcast link");
       return;
     }
 
@@ -46,12 +51,12 @@ function LearningMaterialsInput({ materials, setMaterials }) {
       podcasts: [...materials.podcasts, newPodcast]
     });
 
-    setNewPodcast({ title: '', link: '' });
+    setNewPodcast({ title: "", link: "" });
   };
 
   const addVideo = () => {
     if (!newVideo.link) {
-      alert('Please enter a video link');
+      alert("Please enter a video link");
       return;
     }
 
@@ -60,222 +65,307 @@ function LearningMaterialsInput({ materials, setMaterials }) {
       videos: [...materials.videos, newVideo]
     });
 
-    setNewVideo({ title: '', link: '' });
+    setNewVideo({ title: "", link: "" });
   };
 
   const removeReading = (index) => {
     setMaterials({
       ...materials,
-      readings: materials.readings.filter((_, i) => i !== index)
+      readings: materials.readings.filter((_, readingIndex) => readingIndex !== index)
     });
   };
 
   const removePodcast = (index) => {
     setMaterials({
       ...materials,
-      podcasts: materials.podcasts.filter((_, i) => i !== index)
+      podcasts: materials.podcasts.filter((_, podcastIndex) => podcastIndex !== index)
     });
   };
 
   const removeVideo = (index) => {
     setMaterials({
       ...materials,
-      videos: materials.videos.filter((_, i) => i !== index)
+      videos: materials.videos.filter((_, videoIndex) => videoIndex !== index)
     });
   };
 
-  return (
-    <div className="learning-materials-input">
-      <div className="materials-tabs">
-        <button 
-          className={`tab ${activeTab === 'readings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('readings')}
-        >
-          📚 Readings ({materials.readings.length})
-        </button>
-        <button 
-          className={`tab ${activeTab === 'podcasts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('podcasts')}
-        >
-          🎧 Podcasts ({materials.podcasts.length})
-        </button>
-        <button 
-          className={`tab ${activeTab === 'videos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('videos')}
-        >
-          🎥 Videos ({materials.videos.length})
-        </button>
+  const tabs = [
+    { id: "readings", label: "Readings", count: materials.readings.length },
+    { id: "podcasts", label: "Podcasts", count: materials.podcasts.length },
+    { id: "videos", label: "Videos", count: materials.videos.length }
+  ];
+
+  const renderEmptyState = (message) => (
+    <div className="rounded-[24px] border border-dashed border-border bg-light-tertiary px-5 py-10 text-center text-sm text-dark-secondary">
+      {message}
+    </div>
+  );
+
+  const renderMaterialItem = ({ title, subtitle, linkLabel, link, onRemove }) => (
+    <div className="flex flex-col gap-4 rounded-[24px] border border-border bg-light-tertiary p-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="space-y-2">
+        {title ? (
+          <p className="text-sm font-semibold text-dark">{title}</p>
+        ) : null}
+        {subtitle ? <p className="text-sm text-dark-secondary">{subtitle}</p> : null}
+        {link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-sm font-semibold text-accent transition hover:text-accent-tertiary"
+          >
+            {linkLabel}
+          </a>
+        ) : null}
       </div>
 
-      <div className="tab-content">
-        {activeTab === 'readings' && (
-          <div className="readings-section">
-            <h4>Add Reading Material</h4>
-            
-            <div className="form-group">
-              <label>Title *</label>
+      <button type="button" onClick={onRemove} className={removeButtonClasses}>
+        Remove
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 rounded-[28px] border border-border bg-white p-5">
+      <div className="flex flex-wrap gap-3">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={`${secondaryButtonClasses} ${
+                isActive
+                  ? "bg-dark text-white shadow-md"
+                  : "bg-light-tertiary text-dark hover:bg-light-secondary"
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === "readings" ? (
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-2xl font-bold text-dark">Add Reading Material</h4>
+            <p className="mt-2 text-sm leading-7 text-dark-secondary">
+              Include book chapters, articles, or reference notes for this module.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Title *
+              </label>
               <input
                 type="text"
                 value={newReading.title}
-                onChange={(e) => setNewReading({ ...newReading, title: e.target.value })}
+                onChange={(event) =>
+                  setNewReading((prev) => ({ ...prev, title: event.target.value }))
+                }
                 placeholder="e.g., Contagious: Why Things Catch On"
+                className={inputClasses}
               />
             </div>
 
-            <div className="form-group">
-              <label>Author</label>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Author
+              </label>
               <input
                 type="text"
                 value={newReading.author}
-                onChange={(e) => setNewReading({ ...newReading, author: e.target.value })}
+                onChange={(event) =>
+                  setNewReading((prev) => ({ ...prev, author: event.target.value }))
+                }
                 placeholder="e.g., Berger, J."
+                className={inputClasses}
               />
             </div>
 
-            <div className="form-group">
-              <label>Citation/Chapter *</label>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Citation or Chapter *
+              </label>
               <input
                 type="text"
                 value={newReading.citation}
-                onChange={(e) => setNewReading({ ...newReading, citation: e.target.value })}
+                onChange={(event) =>
+                  setNewReading((prev) => ({
+                    ...prev,
+                    citation: event.target.value
+                  }))
+                }
                 placeholder="e.g., Chapter 1 - Social Currency"
+                className={inputClasses}
               />
             </div>
 
-            <div className="form-group">
-              <label>Link (optional)</label>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Link (optional)
+              </label>
               <input
                 type="url"
                 value={newReading.link}
-                onChange={(e) => setNewReading({ ...newReading, link: e.target.value })}
+                onChange={(event) =>
+                  setNewReading((prev) => ({ ...prev, link: event.target.value }))
+                }
                 placeholder="https://..."
+                className={inputClasses}
               />
             </div>
-
-            <button type="button" onClick={addReading} className="add-material-button">
-              + Add Reading
-            </button>
-
-            {materials.readings.length > 0 && (
-              <div className="materials-list">
-                {materials.readings.map((reading, index) => (
-                  <div key={index} className="material-item">
-                    <div className="material-info">
-                      <strong>{reading.title}</strong>
-                      {reading.author && <span className="author"> by {reading.author}</span>}
-                      <div className="citation">{reading.citation}</div>
-                      {reading.link && (
-                        <a href={reading.link} target="_blank" rel="noopener noreferrer" className="material-link">
-                          View Resource →
-                        </a>
-                      )}
-                    </div>
-                    <button onClick={() => removeReading(index)} className="remove-button-small">
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
 
-        {activeTab === 'podcasts' && (
-          <div className="podcasts-section">
-            <h4>Add Podcast</h4>
-            
-            <div className="form-group">
-              <label>Title (optional)</label>
+          <button type="button" onClick={addReading} className={primaryButtonClasses}>
+            Add Reading
+          </button>
+
+          <div className="space-y-4">
+            {materials.readings.length === 0
+              ? renderEmptyState("No reading materials added yet.")
+              : materials.readings.map((reading, index) =>
+                  renderMaterialItem({
+                    title: reading.title,
+                    subtitle: [reading.author ? `By ${reading.author}` : null, reading.citation]
+                      .filter(Boolean)
+                      .join(" | "),
+                    linkLabel: "View Resource",
+                    link: reading.link,
+                    onRemove: () => removeReading(index)
+                  })
+                )}
+          </div>
+        </div>
+      ) : null}
+
+      {activeTab === "podcasts" ? (
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-2xl font-bold text-dark">Add Podcast</h4>
+            <p className="mt-2 text-sm leading-7 text-dark-secondary">
+              Add an episode learners should listen to before or after the lesson.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Title (optional)
+              </label>
               <input
                 type="text"
                 value={newPodcast.title}
-                onChange={(e) => setNewPodcast({ ...newPodcast, title: e.target.value })}
-                placeholder="e.g., The Q&A Episode"
+                onChange={(event) =>
+                  setNewPodcast((prev) => ({ ...prev, title: event.target.value }))
+                }
+                placeholder="e.g., The Q and A Episode"
+                className={inputClasses}
               />
             </div>
 
-            <div className="form-group">
-              <label>Podcast Link *</label>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Podcast Link *
+              </label>
               <input
                 type="url"
                 value={newPodcast.link}
-                onChange={(e) => setNewPodcast({ ...newPodcast, link: e.target.value })}
+                onChange={(event) =>
+                  setNewPodcast((prev) => ({ ...prev, link: event.target.value }))
+                }
                 placeholder="https://podcasts.apple.com/..."
+                className={inputClasses}
               />
             </div>
-
-            <button type="button" onClick={addPodcast} className="add-material-button">
-              + Add Podcast
-            </button>
-
-            {materials.podcasts.length > 0 && (
-              <div className="materials-list">
-                {materials.podcasts.map((podcast, index) => (
-                  <div key={index} className="material-item">
-                    <div className="material-info">
-                      {podcast.title && <strong>{podcast.title}</strong>}
-                      <a href={podcast.link} target="_blank" rel="noopener noreferrer" className="material-link">
-                        Listen to Podcast →
-                      </a>
-                    </div>
-                    <button onClick={() => removePodcast(index)} className="remove-button-small">
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
 
-        {activeTab === 'videos' && (
-          <div className="videos-section">
-            <h4>Add Video</h4>
-            
-            <div className="form-group">
-              <label>Title (optional)</label>
+          <button type="button" onClick={addPodcast} className={primaryButtonClasses}>
+            Add Podcast
+          </button>
+
+          <div className="space-y-4">
+            {materials.podcasts.length === 0
+              ? renderEmptyState("No podcasts added yet.")
+              : materials.podcasts.map((podcast, index) =>
+                  renderMaterialItem({
+                    title: podcast.title || "Podcast Link",
+                    subtitle: podcast.link,
+                    linkLabel: "Listen to Podcast",
+                    link: podcast.link,
+                    onRemove: () => removePodcast(index)
+                  })
+                )}
+          </div>
+        </div>
+      ) : null}
+
+      {activeTab === "videos" ? (
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-2xl font-bold text-dark">Add Video</h4>
+            <p className="mt-2 text-sm leading-7 text-dark-secondary">
+              Add optional supporting videos for the module.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Title (optional)
+              </label>
               <input
                 type="text"
                 value={newVideo.title}
-                onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
+                onChange={(event) =>
+                  setNewVideo((prev) => ({ ...prev, title: event.target.value }))
+                }
                 placeholder="e.g., Introduction to Social Currency"
+                className={inputClasses}
               />
             </div>
 
-            <div className="form-group">
-              <label>Video Link *</label>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark">
+                Video Link *
+              </label>
               <input
                 type="url"
                 value={newVideo.link}
-                onChange={(e) => setNewVideo({ ...newVideo, link: e.target.value })}
+                onChange={(event) =>
+                  setNewVideo((prev) => ({ ...prev, link: event.target.value }))
+                }
                 placeholder="https://youtu.be/..."
+                className={inputClasses}
               />
             </div>
-
-            <button type="button" onClick={addVideo} className="add-material-button">
-              + Add Video
-            </button>
-
-            {materials.videos.length > 0 && (
-              <div className="materials-list">
-                {materials.videos.map((video, index) => (
-                  <div key={index} className="material-item">
-                    <div className="material-info">
-                      {video.title && <strong>{video.title}</strong>}
-                      <a href={video.link} target="_blank" rel="noopener noreferrer" className="material-link">
-                        Watch Video →
-                      </a>
-                    </div>
-                    <button onClick={() => removeVideo(index)} className="remove-button-small">
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
-      </div>
+
+          <button type="button" onClick={addVideo} className={primaryButtonClasses}>
+            Add Video
+          </button>
+
+          <div className="space-y-4">
+            {materials.videos.length === 0
+              ? renderEmptyState("No videos added yet.")
+              : materials.videos.map((video, index) =>
+                  renderMaterialItem({
+                    title: video.title || "Video Link",
+                    subtitle: video.link,
+                    linkLabel: "Watch Video",
+                    link: video.link,
+                    onRemove: () => removeVideo(index)
+                  })
+                )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
