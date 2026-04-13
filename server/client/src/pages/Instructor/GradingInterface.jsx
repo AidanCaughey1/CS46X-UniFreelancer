@@ -17,6 +17,8 @@ function GradingInterface() {
   const [grades, setGrades] = useState({});
   const [overallFeedback, setOverallFeedback] = useState('');
 
+  const isQuestionBased = submission?.assignmentType === 'question-based';
+
   const getPartAnswer = (partNumber) => {
     if (!submission?.partAnswers && !submission?.answers) return '';
 
@@ -252,6 +254,8 @@ function GradingInterface() {
       alert("AI grading failed");
     } finally {
       setAiLoading(false);
+    }
+  };
       
   const renderQuestionAnswer = (question, studentAnswer) => {
     switch (question.type) {
