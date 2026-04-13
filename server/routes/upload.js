@@ -35,11 +35,11 @@ const upload = multer({
 // Upload endpoint with detailed logging
 router.post('/image', upload.single('image'), async (req, res) => {
   try {
-    console.log('\n=== 📤 UPLOAD REQUEST RECEIVED ===');
+    console.log('\n===UPLOAD REQUEST RECEIVED ===');
     console.log('Timestamp:', new Date().toISOString());
     
     if (!req.file) {
-      console.error('❌ ERROR: No file in request');
+      console.error('ERROR: No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
@@ -49,7 +49,7 @@ router.post('/image', upload.single('image'), async (req, res) => {
     console.log('  - Type:', req.file.mimetype);
     console.log('  - Buffer length:', req.file.buffer.length);
 
-    console.log('\n🚀 Starting Cloudinary upload...');
+    console.log('\nStarting Cloudinary upload...');
 
     // Upload to Cloudinary using buffer
     const result = await new Promise((resolve, reject) => {
@@ -65,13 +65,13 @@ router.post('/image', upload.single('image'), async (req, res) => {
         },
         (error, result) => {
           if (error) {
-            console.error('\n❌ CLOUDINARY ERROR:');
+            console.error('\nCLOUDINARY ERROR:');
             console.error('  - Message:', error.message);
             console.error('  - HTTP Code:', error.http_code);
             console.error('  - Full Error:', JSON.stringify(error, null, 2));
             reject(error);
           } else {
-            console.log('\n✅ Upload successful!');
+            console.log('\nUpload successful!');
             console.log('  - URL:', result.secure_url);
             console.log('  - Public ID:', result.public_id);
             resolve(result);
@@ -89,7 +89,7 @@ router.post('/image', upload.single('image'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('\n❌ UPLOAD ROUTE ERROR:');
+    console.error('\nUPLOAD ROUTE ERROR:');
     console.error('  - Type:', error.constructor.name);
     console.error('  - Message:', error.message);
     console.error('  - Stack:', error.stack);

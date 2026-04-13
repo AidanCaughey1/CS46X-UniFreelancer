@@ -1278,4 +1278,13 @@
   .grade-badge-cell {
     justify-content: flex-start;
   }
+  .learning-time-cell {
+  font-weight: 600;
+  color: #4F46E5;
+}
+
+.no-time {
+  color: #9ca3af;
+  font-style: italic;
+}
 }

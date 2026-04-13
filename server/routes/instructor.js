@@ -271,16 +271,25 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
 
     // Get all enrolled students
     const students = await User.find({
-      enrolledCourses: courseId
-    }).select('firstName lastName username email avatar enrolledAt');
+    enrolledCourses: courseId
+    }).select('firstName lastName username email avatar enrolledAt learning');
 
     // For each student, get their progress
     const studentsWithProgress = await Promise.all(
       students.map(async (student) => {
+
         // Get their submissions for this course
         const submissions = await AssignmentSubmission.find({
           student: student._id,
           course: courseId
+        });
+        console.log("CourseId from params:", courseId);
+
+        console.log("Student:", student._id);
+        console.log("Learning byCourse:", student.learning?.byCourse);
+
+        student.learning?.byCourse?.forEach(entry => {
+          console.log("Entry courseId:", entry.courseId.toString());
         });
 
         const totalSubmissions = submissions.length;
@@ -292,14 +301,24 @@ router.get('/courses/:courseId/students', protect, isInstructor, async (req, res
             )
           : 0;
 
+        const learningEntry = student.learning?.byCourse?.find(
+          entry => entry.courseId.equals(courseId)
+        );
+        
+        const totalSeconds = learningEntry?.totalSeconds || 0;
+        const learningHours = totalSeconds / 3600;
+        
         return {
           ...student.toObject(),
-          name: student.firstName && student.lastName 
-            ? `${student.firstName} ${student.lastName}` 
+          name: student.firstName && student.lastName
+            ? `${student.firstName} ${student.lastName}`
             : student.username,
+
           totalSubmissions,
           gradedSubmissions: gradedSubmissions.length,
-          averageGrade: avgGrade
+          averageGrade: avgGrade,
+          learningSeconds: totalSeconds,
+          learningHours: learningHours
         };
       })
     );

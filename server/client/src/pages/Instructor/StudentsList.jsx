@@ -22,9 +22,9 @@ function StudentsList({ courseId }) {
       if (!response.ok) {
         throw new Error('Failed to fetch students');
       }
-
       const data = await response.json();
       setStudents(data);
+        console.log(students);
     } catch (err) {
       console.error('Error fetching students:', err);
       alert('Failed to load students');
@@ -44,6 +44,8 @@ function StudentsList({ courseId }) {
           return b.totalSubmissions - a.totalSubmissions;
         case 'grade':
           return b.averageGrade - a.averageGrade;
+        case 'time':
+          return (b.learningSeconds || 0) - (a.learningSeconds || 0);
         default:
           return 0;
       }
@@ -83,6 +85,7 @@ function StudentsList({ courseId }) {
             <option value="name">Name</option>
             <option value="submissions">Submissions</option>
             <option value="grade">Average Grade</option>
+            <option value="time">Learning Time</option>
           </select>
         </div>
       </div>
@@ -95,6 +98,7 @@ function StudentsList({ courseId }) {
           <div className="table-cell header-cell center">Submissions</div>
           <div className="table-cell header-cell center">Graded</div>
           <div className="table-cell header-cell center">Avg Grade</div>
+          <div className="table-cell header-cell center">Learning Time</div>
         </div>
 
         <div className="table-body">
@@ -152,6 +156,18 @@ function StudentsList({ courseId }) {
                   </div>
                 ) : (
                   <span className="no-grade">N/A</span>
+                )}
+              </div>
+              {/* Learning Time */}
+              <div className="table-cell center">
+                {student.learningHours > 0 ? (
+                  <span className="learning-time-cell">
+                    {student.learningSeconds < 3600
+                      ? `${Math.round(student.learningSeconds / 60)} min`
+                      : `${student.learningHours.toFixed(1)} hrs`}
+                  </span>
+                ) : (
+                  <span className="no-time">0 min</span>
                 )}
               </div>
             </div>
