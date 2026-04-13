@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import './App.css';
 import Academy from './pages/Academy/Academy';
 import LearningHub from './pages/Academy/LearningHub/LearningHub';
 import CreateContent from './pages/Academy/CreateContent/CreateContent';
@@ -56,8 +55,8 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
-        <Header user={user} setUser={setUser} />
+      <div className="min-h-screen">
+        <Header user={user} />
         <Routes>
           <Route path="/" element={<Academy />} />
           <Route path="/academy" element={<Academy />} />
@@ -128,6 +127,20 @@ function AdminRoute({ user, authLoading, children }) {
   return children;
 }
 
+function NavItem({ to, isActive, children, className = '' }) {
+  const active = isActive(to);
+  const baseClasses = 'relative pb-1 text-sm font-medium transition-colors duration-300 whitespace-nowrap after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-accent after:transition-transform after:duration-300 after:origin-left';
+  const stateClasses = active
+    ? 'text-dark font-semibold after:scale-x-100'
+    : 'text-dark-tertiary hover:text-dark after:scale-x-0 hover:after:scale-x-100';
+
+  return (
+    <Link to={to} className={`${baseClasses} ${stateClasses} ${className}`.trim()}>
+      {children}
+    </Link>
+  );
+}
+
 function Header({ user }) {
   const location = useLocation();
   const isSeminarJoinRoute = /^\/academy\/seminars\/[^/]+\/join$/.test(location.pathname);
@@ -138,59 +151,67 @@ function Header({ user }) {
 
   // Function to check if link is active
   const isActive = (path) => {
-    return location.pathname === path ? 'active' : '';
+    return location.pathname === path;
   };
 
+  const avatarLetter =
+    user?.firstName?.charAt(0)?.toUpperCase() ||
+    user?.username?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase() ||
+    'U';
+
   return (
-    <header className="header">
-      <div className="header-content">
-        <div className="logo">
-          <Link to="/">
-            <h1>UniFreelancer</h1>
-            <p>FREELANCE PORTAL</p>
+    <header className="sticky top-0 z-50 border-b border-border bg-white shadow-sm">
+      <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-4 px-8 py-4 lg:flex-nowrap">
+        <div className="shrink-0">
+          <Link to="/" className="text-inherit no-underline">
+            <h1 className="mb-0.5 text-[22px] font-bold tracking-wide text-body">UniFreelancer</h1>
+            <p className="text-[10px] font-medium uppercase tracking-[1.5px] text-muted">FREELANCE PORTAL</p>
           </Link>
         </div>
-        <nav className="nav">
-          <Link to="/" className={isActive('/')}>Home</Link>
-          <Link to="/find-work" className={isActive('/find-work')}>Find Work</Link>
-          <Link to="/browse-freelancers" className={isActive('/browse-freelancers')}>Browse Freelancers</Link>
-          <Link to="/hire-talent" className={isActive('/hire-talent')}>Hire Talent</Link>
-          <Link to="/academy" className={isActive('/academy')}>UF Academy</Link>
-          <Link to="/social" className={isActive('/social')}>UF Social</Link>
-          <Link to="/about" className={isActive('/about')}>About Us</Link>
-          <Link to="/inbox" className={isActive('/inbox')}>Inbox</Link>
 
-          {/* Instructor Dashboard Link - Only for instructors */}
+        <nav className="order-3 flex w-full grow items-center justify-start gap-5 overflow-x-auto lg:order-none lg:w-auto lg:justify-center xl:gap-8">
+          <NavItem to="/" isActive={isActive}>Home</NavItem>
+          <NavItem to="/find-work" isActive={isActive}>Find Work</NavItem>
+          <NavItem to="/browse-freelancers" isActive={isActive}>Browse Freelancers</NavItem>
+          <NavItem to="/hire-talent" isActive={isActive}>Hire Talent</NavItem>
+          <NavItem to="/academy" isActive={isActive}>UF Academy</NavItem>
+          <NavItem to="/social" isActive={isActive}>UF Social</NavItem>
+          <NavItem to="/about" isActive={isActive}>About Us</NavItem>
+          <NavItem to="/inbox" isActive={isActive}>Inbox</NavItem>
+
           {user && user.accountType === 'instructor' && (
-            <Link
+            <NavItem
               to="/instructor/dashboard"
-              className={`instructor-dashboard-link ${isActive('/instructor/dashboard')}`}
+              isActive={isActive}
+              className="rounded-md bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 py-2 font-semibold text-white shadow-[0_4px_12px_rgba(102,126,234,0.4)] after:hidden hover:-translate-y-0.5 hover:text-white"
             >
-              📊 Dashboard
-            </Link>
+              Dashboard
+            </NavItem>
           )}
 
           {user && user.accountType === 'admin' && (
-            <Link
+            <NavItem
               to="/admin"
-              className={`instructor-dashboard-link ${isActive('/admin')}`}
+              isActive={isActive}
+              className="rounded-md bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 py-2 font-semibold text-white shadow-[0_4px_12px_rgba(102,126,234,0.4)] after:hidden hover:-translate-y-0.5 hover:text-white"
             >
-              🛡️ Admin
-            </Link>
+              Admin
+            </NavItem>
           )}
 
           {user ? (
-            <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link to="/profile" className={`user-profile-link ${isActive('/profile')}`}>
-                <div className="nav-profile-avatar">
-                  {user.firstName && user.firstName.charAt(0).toUpperCase()}
+            <div className="flex items-center gap-4">
+              <Link to="/profile" className="flex items-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-secondary text-sm font-semibold text-white shadow-accent transition-all duration-300 hover:scale-110 hover:shadow-accent-hover">
+                  {avatarLetter}
                 </div>
               </Link>
             </div>
           ) : (
             <>
-              <Link to="/login" className={isActive('/login')}>Login</Link>
-              <Link to="/signup" className={isActive('/signup')}>Sign Up</Link>
+              <NavItem to="/login" isActive={isActive}>Login</NavItem>
+              <NavItem to="/signup" isActive={isActive}>Sign Up</NavItem>
             </>
           )}
         </nav>
@@ -208,6 +229,13 @@ Header.propTypes = {
     _id: PropTypes.string,
     accountType: PropTypes.string
   })
+};
+
+NavItem.propTypes = {
+  to: PropTypes.string.isRequired,
+  isActive: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
 };
 
 AdminRoute.propTypes = {

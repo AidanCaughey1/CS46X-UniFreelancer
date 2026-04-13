@@ -61,15 +61,15 @@ function CheckoutForm() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
+      <div className="p-5 text-center">
         <p>Loading payment form...</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
-      <PaymentElement 
+    <form onSubmit={handleSubmit} className="p-5">
+      <PaymentElement
         options={{
           layout: "tabs"
         }}
@@ -78,32 +78,17 @@ function CheckoutForm() {
       <button
         type="submit"
         disabled={!stripe || isSubmitting}
-        style={{
-          marginTop: "20px",
-          padding: "12px 24px",
-          backgroundColor: isSubmitting ? "#ccc" : "#0070f3",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: isSubmitting ? "not-allowed" : "pointer",
-          width: "100%",
-          fontSize: "16px",
-        }}
+        className={`mt-5 w-full rounded border-none px-6 py-3 text-base text-white ${
+          isSubmitting
+            ? "cursor-not-allowed bg-gray-300"
+            : "cursor-pointer bg-accent hover:bg-accent-secondary"
+        }`}
       >
         {isSubmitting ? "Processing..." : "Complete Payment"}
       </button>
 
       {errorMessage && (
-        <div
-          style={{
-            color: "#d32f2f",
-            marginTop: "16px",
-            padding: "12px",
-            backgroundColor: "#ffebee",
-            borderRadius: "4px",
-            fontSize: "14px",
-          }}
-        >
+        <div className="mt-4 rounded bg-red-50 p-3 text-sm text-error">
           {errorMessage}
         </div>
       )}

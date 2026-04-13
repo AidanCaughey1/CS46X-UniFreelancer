@@ -94,69 +94,72 @@ function AcademyTopPicksCarousel({ featuredLoading, featuredTracks }) {
   };
 
   return (
-    <section className="academy-showcase" aria-label="Featured learning carousel">
-      <div className="showcase-header">
+    <section className="relative my-10 mb-8 overflow-hidden rounded-[30px] border border-border bg-light-tertiary p-8 shadow-card backdrop-blur-[8px] before:absolute before:left-0 before:top-0 before:h-full before:w-2 before:bg-[linear-gradient(180deg,rgba(244,102,62,0.22)_0%,rgba(244,102,62,1)_16%,rgba(244,102,62,1)_84%,rgba(244,102,62,0.22)_100%)] before:content-[''] md:p-6" aria-label="Featured learning carousel">
+      <div className="mb-6 flex items-end justify-start gap-5 md:flex-col md:items-start">
         <div>
-          <span className="showcase-kicker">Top Picks</span>
-          <h3>Current academy highlights</h3>
+          <span className="mb-1.5 inline-block text-[11px] font-bold uppercase tracking-[2px] text-accent">Top Picks</span>
+          <h3 className="text-[30px] text-dark-primary md:text-2xl">Current academy highlights</h3>
         </div>
       </div>
 
       {featuredLoading ? (
-        <p className="carousel-empty">Loading top picks...</p>
+        <p className="rounded-lg border border-border bg-light-secondary px-[18px] py-[30px] text-center text-md text-dark-secondary">Loading top picks...</p>
       ) : featuredTracks.length === 0 ? (
-        <p className="carousel-empty">No top picks are available yet.</p>
+        <p className="rounded-lg border border-border bg-light-secondary px-[18px] py-[30px] text-center text-md text-dark-secondary">No top picks are available yet.</p>
       ) : (
         <>
           <div
-            className="carousel-window"
+            className="overflow-hidden"
             ref={carouselWindowRef}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="carousel-track" style={{ transform: `translateX(-${activeSlide * slideStep}px)` }}>
+            <div className="flex gap-4 transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${activeSlide * slideStep}px)` }}>
               {featuredTracks.map((track, index) => (
-                <article className={`feature-slide accent-${track.accent.toLowerCase()}`} key={`${track.id || track.title}-${index}`}>
-                  <div className="slide-body">
-                    <span className="slide-label">{track.label}</span>
-                    <h4>{track.title}</h4>
-                    <div className="slide-meta">
-                      <span>{track.level}</span>
-                      <span>{track.metaDetail}</span>
+                <article
+                  className={`grid min-w-[calc(100%-120px)] flex-[0_0_calc(100%-120px)] grid-cols-1 items-center gap-5 rounded-2xl border border-border p-8 md:min-w-[calc(100%-24px)] md:flex-[0_0_calc(100%-24px)] md:p-[22px] lg:grid-cols-[minmax(0,1fr)_280px] ${track.accent.toLowerCase() === 'warm' ? 'bg-light-secondary' : 'bg-light-secondary'}`}
+                  key={`${track.id || track.title}-${index}`}
+                >
+                  <div className="min-w-0">
+                    <span className="mb-4 inline-flex rounded-full bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-dark-primary">{track.label}</span>
+                    <h4 className="mb-4 max-w-[700px] text-3xl text-dark-primary md:text-2xl">{track.title}</h4>
+                    <div className="mb-4 flex flex-wrap gap-2.5">
+                      <span className="rounded-full bg-light-secondary px-2.5 py-1.5 text-xs text-[#666]">{track.level}</span>
+                      <span className="rounded-full bg-light-secondary px-2.5 py-1.5 text-xs text-[#666]">{track.metaDetail}</span>
                     </div>
-                    <p>{track.outcome}</p>
-                    <button className="slide-cta" type="button">
+                    <p className="mb-5 max-w-[760px] text-base leading-[1.7] text-dark-secondary">{track.outcome}</p>
+                    <button className="rounded-full border-none bg-accent px-[18px] py-[11px] text-sm font-semibold text-white transition-all duration-[250ms] ease-in-out hover:-translate-y-0.5 hover:bg-accent-tertiary hover:shadow-[0_10px_20px_rgba(244,102,62,0.28)]" type="button">
                       View Program
                     </button>
                   </div>
-                  <div className="slide-image">
-                    <img src={track.image} alt={track.imageAlt} loading="lazy" />
+                  <div className="h-[230px] overflow-hidden rounded-lg border border-border shadow-card md:-order-1 md:h-[186px]">
+                    <img src={track.image} alt={track.imageAlt} loading="lazy" className="block h-full w-full object-cover" />
                   </div>
                 </article>
               ))}
             </div>
           </div>
 
-          <div className="carousel-footer" aria-label="Carousel controls and indicators">
-            <button className="carousel-control" onClick={handlePrevSlide} aria-label="Previous slide">
-              <svg className="carousel-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <div className="mt-4 flex items-center justify-center gap-4" aria-label="Carousel controls and indicators">
+            <button className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-border bg-light-tertiary text-dark-primary transition-all duration-[250ms] ease-in-out hover:-translate-y-px hover:border-[rgba(27,36,50,0.32)]" onClick={handlePrevSlide} aria-label="Previous slide">
+              <svg className="h-[18px] w-[18px] stroke-current" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <div className="carousel-dots" aria-label="Slide indicators">
+            <div className="flex justify-center gap-2" aria-label="Slide indicators">
               {featuredTracks.map((track, index) => (
                 <button
                   key={`${track.id || track.title}-${index}`}
-                  className={`carousel-dot ${activeSlide === index ? 'active' : ''}`}
+                  className={`h-2.5 w-2.5 rounded-full border-none transition-all duration-[250ms] ease-in-out ${activeSlide === index ? 'scale-[1.2] bg-accent' : 'bg-dark-primary/[0.28]'}`}
                   onClick={() => setActiveSlide(index)}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
             </div>
-            <button className="carousel-control" onClick={handleNextSlide} aria-label="Next slide">
-              <svg className="carousel-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <button className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-border bg-light-tertiary text-dark-primary transition-all duration-[250ms] ease-in-out hover:-translate-y-px hover:border-[rgba(27,36,50,0.32)]" onClick={handleNextSlide} aria-label="Next slide">
+              <svg className="h-[18px] w-[18px] stroke-current" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>

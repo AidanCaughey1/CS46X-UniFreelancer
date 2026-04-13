@@ -1,4 +1,3 @@
-/* global process */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AcademyAudienceCards from '../../components/Academy/AcademyAudienceCards';
@@ -9,7 +8,6 @@ import AcademyMarquee from '../../components/Academy/AcademyMarquee';
 import AcademyPlans from '../../components/Academy/AcademyPlans';
 import AcademySignals from '../../components/Academy/AcademySignals';
 import AcademyTopPicksCarousel from '../../components/Academy/AcademyTopPicksCarousel';
-import './Academy.css';
 
 function Academy() {
   const navigate = useNavigate();
@@ -27,8 +25,7 @@ function Academy() {
   useEffect(() => {
     const fetchTopPicks = async () => {
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        const coursesRes = await fetch(`${apiUrl}/api/academy/courses`);
+        const coursesRes = await fetch('/api/academy/courses');
         const coursesData = coursesRes.ok ? await coursesRes.json() : [];
 
         const pickArrayFromPayload = (payload) => {
@@ -115,12 +112,12 @@ function Academy() {
   }, []);
 
   return (
-    <div className="academy-page">
-      <div className="academy-ambient">
-        <span className="ambient-beam beam-one" />
-        <span className="ambient-beam beam-two" />
+    <div className="relative min-h-screen overflow-hidden bg-main-bg px-6 pb-24 pt-20 font-academy">
+      <div className="hidden">
+        <span className="absolute left-[-8vw] top-[-24vh] h-[120vh] min-w-[260px] w-[42vw] rotate-[16deg] bg-[linear-gradient(180deg,rgba(244,102,62,0),rgba(244,102,62,0.06),rgba(244,102,62,0))] opacity-[0.18] blur-[2px] animate-beam-sweep-left" />
+        <span className="absolute right-[-10vw] top-[-22vh] h-[120vh] min-w-[260px] w-[42vw] -rotate-[14deg] bg-[linear-gradient(180deg,rgba(243,245,248,0),rgba(243,245,248,0.3),rgba(243,245,248,0))] opacity-[0.18] blur-[2px] animate-beam-sweep-right" />
       </div>
-      <div className="academy-container">
+      <div className="relative z-[3] mx-auto max-w-academy">
         <AcademyHero
           onBrowseCourses={handleBrowseCourses}
           onCreateContent={handleCreateContent}
@@ -138,7 +135,7 @@ function Academy() {
         />
         <AcademyPlans />
         <AcademyBenefits />
-        <p className="academy-image-credit">Photography sourced from Unsplash.</p>
+        <p className="mt-4 text-right text-xs text-dark-secondary/65">Photography sourced from Unsplash.</p>
       </div>
     </div>
   );

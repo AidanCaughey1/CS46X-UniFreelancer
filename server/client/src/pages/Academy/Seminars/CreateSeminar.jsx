@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiVideo } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
-import "./CreateSeminar.css";
+
+const inputClasses =
+  "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
+const textareaClasses =
+  "w-full min-h-[180px] rounded-2xl border border-border bg-white px-4 py-3 text-sm leading-7 text-dark outline-none transition focus:border-dark";
 
 const getScheduleTimes = ({ date, startTime, endTime }) => {
   if (!date || !startTime || !endTime) {
@@ -12,7 +16,10 @@ const getScheduleTimes = ({ date, startTime, endTime }) => {
   const startAtLocal = new Date(`${date}T${startTime}`);
   const endAtLocal = new Date(`${date}T${endTime}`);
 
-  if (Number.isNaN(startAtLocal.getTime()) || Number.isNaN(endAtLocal.getTime())) {
+  if (
+    Number.isNaN(startAtLocal.getTime()) ||
+    Number.isNaN(endAtLocal.getTime())
+  ) {
     return { startAtLocal: null, endAtLocal: null, valid: false };
   }
 
@@ -36,138 +43,9 @@ function CreateSeminar() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("basic-info");
   const [highlightDraft, setHighlightDraft] = useState("");
-    // Camera state for speaker avatar
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  const videoRef = React.useRef(null);
-  const streamRef = React.useRef(null);
-
-  const stopCamera = () => {
-    const stream = streamRef.current;
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraOpen(false);
-  };
-
-  const startCamera = async () => {
-    setCameraError("");
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError("Camera API not supported in this browser.");
-      return;
-    }
-
-    try {
-      // If already open, reset cleanly
-      stopCamera();
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false
-      });
-
-      streamRef.current = stream;
-      setIsCameraOpen(true); // <-- render the <video> first
-    } catch (err) {
-      console.error("Camera start failed:", err);
-      setCameraError(
-        err?.name === "NotAllowedError"
-          ? "Camera permission denied. Please allow camera access in your browser."
-          : "Unable to access camera. Make sure a camera is available and not in use."
-      );
-      stopCamera();
-    }
-  };
-
-  React.useEffect(() => {
-    const video = videoRef.current;
-    const stream = streamRef.current;
-
-    if (!isCameraOpen || !video || !stream) return;
-
-    video.srcObject = stream;
-
-    const play = async () => {
-      try {
-        await video.play();
-      } catch (e) {
-        // Some browsers require user interaction; still OK
-        console.warn("Video play() blocked:", e);
-      }
-    };
-
-    // Wait for metadata so videoWidth/videoHeight are available
-    video.onloadedmetadata = play;
-
-    return () => {
-      if (video) video.onloadedmetadata = null;
-    };
-  }, [isCameraOpen]);
-
-  const captureSpeakerAvatar = () => {
-  const video = videoRef.current;
-  if (!video) return;
-
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-
-  if (!w || !h) {
-    setCameraError("Camera not ready yet—try again in a moment.");
-    return;
-  }
-
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, w, h);
-
-  canvas.toBlob(async (blob) => {
-    try {
-      if (!blob) throw new Error("Failed to capture image");
-
-      setIsUploadingAvatar(true);
-      setCameraError("");
-
-      const form = new FormData();
-      form.append("image", blob, "speaker-avatar.png");
-
-      const res = await fetch("/api/upload/image", {
-        method: "POST",
-        body: form,
-        credentials: "include" // safe even if not required
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Upload failed");
-      }
-      setFormData((prev) => ({ ...prev, speakerAvatar: data.url }));
-
-      stopCamera();
-    } catch (err) {
-      console.error("Speaker avatar upload failed:", err);
-      setCameraError(err.message || "Failed to upload image");
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  }, "image/png", 0.92);
-};
-
-  // Cleanup if leaving the page
-  React.useEffect(() => {
-    return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -183,11 +61,127 @@ function CreateSeminar() {
     zoomPassword: ""
   });
 
-  const scheduleTimes = getScheduleTimes(formData);
-  const calculatedDurationMinutes = scheduleTimes.valid
-    ? Math.round((scheduleTimes.endAtLocal.getTime() - scheduleTimes.startAtLocal.getTime()) / 60000)
-    : 0;
-  const calculatedDurationLabel = formatDurationLabel(calculatedDurationMinutes);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const stopCamera = () => {
+    const stream = streamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setIsCameraOpen(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera API not supported in this browser.");
+      return;
+    }
+
+    try {
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+      });
+
+      streamRef.current = stream;
+      setIsCameraOpen(true);
+    } catch (error) {
+      console.error("Camera start failed:", error);
+      setCameraError(
+        error?.name === "NotAllowedError"
+          ? "Camera permission denied. Please allow camera access in your browser."
+          : "Unable to access camera. Make sure a camera is available and not in use."
+      );
+      stopCamera();
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!isCameraOpen || !video || !stream) return undefined;
+
+    video.srcObject = stream;
+    const play = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        console.warn("Video play() blocked:", error);
+      }
+    };
+
+    video.onloadedmetadata = play;
+
+    return () => {
+      if (video) {
+        video.onloadedmetadata = null;
+      }
+    };
+  }, [isCameraOpen]);
+
+  useEffect(() => () => stopCamera(), []);
+
+  const captureSpeakerAvatar = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    if (!width || !height) {
+      setCameraError("Camera not ready yet. Please try again in a moment.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, width, height);
+
+    canvas.toBlob(async (blob) => {
+      try {
+        if (!blob) throw new Error("Failed to capture image");
+
+        setIsUploadingAvatar(true);
+        setCameraError("");
+
+        const form = new FormData();
+        form.append("image", blob, "speaker-avatar.png");
+
+        const response = await fetch("/api/upload/image", {
+          method: "POST",
+          body: form,
+          credentials: "include"
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Upload failed");
+        }
+
+        setFormData((prev) => ({ ...prev, speakerAvatar: data.url }));
+        stopCamera();
+      } catch (error) {
+        console.error("Speaker avatar upload failed:", error);
+        setCameraError(error.message || "Failed to upload image");
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+    }, "image/png", 0.92);
+  };
 
   const steps = [
     { id: "basic-info", label: "Basic Info" },
@@ -196,10 +190,22 @@ function CreateSeminar() {
   ];
 
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
+  const scheduleTimes = getScheduleTimes(formData);
+  const calculatedDurationMinutes = scheduleTimes.valid
+    ? Math.round(
+        (scheduleTimes.endAtLocal.getTime() - scheduleTimes.startAtLocal.getTime()) /
+          60000
+      )
+    : 0;
+  const calculatedDurationLabel = formatDurationLabel(calculatedDurationMinutes);
+
+  const updateField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    updateField(name, value);
   };
 
   const handleAddHighlight = () => {
@@ -271,8 +277,9 @@ function CreateSeminar() {
       return;
     }
 
-    const durationMinutes = String(Math.round((endAtLocal.getTime() - startAtLocal.getTime()) / 60000));
-
+    const durationMinutes = String(
+      Math.round((endAtLocal.getTime() - startAtLocal.getTime()) / 60000)
+    );
     const sourceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
     const payload = {
@@ -318,255 +325,380 @@ function CreateSeminar() {
   };
 
   return (
-    <div className="create-seminar-page">
-      <div className="create-seminar-container">
-        <button className="back-button" onClick={() => navigate(-1)}>
-          <FiArrowLeft size={18} /> Back
+    <div className="min-h-screen bg-main-bg px-4 py-8 font-academy sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-narrow">
+        <button
+          type="button"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:-translate-y-0.5 hover:bg-light-secondary"
+          onClick={() => navigate(-1)}
+        >
+          <FiArrowLeft />
+          <span>Back</span>
         </button>
 
-        <h1>Create New Seminar</h1>
-        <p className="create-seminar-page-subtitle">Fill in the details to schedule a new live seminar</p>
+        <section className="rounded-[32px] border border-border bg-light-tertiary p-6 shadow-card lg:p-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              Seminars
+            </p>
+            <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
+              Create New Seminar
+            </h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
+              Schedule a live seminar, define the speaker profile, and prepare the
+              Zoom access details used by the current branch.
+            </p>
+          </div>
 
-        <div className="create-seminar-steps-indicator">
-          {steps.map((step, index) => (
-            <div
-              key={step.id}
-              className={`create-seminar-step ${currentStepIndex === index ? "active" : ""} ${
-                currentStepIndex > index ? "completed" : ""
-              }`}
-            >
-              <div className="create-seminar-step-number">{index + 1}</div>
-              <div className="create-seminar-step-label">{step.label}</div>
-            </div>
-          ))}
-        </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {steps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                className={`inline-flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition ${
+                  currentStep === step.id
+                    ? "bg-dark text-white shadow-md"
+                    : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
+                }`}
+                onClick={() => setCurrentStep(step.id)}
+              >
+                <span
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${
+                    currentStep === step.id
+                      ? "bg-white/15 text-white"
+                      : currentStepIndex > index
+                      ? "bg-accent text-white"
+                      : "bg-light-tertiary text-dark"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span>{step.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-        <div className="create-seminar-form-container">
-          {currentStep === "basic-info" && (
-            <div className="create-seminar-form-section">
-              <h2>Seminar Information</h2>
-              <p className="create-seminar-section-subtitle">Basic details about your seminar</p>
-
-              <div className="create-seminar-form-group">
-                <label>Seminar Title *</label>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="e.g., Building Your Freelance Brand"
-                  value={formData.title}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="create-seminar-form-group">
-                <label>Description *</label>
-                <textarea
-                  name="description"
-                  placeholder="Describe what attendees will learn in this seminar..."
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={4}
-                />
-              </div>
-
-              <div className="create-seminar-form-group">
-                <label>What to Expect (up to 3 bullet points)</label>
-                <div className="create-seminar-highlight-entry-row">
-                  <input
-                    type="text"
-                    placeholder="Enter a highlight"
-                    value={highlightDraft}
-                    onChange={(event) => setHighlightDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        handleAddHighlight();
-                      }
-                    }}
-                    maxLength={160}
-                    disabled={formData.highlights.length >= 3}
-                  />
-                  <button
-                    type="button"
-                    className="create-seminar-secondary-button create-seminar-highlight-add-btn"
-                    onClick={handleAddHighlight}
-                    disabled={!highlightDraft.trim() || formData.highlights.length >= 3}
-                  >
-                    Add
-                  </button>
-                </div>
-
-                {formData.highlights.length > 0 ? (
-                  <div className="create-seminar-highlight-list" role="list">
-                    {formData.highlights.map((highlight, index) => (
-                      <div className="create-seminar-highlight-item" key={`${highlight}-${index}`} role="listitem">
-                        <span>{highlight}</span>
-                        <button
-                          type="button"
-                          className="create-seminar-highlight-remove-btn"
-                          onClick={() => handleRemoveHighlight(index)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <p className="create-seminar-highlight-hint">
-                  {formData.highlights.length}/3 added
+        <section className="mt-8 rounded-[32px] border border-border bg-white p-6 shadow-card lg:p-8">
+          {currentStep === "basic-info" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 1
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Seminar information</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Set the title, description, and attendee expectations.
                 </p>
               </div>
 
-              <ImageUpload
-                value={formData.thumbnail}
-                onChange={(url) => setFormData((prev) => ({ ...prev, thumbnail: url }))}
-                label="Seminar Thumbnail"
-              />
-            </div>
-          )}
+              <div className="space-y-6">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Seminar Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    className={inputClasses}
+                    placeholder="e.g., Building Your Freelance Brand"
+                    value={formData.title}
+                    onChange={handleChange}
+                  />
+                </div>
 
-          {currentStep === "speaker" && (
-            <div className="create-seminar-form-section">
-              <h2>Speaker Information</h2>
-              <p className="create-seminar-section-subtitle">Details about the seminar speaker</p>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Description *
+                  </label>
+                  <textarea
+                    name="description"
+                    className={textareaClasses}
+                    placeholder="Describe what attendees will learn in this seminar..."
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={6}
+                  />
+                </div>
 
-              <div className="create-seminar-form-group">
-                <label>Speaker Name *</label>
-                <input
-                  type="text"
-                  name="speakerName"
-                  placeholder="e.g., Jane Doe"
-                  value={formData.speakerName}
-                  onChange={handleChange}
-                />
-              </div>
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    What to Expect (up to 3 bullet points)
+                  </label>
 
-              <div className="create-seminar-form-group">
-                <label>Speaker Bio</label>
-                <textarea
-                  name="speakerBio"
-                  placeholder="Brief biography of the speaker..."
-                  value={formData.speakerBio}
-                  onChange={handleChange}
-                  rows={4}
-                />
-              </div>
-
-                            <ImageUpload
-                value={formData.speakerAvatar}
-                onChange={(url) => setFormData((prev) => ({ ...prev, speakerAvatar: url }))}
-                label="Speaker Avatar"
-              />
-
-              {/* Camera controls (right under paste image url / ImageUpload) */}
-              <div className="create-seminar-camera">
-                {!isCameraOpen ? (
-                  <button
-                    type="button"
-                    className="create-seminar-secondary-button"
-                    onClick={startCamera}
-                  >
-                    Use Camera
-                  </button>
-                ) : (
-                  <div className="create-seminar-camera-panel">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="create-seminar-camera-preview"
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <input
+                      type="text"
+                      className={`${inputClasses} flex-1`}
+                      placeholder="Enter a highlight"
+                      value={highlightDraft}
+                      onChange={(event) => setHighlightDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleAddHighlight();
+                        }
+                      }}
+                      maxLength={160}
+                      disabled={formData.highlights.length >= 3}
                     />
-
-                    <div className="create-seminar-camera-actions">
-                      <button
-                        type="button"
-                        className="create-seminar-primary-button"
-                        onClick={captureSpeakerAvatar}
-                      >
-                        Capture
-                      </button>
-                    
-                      <button
-                        type="button"
-                        className="create-seminar-secondary-button"
-                        onClick={stopCamera}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full bg-dark px-4 py-3 text-sm font-semibold text-white transition hover:bg-dark-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleAddHighlight}
+                      disabled={!highlightDraft.trim() || formData.highlights.length >= 3}
+                    >
+                      <FiPlus />
+                      <span className="ml-2">Add</span>
+                    </button>
                   </div>
-                )}
 
-                {cameraError ? <p className="create-seminar-camera-error">{cameraError}</p> : null}
+                  <div className="mt-4 space-y-3">
+                    {formData.highlights.length === 0 ? (
+                      <p className="text-sm text-dark-secondary">
+                        No highlights added yet.
+                      </p>
+                    ) : (
+                      formData.highlights.map((highlight, index) => (
+                        <div
+                          key={`${highlight}-${index}`}
+                          className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-4 py-4 md:flex-row md:items-center md:justify-between"
+                        >
+                          <span className="text-sm text-dark">{highlight}</span>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:bg-light-secondary"
+                            onClick={() => handleRemoveHighlight(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-sm text-dark-secondary">
+                    {formData.highlights.length}/3 added
+                  </p>
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <ImageUpload
+                    value={formData.thumbnail}
+                    onChange={(url) => updateField("thumbnail", url)}
+                    label="Seminar Thumbnail"
+                  />
+                </div>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {currentStep === "schedule" && (
-            <div className="create-seminar-form-section">
-              <h2>Schedule</h2>
-              <p className="create-seminar-section-subtitle">Set the date, time, and Zoom details</p>
-
-              <div className="create-seminar-form-row">
-                <div className="create-seminar-form-group">
-                  <label>Date *</label>
-                  <input type="date" name="date" value={formData.date} onChange={handleChange} />
-                </div>
-
-                <div className="create-seminar-form-group">
-                  <label>Start Time *</label>
-                  <input type="time" name="startTime" value={formData.startTime} onChange={handleChange} />
-                </div>
-
-                <div className="create-seminar-form-group">
-                  <label>End Time *</label>
-                  <input type="time" name="endTime" value={formData.endTime} onChange={handleChange} />
-                </div>
+          {currentStep === "speaker" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 2
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Speaker profile</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Add the speaker details and upload or capture an avatar.
+                </p>
               </div>
 
-              <div className="create-seminar-form-group">
-                <label>Duration</label>
-                <input
-                  type="text"
-                  value={calculatedDurationLabel}
-                  placeholder="Set start and end time"
-                  readOnly
-                />
-              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Speaker Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="speakerName"
+                    className={inputClasses}
+                    placeholder="e.g., Jane Doe"
+                    value={formData.speakerName}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div className="create-seminar-form-group">
-                <label>Zoom Meeting ID *</label>
-                <input
-                  type="text"
-                  name="zoomMeetingId"
-                  placeholder="e.g., 12345678901"
-                  value={formData.zoomMeetingId}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Speaker Bio
+                  </label>
+                  <textarea
+                    name="speakerBio"
+                    className={textareaClasses}
+                    placeholder="Brief biography of the speaker..."
+                    value={formData.speakerBio}
+                    onChange={handleChange}
+                    rows={6}
+                  />
+                </div>
 
-              <div className="create-seminar-form-group">
-                <label>Zoom Passcode *</label>
-                <input
-                  type="text"
-                  name="zoomPassword"
-                  placeholder="Enter Zoom passcode"
-                  value={formData.zoomPassword}
-                  onChange={handleChange}
-                />
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <ImageUpload
+                    value={formData.speakerAvatar}
+                    onChange={(url) => updateField("speakerAvatar", url)}
+                    label="Speaker Avatar"
+                  />
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  {!isCameraOpen ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-full bg-dark px-4 py-3 text-sm font-semibold text-white transition hover:bg-dark-secondary"
+                      onClick={startCamera}
+                    >
+                      <FiVideo />
+                      <span>Use Camera</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-4">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="aspect-video w-full rounded-[28px] border border-border bg-black object-cover"
+                      />
+
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={captureSpeakerAvatar}
+                          disabled={isUploadingAvatar}
+                        >
+                          {isUploadingAvatar ? "Capturing..." : "Capture"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-dark transition hover:bg-light-secondary"
+                          onClick={stopCamera}
+                          disabled={isUploadingAvatar}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {cameraError ? (
+                    <p className="mt-4 text-sm text-error">{cameraError}</p>
+                  ) : null}
+                </div>
               </div>
             </div>
-          )}
-        </div>
+          ) : null}
 
-        <div className="create-seminar-form-actions">
+          {currentStep === "schedule" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 3
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Schedule & Zoom</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Set the local date, time range, and Zoom credentials used by the join page.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      className={inputClasses}
+                      value={formData.date}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      className={inputClasses}
+                      value={formData.startTime}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      End Time *
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      className={inputClasses}
+                      value={formData.endTime}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Duration
+                  </label>
+                  <input
+                    type="text"
+                    className={inputClasses}
+                    value={calculatedDurationLabel}
+                    placeholder="Set start and end time"
+                    readOnly
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Zoom Meeting ID *
+                    </label>
+                    <input
+                      type="text"
+                      name="zoomMeetingId"
+                      className={inputClasses}
+                      placeholder="e.g., 12345678901"
+                      value={formData.zoomMeetingId}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Zoom Passcode *
+                    </label>
+                    <input
+                      type="text"
+                      name="zoomPassword"
+                      className={inputClasses}
+                      placeholder="Enter Zoom passcode"
+                      value={formData.zoomPassword}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentStepIndex === 0}
-            className="create-seminar-secondary-button"
+            className="inline-flex items-center justify-center rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold text-dark transition hover:bg-light-secondary disabled:cursor-not-allowed disabled:opacity-60"
           >
             Previous
           </button>
@@ -575,8 +707,8 @@ function CreateSeminar() {
             <button
               type="button"
               onClick={handleNext}
-              className="create-seminar-primary-button"
               disabled={!isStepValid(currentStep)}
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
             >
               Next
             </button>
@@ -584,8 +716,8 @@ function CreateSeminar() {
             <button
               type="button"
               onClick={handleSubmit}
-              className="create-seminar-primary-button"
               disabled={!isStepValid("schedule")}
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
             >
               Create Seminar
             </button>

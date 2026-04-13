@@ -1,4 +1,3 @@
-/* global process */
 import React, { useEffect, useState } from 'react';
 import { FiCheck } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
@@ -10,8 +9,7 @@ function AcademyPlans() {
   useEffect(() => {
     const checkSignedIn = async () => {
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${apiUrl}/api/users/me`, {
+        const response = await fetch('/api/users/me', {
           credentials: 'include'
         });
         setIsSignedIn(response.ok);
@@ -29,17 +27,19 @@ function AcademyPlans() {
     }
   };
 
+  const checkIconClasses = 'h-4 w-4 shrink-0 rounded-full border border-[rgba(33,163,92,0.45)] bg-main-bg p-0.5 text-[#21a35c]';
+
   return (
-    <section className="academy-plans" aria-label="Subscription plans">
-      <div className="plans-header">
-        <span className="showcase-kicker">Subscriptions</span>
-        <h3>Pick the plan that fits your pace</h3>
-        <p>Start free, then upgrade when you want deeper access and more live experiences.</p>
+    <section className="my-5 mb-10 rounded-[30px] border border-border bg-light-tertiary p-8 shadow-card md:p-6" aria-label="Subscription plans">
+      <div className="mb-5">
+        <span className="mb-1.5 inline-block text-[11px] font-bold uppercase tracking-[2px] text-accent">Subscriptions</span>
+        <h3 className="mb-2 text-[30px] text-dark-primary md:text-2xl">Pick the plan that fits your pace</h3>
+        <p className="text-md text-dark-secondary">Start free, then upgrade when you want deeper access and more live experiences.</p>
       </div>
 
-      <div className="plans-grid">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <article
-          className={`plan-card plan-free ${!isSignedIn ? 'is-clickable' : ''}`}
+          className={`relative flex min-h-[530px] flex-col overflow-hidden rounded-[22px] border border-border bg-light-secondary p-6 transition-all duration-[250ms] ease-in-out before:absolute before:left-0 before:top-0 before:h-[5px] before:w-full before:bg-dark-primary/90 before:content-[''] hover:-translate-y-1 hover:shadow-card-hover ${!isSignedIn ? 'cursor-pointer' : ''}`}
           onClick={handleFreeSelect}
           role={!isSignedIn ? 'button' : undefined}
           tabIndex={!isSignedIn ? 0 : -1}
@@ -55,47 +55,47 @@ function AcademyPlans() {
           }}
           aria-label={!isSignedIn ? 'Sign up for free plan' : 'Free plan'}
         >
-          <h4>Free</h4>
-          <p className="plan-price">$0/mo</p>
-          <p className="plan-subtitle">Get started and explore</p>
-          <ul className="plan-features">
-            <li><FiCheck aria-hidden="true" />Access to free courses</li>
-            <li><FiCheck aria-hidden="true" />Access to free tutorials</li>
-            <li><FiCheck aria-hidden="true" />Limited seminars + podcasts</li>
-            <li><FiCheck aria-hidden="true" />Limited resource downloads</li>
+          <h4 className="mb-1 text-2xl text-dark-primary">Free</h4>
+          <p className="mb-1.5 text-3xl font-bold text-accent">$0/mo</p>
+          <p className="mb-3.5 text-sm text-dark-secondary">Get started and explore</p>
+          <ul className="mb-5 flex flex-1 flex-col gap-2 p-0">
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Access to free courses</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Access to free tutorials</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Limited seminars + podcasts</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Limited resource downloads</li>
           </ul>
-          <button className="plan-button ghost" onClick={handleFreeSelect}>
+          <button className="w-full rounded-full border border-border bg-main-bg px-3.5 py-2.5 text-sm font-bold text-dark-primary" onClick={handleFreeSelect}>
             Start Free
           </button>
         </article>
 
-        <article className="plan-card plan-plus featured">
-          <span className="plan-badge">Most popular</span>
-          <h4>Plus</h4>
-          <p className="plan-price">$14.99/mo</p>
-          <p className="plan-subtitle">Best for consistent learners</p>
-          <ul className="plan-features">
-            <li><FiCheck aria-hidden="true" />Access to most courses</li>
-            <li><FiCheck aria-hidden="true" />Full tutorials library</li>
-            <li><FiCheck aria-hidden="true" />Expanded seminars + podcasts</li>
-            <li><FiCheck aria-hidden="true" />10 resource downloads / month</li>
-            <li><FiCheck aria-hidden="true" />Monthly AI feedback credits</li>
+        <article className="relative flex min-h-[530px] flex-col overflow-hidden rounded-[22px] border border-accent/50 bg-main-bg p-6 shadow-accent transition-all duration-[250ms] ease-in-out before:absolute before:left-0 before:top-0 before:h-[5px] before:w-full before:bg-accent-secondary before:content-[''] hover:-translate-y-1 hover:shadow-card-hover">
+          <span className="absolute right-3 top-3 inline-flex rounded-full bg-accent px-[9px] py-[5px] text-[10px] font-bold uppercase tracking-[0.5px] text-white">Most popular</span>
+          <h4 className="mb-1 text-2xl text-dark-primary">Plus</h4>
+          <p className="mb-1.5 text-3xl font-bold text-accent">$14.99/mo</p>
+          <p className="mb-3.5 text-sm text-dark-secondary">Best for consistent learners</p>
+          <ul className="mb-5 flex flex-1 flex-col gap-2 p-0">
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Access to most courses</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Full tutorials library</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Expanded seminars + podcasts</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />10 resource downloads / month</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Monthly AI feedback credits</li>
           </ul>
-          <button className="plan-button primary">Choose Plus</button>
+          <button className="w-full rounded-full border-none bg-accent px-3.5 py-2.5 text-sm font-bold text-white" type="button">Choose Plus</button>
         </article>
 
-        <article className="plan-card plan-premium">
-          <h4>Premium</h4>
-          <p className="plan-price">$24.99/mo</p>
-          <p className="plan-subtitle">For power learners and creators</p>
-          <ul className="plan-features">
-            <li><FiCheck aria-hidden="true" />Full access to all academy content</li>
-            <li><FiCheck aria-hidden="true" />Unlimited resource downloads</li>
-            <li><FiCheck aria-hidden="true" />Unlimited AI feedback (Fair Use)</li>
-            <li><FiCheck aria-hidden="true" />AI-assisted creator tools</li>
+        <article className="relative flex min-h-[530px] flex-col overflow-hidden rounded-[22px] border border-border bg-light-secondary p-6 transition-all duration-[250ms] ease-in-out before:absolute before:left-0 before:top-0 before:h-[5px] before:w-full before:bg-accent before:content-[''] hover:-translate-y-1 hover:shadow-card-hover">
+          <h4 className="mb-1 text-2xl text-dark-primary">Premium</h4>
+          <p className="mb-1.5 text-3xl font-bold text-accent">$24.99/mo</p>
+          <p className="mb-3.5 text-sm text-dark-secondary">For power learners and creators</p>
+          <ul className="mb-5 flex flex-1 flex-col gap-2 p-0">
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Full access to all academy content</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Unlimited resource downloads</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Unlimited AI feedback (Fair Use)</li>
+            <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />AI-assisted creator tools</li>
           </ul>
-          <p className="plan-note">Unlimited AI is subject to fair use and anti-abuse protections.</p>
-          <button className="plan-button secondary">Go Premium</button>
+          <p className="-mt-1.5 mb-3.5 text-[11px] leading-[1.4] text-[#666]">Unlimited AI is subject to fair use and anti-abuse protections.</p>
+          <button className="w-full rounded-full border-none bg-accent-secondary px-3.5 py-2.5 text-sm font-bold text-white" type="button">Go Premium</button>
         </article>
       </div>
     </section>
