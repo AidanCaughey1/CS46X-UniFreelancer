@@ -107,18 +107,18 @@ router.get("/courses", protect, isInstructor, async (req, res) => {
 });
 
 // -------------------------------------
-// GET pending submissions
+// GET pending submissions (FIXED - only one now)
 // -------------------------------------
 router.get("/submissions/pending", protect, isInstructor, async (req, res) => {
   try {
-    console.log("Fetching pending submissions for instructor:", req.user._id);
+    console.log('Fetching pending submissions for instructor:', req.user._id);
 
     const submissions = await AssignmentSubmission.find({
       instructor: req.user._id,
       status: "pending"
     })
-      .populate("student", "firstName lastName email avatar")
-      .sort({ submittedAt: -1 });
+    .populate("student", "firstName lastName email avatar")
+    .sort({ submittedAt: -1 });
 
     console.log("Found pending submissions:", submissions.length);
     res.json(submissions);
@@ -143,8 +143,8 @@ router.get("/submissions", protect, isInstructor, async (req, res) => {
 
     const submissions = await AssignmentSubmission.find(query)
       .sort({ submittedAt: -1 })
-      .populate("student", "firstName lastName email avatar")
-      .populate("course", "title thumbnail");
+      .populate("student", 'firstName lastName email avatar')
+      .populate("course", 'title thumbnail');
 
     res.json(submissions);
 
@@ -172,6 +172,14 @@ router.get("/submissions/:id", protect, isInstructor, async (req, res) => {
       console.log("❌ Submission not found");
       return res.status(404).json({ error: "Submission not found" });
     }
+
+    console.log("Submission data:", {
+      student: submission.student,
+      course: submission.course,
+      assignmentType: submission.assignmentType,
+      hasAnswers: !!submission.answers,
+      hasPartAnswers: !!submission.partAnswers
+    });
 
     if (submission.instructor.toString() !== req.user._id.toString()) {
       console.log("❌ Access denied - wrong instructor");
@@ -258,13 +266,20 @@ router.get("/courses/:courseId/students", protect, isInstructor, async (req, res
         });
 
         const totalSubmissions = submissions.length;
-        const gradedSubmissions = submissions.filter(s => s.status === "graded");
+        const gradedSubmissions = submissions.filter(s => s.status === 'graded');
         const avgGrade = gradedSubmissions.length > 0
           ? Math.round(
               gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) /
               gradedSubmissions.length
             )
           : 0;
+
+        const learningEntry = student.learning?.byCourse?.find(
+          entry => entry.courseId.equals(courseId)
+        );
+
+        const totalSeconds = learningEntry?.totalSeconds || 0;
+        const learningHours = totalSeconds / 3600;
 
         return {
           ...student.toObject(),
@@ -273,7 +288,9 @@ router.get("/courses/:courseId/students", protect, isInstructor, async (req, res
             : student.username,
           totalSubmissions,
           gradedSubmissions: gradedSubmissions.length,
-          averageGrade: avgGrade
+          averageGrade: avgGrade,
+          learningSeconds: totalSeconds,
+          learningHours: learningHours
         };
       })
     );

@@ -1,0 +1,239 @@
+.admin-dashboard-page {
+  min-height: 100vh;
+  background: #f4f6f9;
+  padding: 2rem 1rem;
+}
+
+.admin-dashboard-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-header {
+  background: #ffffff;
+  border: 1px solid #e5e8ef;
+  border-radius: 14px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.admin-header p {
+  margin: 0.4rem 0 0;
+  color: #5f6475;
+}
+
+.admin-primary-link {
+  text-decoration: none;
+  background: #1f6feb;
+  color: #fff;
+  padding: 0.6rem 0.95rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.summary-card {
+  background: #ffffff;
+  border: 1px solid #e5e8ef;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.summary-card h3 {
+  margin: 0;
+  color: #555c70;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.summary-card p {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e2333;
+}
+
+.admin-card {
+  background: #ffffff;
+  border: 1px solid #e5e8ef;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.admin-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.admin-card-header h2 {
+  margin: 0;
+}
+
+.admin-search-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-search-form input {
+  border: 1px solid #cdd3e2;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  min-width: 250px;
+}
+
+.admin-search-form button {
+  border: none;
+  border-radius: 8px;
+  background: #0f5132;
+  color: white;
+  font-weight: 600;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.refresh-activity-btn {
+  border: 1px solid #c8d0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2a3142;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.admin-users-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-users-table th,
+.admin-users-table td {
+  text-align: left;
+  border-bottom: 1px solid #ebedf3;
+  padding: 0.65rem 0.4rem;
+  font-size: 0.94rem;
+}
+
+.admin-users-table th {
+  color: #5d6373;
+  font-weight: 700;
+}
+
+.account-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.account-badge.student {
+  background: #eef5ff;
+  color: #164d9a;
+}
+
+.account-badge.instructor {
+  background: #eaf9ef;
+  color: #14532d;
+}
+
+.account-badge.admin {
+  background: #fff2f2;
+  color: #a81818;
+}
+
+.admin-error {
+  color: #b3261e;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.activity-item {
+  border: 1px solid #ebedf3;
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  background: #fcfdff;
+}
+
+.activity-item p {
+  margin: 0.15rem 0;
+  color: #2f3546;
+}
+
+.activity-item span {
+  display: inline-block;
+  margin-top: 0.2rem;
+  color: #6c7386;
+  font-size: 0.84rem;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.admin-pagination button {
+  border: 1px solid #c8d0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2a3142;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-pagination span {
+  color: #5d6373;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 780px) {
+  .admin-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-search-form input {
+    min-width: 0;
+    width: 100%;
+  }
+}

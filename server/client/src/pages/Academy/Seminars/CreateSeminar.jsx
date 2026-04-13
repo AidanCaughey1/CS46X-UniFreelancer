@@ -1,278 +1,727 @@
-/* global process */
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
-import './CreateSeminar.css';
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiArrowLeft, FiPlus, FiVideo } from "react-icons/fi";
+import ImageUpload from "../../../components/ImageUpload";
+
+const inputClasses =
+  "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
+const textareaClasses =
+  "w-full min-h-[180px] rounded-2xl border border-border bg-white px-4 py-3 text-sm leading-7 text-dark outline-none transition focus:border-dark";
+
+const getScheduleTimes = ({ date, startTime, endTime }) => {
+  if (!date || !startTime || !endTime) {
+    return { startAtLocal: null, endAtLocal: null, valid: false };
+  }
+
+  const startAtLocal = new Date(`${date}T${startTime}`);
+  const endAtLocal = new Date(`${date}T${endTime}`);
+
+  if (
+    Number.isNaN(startAtLocal.getTime()) ||
+    Number.isNaN(endAtLocal.getTime())
+  ) {
+    return { startAtLocal: null, endAtLocal: null, valid: false };
+  }
+
+  return {
+    startAtLocal,
+    endAtLocal,
+    valid: endAtLocal > startAtLocal
+  };
+};
+
+const formatDurationLabel = (minutes) => {
+  if (!minutes || !Number.isFinite(minutes)) return "";
+  if (minutes < 60) return `${minutes} minutes`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (!remainder) return `${hours} hour${hours > 1 ? "s" : ""}`;
+  return `${hours} hour${hours > 1 ? "s" : ""} ${remainder} minute${remainder > 1 ? "s" : ""}`;
+};
 
 function CreateSeminar() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState('basic-info');
-  const [seminarData, setSeminarData] = useState({
-    title: '',
-    description: '',
-    duration: '',
-    type: 'Live Now',
-    thumbnail: '',
-
-    speakerName: '',
-    speakerBio: '',
-    speakerAvatar: '',
-
-    date: '',
-    time: '',
-    joinUrl: ''
+  const [currentStep, setCurrentStep] = useState("basic-info");
+  const [highlightDraft, setHighlightDraft] = useState("");
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    highlights: [],
+    thumbnail: "",
+    speakerName: "",
+    speakerBio: "",
+    speakerAvatar: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    zoomMeetingId: "",
+    zoomPassword: ""
   });
 
-  const handleBack = () => {
-    navigate('/academy/create');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const stopCamera = () => {
+    const stream = streamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setIsCameraOpen(false);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSeminarData({
-      ...seminarData,
-      [name]: value
-    });
-  };
+  const startCamera = async () => {
+    setCameraError("");
 
-  const handleCreateSeminar = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Camera API not supported in this browser.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/academy/seminars`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: seminarData.title,
-          description: seminarData.description,
-          duration: seminarData.duration,
-          type: seminarData.type,
-          thumbnail: seminarData.thumbnail,
+      stopCamera();
 
-          speaker: {
-            name: seminarData.speakerName,
-            bio: seminarData.speakerBio,
-            avatar: seminarData.speakerAvatar
-          },
-
-          schedule: {
-            date: seminarData.date,
-            time: seminarData.time,
-            joinUrl: seminarData.joinUrl
-          }
-        }),
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
       });
 
-      if (response.ok) {
-        alert('Seminar created successfully!');
-        navigate('/academy');
-      } else {
-        alert('Failed to create seminar. Please try again.');
-      }
+      streamRef.current = stream;
+      setIsCameraOpen(true);
     } catch (error) {
-      console.error('Error creating seminar:', error);
-      alert('An error occurred. Please try again.');
+      console.error("Camera start failed:", error);
+      setCameraError(
+        error?.name === "NotAllowedError"
+          ? "Camera permission denied. Please allow camera access in your browser."
+          : "Unable to access camera. Make sure a camera is available and not in use."
+      );
+      stopCamera();
     }
   };
 
-  const handleCancel = () => {
-    navigate('/academy/create');
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!isCameraOpen || !video || !stream) return undefined;
+
+    video.srcObject = stream;
+    const play = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        console.warn("Video play() blocked:", error);
+      }
+    };
+
+    video.onloadedmetadata = play;
+
+    return () => {
+      if (video) {
+        video.onloadedmetadata = null;
+      }
+    };
+  }, [isCameraOpen]);
+
+  useEffect(() => () => stopCamera(), []);
+
+  const captureSpeakerAvatar = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    if (!width || !height) {
+      setCameraError("Camera not ready yet. Please try again in a moment.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, width, height);
+
+    canvas.toBlob(async (blob) => {
+      try {
+        if (!blob) throw new Error("Failed to capture image");
+
+        setIsUploadingAvatar(true);
+        setCameraError("");
+
+        const form = new FormData();
+        form.append("image", blob, "speaker-avatar.png");
+
+        const response = await fetch("/api/upload/image", {
+          method: "POST",
+          body: form,
+          credentials: "include"
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Upload failed");
+        }
+
+        setFormData((prev) => ({ ...prev, speakerAvatar: data.url }));
+        stopCamera();
+      } catch (error) {
+        console.error("Speaker avatar upload failed:", error);
+        setCameraError(error.message || "Failed to upload image");
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+    }, "image/png", 0.92);
   };
 
   const steps = [
-    { id: 'basic-info', label: 'Basic Info' },
-    { id: 'speaker', label: 'Speaker' },
-    { id: 'schedule', label: 'Schedule' },
+    { id: "basic-info", label: "Basic Info" },
+    { id: "speaker", label: "Speaker" },
+    { id: "schedule", label: "Schedule" }
   ];
 
-  return (
-    <div className="create-seminar-page">
-      <div className="create-seminar-container">
+  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
+  const scheduleTimes = getScheduleTimes(formData);
+  const calculatedDurationMinutes = scheduleTimes.valid
+    ? Math.round(
+        (scheduleTimes.endAtLocal.getTime() - scheduleTimes.startAtLocal.getTime()) /
+          60000
+      )
+    : 0;
+  const calculatedDurationLabel = formatDurationLabel(calculatedDurationMinutes);
 
-        <button className="back-button" onClick={handleBack}>
-          <FiArrowLeft size={18} /> Back
+  const updateField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    updateField(name, value);
+  };
+
+  const handleAddHighlight = () => {
+    const nextHighlight = highlightDraft.trim();
+    if (!nextHighlight) return;
+
+    setFormData((prev) => {
+      if (prev.highlights.length >= 3) return prev;
+      return { ...prev, highlights: [...prev.highlights, nextHighlight] };
+    });
+
+    setHighlightDraft("");
+  };
+
+  const handleRemoveHighlight = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      highlights: prev.highlights.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const isStepValid = (stepId) => {
+    if (stepId === "basic-info") {
+      return formData.title.trim() && formData.description.trim();
+    }
+
+    if (stepId === "speaker") {
+      return formData.speakerName.trim();
+    }
+
+    if (stepId === "schedule") {
+      if (!formData.date || !formData.startTime || !formData.endTime) return false;
+      if (!formData.zoomMeetingId.trim() || !formData.zoomPassword.trim()) return false;
+      return getScheduleTimes(formData).valid;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!isStepValid(currentStep)) {
+      if (currentStep === "basic-info") {
+        alert("Please fill in title and description before continuing.");
+      } else if (currentStep === "speaker") {
+        alert("Please provide the speaker name before continuing.");
+      }
+      return;
+    }
+
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStep(steps[currentStepIndex + 1].id);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(steps[currentStepIndex - 1].id);
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const { startAtLocal, endAtLocal, valid } = getScheduleTimes(formData);
+    if (!valid || !startAtLocal || !endAtLocal) {
+      alert("Please provide a valid date/time range. End time must be after start time.");
+      return;
+    }
+
+    const durationMinutes = String(
+      Math.round((endAtLocal.getTime() - startAtLocal.getTime()) / 60000)
+    );
+    const sourceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+    const payload = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      highlights: formData.highlights.map((item) => item.trim()).filter(Boolean).slice(0, 3),
+      duration: durationMinutes,
+      thumbnail: formData.thumbnail,
+      speaker: {
+        name: formData.speakerName.trim(),
+        bio: formData.speakerBio.trim(),
+        avatar: formData.speakerAvatar
+      },
+      schedule: {
+        date: formData.date,
+        time: formData.startTime,
+        startAt: startAtLocal.toISOString(),
+        endAt: endAtLocal.toISOString(),
+        sourceTimezone,
+        zoomMeetingId: formData.zoomMeetingId.trim(),
+        zoomPassword: formData.zoomPassword.trim()
+      }
+    };
+
+    try {
+      const response = await fetch("/api/academy/seminars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create seminar.");
+      }
+
+      alert("Seminar created successfully!");
+      navigate("/academy/seminars");
+    } catch (error) {
+      console.error("Error creating seminar:", error);
+      alert(error.message || "An unexpected error occurred while creating the seminar.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-main-bg px-4 py-8 font-academy sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-narrow">
+        <button
+          type="button"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:-translate-y-0.5 hover:bg-light-secondary"
+          onClick={() => navigate(-1)}
+        >
+          <FiArrowLeft />
+          <span>Back</span>
         </button>
 
-        <h1 className="create-seminar-title">Create New Seminar</h1>
-        <p className="create-seminar-subtitle">
-          Fill in the details to create a new seminar or webinar
-        </p>
+        <section className="rounded-[32px] border border-border bg-light-tertiary p-6 shadow-card lg:p-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              Seminars
+            </p>
+            <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
+              Create New Seminar
+            </h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
+              Schedule a live seminar, define the speaker profile, and prepare the
+              Zoom access details used by the current branch.
+            </p>
+          </div>
 
-        <div className="step-navigation">
-          {steps.map((step) => (
-            <button
-              key={step.id}
-              className={`step-button ${currentStep === step.id ? 'active' : ''}`}
-              onClick={() => setCurrentStep(step.id)}
-            >
-              {step.label}
-            </button>
-          ))}
-        </div>
-
-        {currentStep === 'basic-info' && (
-          <div className="form-section">
-            <h2 className="section-title">Seminar Information</h2>
-            <p className="section-subtitle">Basic details about your seminar</p>
-
-            <div className="form-group">
-              <label className="form-label">Seminar Title *</label>
-              <input
-                type="text"
-                name="title"
-                className="form-input"
-                placeholder="e.g., Building Your Freelance Brand"
-                value={seminarData.title}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Description *</label>
-              <textarea
-                name="description"
-                rows="5"
-                className="form-textarea"
-                placeholder="Describe what attendees will learn in this seminar..."
-                value={seminarData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Duration</label>
-                <input
-                  type="text"
-                  name="duration"
-                  className="form-input"
-                  placeholder="e.g., 1.5 hours"
-                  value={seminarData.duration}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Seminar Type</label>
-                <select
-                  name="type"
-                  className="form-select"
-                  value={seminarData.type}
-                  onChange={handleInputChange}
+          <div className="mt-8 flex flex-wrap gap-3">
+            {steps.map((step, index) => (
+              <button
+                key={step.id}
+                type="button"
+                className={`inline-flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition ${
+                  currentStep === step.id
+                    ? "bg-dark text-white shadow-md"
+                    : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
+                }`}
+                onClick={() => setCurrentStep(step.id)}
+              >
+                <span
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${
+                    currentStep === step.id
+                      ? "bg-white/15 text-white"
+                      : currentStepIndex > index
+                      ? "bg-accent text-white"
+                      : "bg-light-tertiary text-dark"
+                  }`}
                 >
-                  <option value="Live Now">Live Now</option>
-                  <option value="Recorded">Recorded</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Thumbnail URL</label>
-              <input
-                type="text"
-                name="thumbnail"
-                className="form-input"
-                placeholder="https://example.com/image.jpg"
-                value={seminarData.thumbnail}
-                onChange={handleInputChange}
-              />
-            </div>
+                  {index + 1}
+                </span>
+                <span>{step.label}</span>
+              </button>
+            ))}
           </div>
-        )}
+        </section>
 
-        {currentStep === 'speaker' && (
-          <div className="form-section">
-            <h2 className="section-title">Speaker Information</h2>
-            <p className="section-subtitle">Details about the seminar speaker</p>
-
-            <div className="form-group">
-              <label className="form-label">Speaker Name *</label>
-              <input
-                type="text"
-                name="speakerName"
-                className="form-input"
-                placeholder="e.g., John Smith"
-                value={seminarData.speakerName}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Speaker Bio</label>
-              <textarea
-                name="speakerBio"
-                rows="4"
-                className="form-textarea"
-                placeholder="Brief biography of the speaker..."
-                value={seminarData.speakerBio}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Speaker Avatar URL</label>
-              <input
-                type="text"
-                name="speakerAvatar"
-                className="form-input"
-                placeholder="https://example.com/avatar.jpg"
-                value={seminarData.speakerAvatar}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'schedule' && (
-          <div className="form-section">
-            <h2 className="section-title">Schedule</h2>
-            <p className="section-subtitle">When will this seminar take place?</p>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  className="form-input"
-                  value={seminarData.date}
-                  onChange={handleInputChange}
-                />
+        <section className="mt-8 rounded-[32px] border border-border bg-white p-6 shadow-card lg:p-8">
+          {currentStep === "basic-info" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 1
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Seminar information</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Set the title, description, and attendee expectations.
+                </p>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Time</label>
-                <input
-                  type="time"
-                  name="time"
-                  className="form-input"
-                  value={seminarData.time}
-                  onChange={handleInputChange}
-                />
+              <div className="space-y-6">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Seminar Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    className={inputClasses}
+                    placeholder="e.g., Building Your Freelance Brand"
+                    value={formData.title}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Description *
+                  </label>
+                  <textarea
+                    name="description"
+                    className={textareaClasses}
+                    placeholder="Describe what attendees will learn in this seminar..."
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={6}
+                  />
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    What to Expect (up to 3 bullet points)
+                  </label>
+
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <input
+                      type="text"
+                      className={`${inputClasses} flex-1`}
+                      placeholder="Enter a highlight"
+                      value={highlightDraft}
+                      onChange={(event) => setHighlightDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleAddHighlight();
+                        }
+                      }}
+                      maxLength={160}
+                      disabled={formData.highlights.length >= 3}
+                    />
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full bg-dark px-4 py-3 text-sm font-semibold text-white transition hover:bg-dark-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleAddHighlight}
+                      disabled={!highlightDraft.trim() || formData.highlights.length >= 3}
+                    >
+                      <FiPlus />
+                      <span className="ml-2">Add</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {formData.highlights.length === 0 ? (
+                      <p className="text-sm text-dark-secondary">
+                        No highlights added yet.
+                      </p>
+                    ) : (
+                      formData.highlights.map((highlight, index) => (
+                        <div
+                          key={`${highlight}-${index}`}
+                          className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-4 py-4 md:flex-row md:items-center md:justify-between"
+                        >
+                          <span className="text-sm text-dark">{highlight}</span>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:bg-light-secondary"
+                            onClick={() => handleRemoveHighlight(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-sm text-dark-secondary">
+                    {formData.highlights.length}/3 added
+                  </p>
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <ImageUpload
+                    value={formData.thumbnail}
+                    onChange={(url) => updateField("thumbnail", url)}
+                    label="Seminar Thumbnail"
+                  />
+                </div>
               </div>
             </div>
+          ) : null}
 
-            <div className="form-group">
-              <label className="form-label">Join URL</label>
-              <input
-                type="text"
-                name="joinUrl"
-                className="form-input"
-                placeholder="https://zoom.us/..."
-                value={seminarData.joinUrl}
-                onChange={handleInputChange}
-              />
+          {currentStep === "speaker" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 2
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Speaker profile</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Add the speaker details and upload or capture an avatar.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Speaker Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="speakerName"
+                    className={inputClasses}
+                    placeholder="e.g., Jane Doe"
+                    value={formData.speakerName}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Speaker Bio
+                  </label>
+                  <textarea
+                    name="speakerBio"
+                    className={textareaClasses}
+                    placeholder="Brief biography of the speaker..."
+                    value={formData.speakerBio}
+                    onChange={handleChange}
+                    rows={6}
+                  />
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  <ImageUpload
+                    value={formData.speakerAvatar}
+                    onChange={(url) => updateField("speakerAvatar", url)}
+                    label="Speaker Avatar"
+                  />
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                  {!isCameraOpen ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-full bg-dark px-4 py-3 text-sm font-semibold text-white transition hover:bg-dark-secondary"
+                      onClick={startCamera}
+                    >
+                      <FiVideo />
+                      <span>Use Camera</span>
+                    </button>
+                  ) : (
+                    <div className="space-y-4">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="aspect-video w-full rounded-[28px] border border-border bg-black object-cover"
+                      />
+
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={captureSpeakerAvatar}
+                          disabled={isUploadingAvatar}
+                        >
+                          {isUploadingAvatar ? "Capturing..." : "Capture"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-dark transition hover:bg-light-secondary"
+                          onClick={stopCamera}
+                          disabled={isUploadingAvatar}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {cameraError ? (
+                    <p className="mt-4 text-sm text-error">{cameraError}</p>
+                  ) : null}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          ) : null}
 
-        {/* Buttons */}
-        <div className="form-actions">
-          <button className="cancel-button" onClick={handleCancel}>
-            Cancel
+          {currentStep === "schedule" ? (
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Step 3
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-dark">Schedule & Zoom</h2>
+                <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                  Set the local date, time range, and Zoom credentials used by the join page.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      className={inputClasses}
+                      value={formData.date}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      className={inputClasses}
+                      value={formData.startTime}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      End Time *
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      className={inputClasses}
+                      value={formData.endTime}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">
+                    Duration
+                  </label>
+                  <input
+                    type="text"
+                    className={inputClasses}
+                    value={calculatedDurationLabel}
+                    placeholder="Set start and end time"
+                    readOnly
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Zoom Meeting ID *
+                    </label>
+                    <input
+                      type="text"
+                      name="zoomMeetingId"
+                      className={inputClasses}
+                      placeholder="e.g., 12345678901"
+                      value={formData.zoomMeetingId}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-dark">
+                      Zoom Passcode *
+                    </label>
+                    <input
+                      type="text"
+                      name="zoomPassword"
+                      className={inputClasses}
+                      placeholder="Enter Zoom passcode"
+                      value={formData.zoomPassword}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentStepIndex === 0}
+            className="inline-flex items-center justify-center rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold text-dark transition hover:bg-light-secondary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Previous
           </button>
-          <button className="submit-button" onClick={handleCreateSeminar}>
-            Create Seminar
-          </button>
+
+          {currentStepIndex < steps.length - 1 ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={!isStepValid(currentStep)}
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!isStepValid("schedule")}
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Create Seminar
+            </button>
+          )}
         </div>
       </div>
     </div>

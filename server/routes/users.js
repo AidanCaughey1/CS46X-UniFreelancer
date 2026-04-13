@@ -21,15 +21,17 @@ const generateToken = (id) => {
 // -------------------------------
 router.post("/register", async (req, res) => {
   try {
+    const allowedSignupAccountTypes = ["student", "instructor"];
     const {
       firstName,
       lastName,
       username,
       email,
       password,
-      role,
       accountType, // ADD THIS
     } = req.body;
+
+    const normalizedAccountType = String(accountType || "student").trim().toLowerCase();
 
     // Basic required fields check
     if (!firstName || !lastName || !username || !email || !password) {
@@ -39,8 +41,8 @@ router.post("/register", async (req, res) => {
     }
 
     // Validate accountType if provided
-    if (accountType && !['student', 'instructor'].includes(accountType)) {
-      return res.status(400).json({ message: "Invalid account type" });
+    if (!allowedSignupAccountTypes.includes(normalizedAccountType)) {
+      return res.status(400).json({ message: "Invalid account type. Signup only supports student or instructor." });
     }
 
     // Check if email or username already exists
@@ -56,8 +58,7 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password,   // <-- will be hashed by the pre-save hook
-      role,
-      accountType: accountType || 'student', // ADD THIS - defaults to 'student'
+      accountType: normalizedAccountType,
     });
     await user.save();
 

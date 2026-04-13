@@ -1,53 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CourseLearning.css';
 
 function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
-  const assignment = lesson.assignmentData;
-  const isQuestionBased = assignment?.questions && assignment.questions.length > 0;
-
   const [answers, setAnswers] = useState({});
-  const [partAnswers, setPartAnswers] = useState(
-    assignment?.parts?.reduce((acc, part) => {
-      acc[part.partNumber] = '';
-      return acc;
-    }, {}) || {}
-  );
   const [fileUrl, setFileUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const assignment = lesson.assignmentData;
+  const isQuestionBased = assignment?.questions && assignment.questions.length > 0;
 
   useEffect(() => {
     const existingSubmission = progress?.assignmentSubmissions?.find(
       sub => sub.lessonId?.toString() === lesson._id?.toString()
     );
 
-    if (existingSubmission || progress?.completedLessons?.some(id => id?.toString() === lesson._id?.toString())) {
+    if (
+      existingSubmission ||
+      progress?.completedLessons?.some(id => id?.toString() === lesson._id?.toString())
+    ) {
       setSubmitted(true);
     }
   }, [progress, lesson._id]);
 
   const handleAnswerChange = (questionNumber, answer) => {
-    setAnswers(prev => ({
-      ...prev,
+    setAnswers({
+      ...answers,
       [questionNumber]: answer
-    }));
+    });
   };
 
   const handleMatchingChange = (questionNumber, pairIndex, value) => {
-    setAnswers(prev => ({
-      ...prev,
+    const currentAnswer = answers[questionNumber] || {};
+    setAnswers({
+      ...answers,
       [questionNumber]: {
-        ...(prev[questionNumber] || {}),
+        ...currentAnswer,
         [pairIndex]: value
       }
-    }));
-  };
-
-  const handlePartChange = (partNumber, value) => {
-    setPartAnswers(prev => ({
-      ...prev,
-      [partNumber]: value
-    }));
+    });
   };
 
   const buildQuestionSubmission = () => {
@@ -83,6 +74,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
       acc[partNumber] = typeof rawAnswer === 'string'
         ? rawAnswer
         : JSON.stringify(rawAnswer, null, 2);
+
       return acc;
     }, {});
 
@@ -96,23 +88,28 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
   };
 
   const handleSubmit = async () => {
-    if (isQuestionBased) {
-      const unansweredQuestions = assignment.questions.filter(question => {
-        const answer = answers[question.questionNumber];
+    if (!isQuestionBased) {
+      if (!fileUrl.trim()) {
+        alert('Please provide a file URL or link to your submission');
+        return;
+      }
+    } else {
+      const unansweredQuestions = assignment.questions.filter(q => {
+        const answer = answers[q.questionNumber];
 
-        if (question.type === 'multiple-choice' || question.type === 'true-false') {
+        if (q.type === 'multiple-choice' || q.type === 'true-false') {
           return answer === undefined || answer === null;
         }
-
-        if (question.type === 'written' || question.type === 'pdf-upload') {
+        if (q.type === 'written') {
           return !answer || answer.trim() === '';
         }
-
-        if (question.type === 'matching') {
-          const pairs = question.matchPairs || [];
+        if (q.type === 'matching') {
+          const pairs = assignment.questions.find(aq => aq.questionNumber === q.questionNumber)?.matchPairs || [];
           return !answer || Object.keys(answer).length < pairs.length;
         }
-
+        if (q.type === 'pdf-upload') {
+          return !answer || answer.trim() === '';
+        }
         return false;
       });
 
@@ -120,40 +117,37 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         alert(`Please answer all questions. Missing: Question ${unansweredQuestions.map(q => q.questionNumber).join(', ')}`);
         return;
       }
-    } else {
-      const allPartsFilled = Object.values(partAnswers).every(answer => answer.trim());
-
-      if (!allPartsFilled) {
-        alert('Please complete all parts of the assignment');
-        return;
-      }
     }
 
     try {
       setSubmitting(true);
 
-      const payload = isQuestionBased
+      const questionSubmission = isQuestionBased ? buildQuestionSubmission() : null;
+
+      const submissionData = isQuestionBased
         ? {
-            ...buildQuestionSubmission(),
-            fileUrl
+            courseId,
+            moduleId: lesson._id.split('-')[0],
+            assignmentId: lesson._id,
+            answers: questionSubmission.answers,
+            partAnswers: questionSubmission.partAnswers,
+            textSubmission: questionSubmission.textSubmission,
+            submittedAt: new Date()
           }
         : {
-            textSubmission: Object.entries(partAnswers)
-              .map(([partNum, answer]) => `Part ${partNum}: ${answer}`)
-              .join('\n\n'),
-            partAnswers,
-            fileUrl
+            courseId,
+            moduleId: lesson._id.split('-')[0],
+            assignmentId: lesson._id,
+            fileUrl,
+            submittedAt: new Date()
           };
 
-      const res = await fetch(
-        `/api/courses/${courseId}/progress/assignment/${lesson._id}/submit`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload)
-        }
-      );
+      const res = await fetch('/api/assignments/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(submissionData)
+      });
 
       const data = await res.json();
 
@@ -164,6 +158,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
       alert('Assignment submitted successfully!');
       setSubmitted(true);
       onComplete();
+
     } catch (err) {
       console.error('Error submitting assignment:', err);
       alert(err.message || 'Failed to submit assignment. Please try again.');
@@ -178,7 +173,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         <h2>{lesson.title}</h2>
         <div className="assignment-submitted">
           <div className="success-message">
-            {'\u2705'} Assignment Submitted
+            ✅ Assignment Submitted
           </div>
           <p>Your assignment has been submitted and is awaiting review from your instructor.</p>
         </div>
@@ -190,7 +185,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
     <div className="assignment-lesson">
       <h2>{lesson.title}</h2>
 
-      <div className="lesson-content">
+      <div className="assignment-content-wrapper">
         <div className="assignment-instructions">
           <h3>Assignment Instructions:</h3>
           <p>{assignment?.instructions || assignment?.purpose || 'Complete all questions below'}</p>
@@ -282,15 +277,15 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
                     {question.matchPairs.map((pair, pairIndex) => (
                       <div key={pairIndex} className="matching-pair">
                         <div className="matching-left">{pair.left}</div>
-                        <span className="matching-arrow">{'\u2192'}</span>
+                        <span className="matching-arrow">→</span>
                         <select
                           value={answers[question.questionNumber]?.[pairIndex] || ''}
                           onChange={(e) => handleMatchingChange(question.questionNumber, pairIndex, e.target.value)}
                           className="matching-select"
                         >
                           <option value="">Select match...</option>
-                          {question.matchPairs.map((matchPair, matchIndex) => (
-                            <option key={matchIndex} value={matchPair.right}>{matchPair.right}</option>
+                          {question.matchPairs.map((p, i) => (
+                            <option key={i} value={p.right}>{p.right}</option>
                           ))}
                         </select>
                       </div>
@@ -322,59 +317,27 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         )}
 
         {!isQuestionBased && (
-          <div className="assignment-content">
-            <div className="assignment-parts-input">
-              {assignment?.parts?.map((part, index) => (
-                <div key={index} className="part-input-section">
-                  <h4>Part {part.partNumber}: {part.title}</h4>
-                  <p className="part-instructions">{part.instructions}</p>
+          <div className="part-based-assignment">
+            {assignment.parts && assignment.parts.map((part, index) => (
+              <div key={index} className="assignment-part">
+                <h4>Part {part.partNumber}: {part.title}</h4>
+                <p>{part.instructions}</p>
+              </div>
+            ))}
 
-                  <textarea
-                    value={partAnswers[part.partNumber] || ''}
-                    onChange={(e) => handlePartChange(part.partNumber, e.target.value)}
-                    placeholder="Enter your answer here..."
-                    rows={4}
-                    className="part-input-field"
-                  />
-                </div>
-              ))}
+            <div className="file-submission">
+              <label>Attach File URL (optional)</label>
+              <input
+                type="text"
+                value={fileUrl}
+                onChange={(e) => setFileUrl(e.target.value)}
+                placeholder="https://docs.google.com/..."
+                className="file-url-input"
+              />
+              <p className="file-help-text">Paste a link to Google Doc, Dropbox file, etc.</p>
             </div>
-
-            {assignment?.gradingCriteria?.length > 0 && (
-              <div className="grading-display">
-                <h3>Grading Criteria</h3>
-                <ul>
-                  {assignment.gradingCriteria.map((criterion, index) => (
-                    <li key={index}>
-                      <strong>{criterion.name}</strong> - {criterion.points} points
-                    </li>
-                  ))}
-                </ul>
-                <div className="total-points-display">
-                  Total Points: {assignment.gradingCriteria.reduce((sum, criterion) => sum + criterion.points, 0)}
-                </div>
-              </div>
-            )}
-
-            {assignment?.deliverableFormat && (
-              <div className="deliverable-info">
-                <strong>Deliverable Format:</strong> {assignment.deliverableFormat}
-              </div>
-            )}
           </div>
         )}
-
-        <div className="file-submission">
-          <label>Attach File URL (optional)</label>
-          <input
-            type="text"
-            value={fileUrl}
-            onChange={(e) => setFileUrl(e.target.value)}
-            placeholder="https://docs.google.com/..."
-            className="file-url-input"
-          />
-          <p className="file-help-text">Paste a link to Google Doc, Dropbox file, etc.</p>
-        </div>
 
         <button
           onClick={handleSubmit}

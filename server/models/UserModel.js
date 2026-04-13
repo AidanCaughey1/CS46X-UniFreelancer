@@ -52,9 +52,18 @@ const CourseProgressSchema = new mongoose.Schema({
   badgeEarned: { type: Boolean, default: false },
 
   progressPercentage: { type: Number, default: 0 },
-
   lastAccessedAt: { type: Date, default: Date.now }
 }, { _id: true });
+
+// Learning Time Tracker (overall + per-course)
+const LearningByCourseSchema = new mongoose.Schema(
+  {
+    courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
+    totalSeconds: { type: Number, default: 0, min: 0 },
+    lastTrackedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema({
   firstName: { type: String, required: true, trim: true },
@@ -109,9 +118,22 @@ const UserSchema = new mongoose.Schema({
   savedPodcasts: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
   ],
-}, {
-  timestamps: true,
-});
+
+  savedPodcasts: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Podcast" }
+  ],
+
+  // Total Learning Time Tracker (store seconds; convert to hours in UI)
+  learning: {
+    totalSeconds: { type: Number, default: 0, min: 0 },
+    byCourse: { type: [LearningByCourseSchema], default: [] },
+    updatedAt: { type: Date, default: Date.now }
+  },
+},
+  {
+    timestamps: true,
+  }
+);
 
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -125,10 +147,13 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
+// Fast lookups
 UserSchema.index({ accountType: 1 });
+UserSchema.index({ createdAt: -1 });
 UserSchema.index({ enrolledCourses: 1 });
 UserSchema.index({ completedCourses: 1 });
 UserSchema.index({ bookmarkedTutorials: 1 });
 UserSchema.index({ "courseProgress.courseId": 1 });
+UserSchema.index({ "learning.byCourse.courseId": 1 });
 
 module.exports = mongoose.model("User", UserSchema);

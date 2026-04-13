@@ -39,11 +39,13 @@ function InstructorDashboard() {
         credentials: 'include'
       });
       const pendingData = await pendingRes.json();
+      
+      // CRITICAL FIX: Ensure pendingSubmissions is always an array
       setPendingSubmissions(Array.isArray(pendingData) ? pendingData : []);
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      alert('Failed to load dashboard');
+      // Set empty arrays on error to prevent crashes
       setCourses([]);
       setPendingSubmissions([]);
     } finally {

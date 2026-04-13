@@ -10,6 +10,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Verify config on startup
+console.log('📸 Cloudinary Configuration:');
+console.log('  Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME ? '✓ Set' : '✗ Missing');
+console.log('  API Key:', process.env.CLOUDINARY_API_KEY ? '✓ Set' : '✗ Missing');
+console.log('  API Secret:', process.env.CLOUDINARY_API_SECRET ? '✓ Set' : '✗ Missing');
+
 // Configure Multer for memory storage
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -26,12 +32,24 @@ const upload = multer({
   }
 });
 
-// Upload endpoint
+// Upload endpoint with detailed logging
 router.post('/image', upload.single('image'), async (req, res) => {
   try {
+    console.log('\n===UPLOAD REQUEST RECEIVED ===');
+    console.log('Timestamp:', new Date().toISOString());
+    
     if (!req.file) {
+      console.error('ERROR: No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    console.log('✓ File received:');
+    console.log('  - Name:', req.file.originalname);
+    console.log('  - Size:', req.file.size, 'bytes');
+    console.log('  - Type:', req.file.mimetype);
+    console.log('  - Buffer length:', req.file.buffer.length);
+
+    console.log('\nStarting Cloudinary upload...');
 
     // Upload to Cloudinary using buffer
     const result = await new Promise((resolve, reject) => {
@@ -40,14 +58,24 @@ router.post('/image', upload.single('image'), async (req, res) => {
           folder: 'unifreelancer/courses',
           resource_type: 'image',
           transformation: [
-            { width: 1200, height: 675, crop: 'limit' }, // Max dimensions
+            { width: 1200, height: 675, crop: 'limit' },
             { quality: 'auto' },
             { fetch_format: 'auto' }
           ]
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('\nCLOUDINARY ERROR:');
+            console.error('  - Message:', error.message);
+            console.error('  - HTTP Code:', error.http_code);
+            console.error('  - Full Error:', JSON.stringify(error, null, 2));
+            reject(error);
+          } else {
+            console.log('\nUpload successful!');
+            console.log('  - URL:', result.secure_url);
+            console.log('  - Public ID:', result.public_id);
+            resolve(result);
+          }
         }
       );
 
@@ -61,8 +89,15 @@ router.post('/image', upload.single('image'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload image' });
+    console.error('\nUPLOAD ROUTE ERROR:');
+    console.error('  - Type:', error.constructor.name);
+    console.error('  - Message:', error.message);
+    console.error('  - Stack:', error.stack);
+    
+    res.status(500).json({ 
+      error: error.message || 'Failed to upload image',
+      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+    });
   }
 });
 

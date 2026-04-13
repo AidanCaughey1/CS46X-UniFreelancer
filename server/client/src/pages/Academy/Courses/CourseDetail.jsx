@@ -1,77 +1,120 @@
-/* global process */
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiClock, FiDollarSign } from 'react-icons/fi';
-import './CourseDetail.css';
+import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  FiArrowLeft,
+  FiBookOpen,
+  FiCalendar,
+  FiCheck,
+  FiChevronDown,
+  FiClock,
+  FiLayers,
+  FiPlayCircle,
+  FiTrendingUp,
+  FiUser
+} from "react-icons/fi";
+import "./CourseDetail.css";
 
-function CourseDetail() {
+const fallbackLearningPoints = [
+  "Build a clearer freelance positioning strategy.",
+  "Create a stronger offer and client onboarding flow.",
+  "Turn repeatable knowledge into a scalable system.",
+  "Ship portfolio and messaging assets with confidence.",
+  "Improve delivery quality and referral readiness.",
+  "Apply practical lessons directly to real client work."
+];
+
+const includesId = (collection, targetId) => {
+  if (!Array.isArray(collection) || !targetId) return false;
+  return collection.some((item) => {
+    if (!item) return false;
+    if (typeof item === "string") return item === targetId;
+    return item._id === targetId;
+  });
+};
+
+const formatDate = (value) => {
+  if (!value) return "Recently updated";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently updated";
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(date);
+};
+
+const formatMinutes = (value) => {
+  const minutes = Number(value || 0);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+
+  if (minutes < 60) return `${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours}h ${String(remainder).padStart(2, "0")}m` : `${hours}h`;
+};
+
+const getLectureCount = (moduleItem) => {
+  if (Array.isArray(moduleItem?.lessons)) return moduleItem.lessons.length;
+  if (Array.isArray(moduleItem?.learningPoints)) return moduleItem.learningPoints.length;
+  return moduleItem?.videoUrl ? 1 : 0;
+};
+
+const toYouTubeEmbedUrl = (url) => {
+  if (!url) return "";
+
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.hostname.includes("youtube.com") && parsedUrl.pathname.startsWith("/embed/")) {
+      return url;
+    }
+
+    if (parsedUrl.hostname === "youtu.be") {
+      const videoId = parsedUrl.pathname.replace("/", "");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+
+    const videoId = parsedUrl.searchParams.get("v");
+    if (videoId) {
+      const playlistId = parsedUrl.searchParams.get("list");
+      return playlistId
+        ? `https://www.youtube.com/embed/${videoId}?list=${encodeURIComponent(playlistId)}`
+        : `https://www.youtube.com/embed/${videoId}`;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+};
+
+export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedModules, setExpandedModules] = useState({});
   const [openVideos, setOpenVideos] = useState({});
   const [enrolling, setEnrolling] = useState(false);
-  const [user, setUser] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
-
-  const toggleModule = (moduleId) => {
-    setExpandedModules(prev => {
-      const next = { ...prev, [moduleId]: !prev[moduleId] };
-      if (prev[moduleId]) {
-        setOpenVideos(v => ({ ...v, [moduleId]: false }));
-      }
-      return next;
-    });
-  };
-
-  const toggleVideo = (moduleKey) => {
-    setOpenVideos(prev => ({
-      ...prev,
-      [moduleKey]: !prev[moduleKey]
-    }));
-  };
-
-  const toYouTubeEmbedUrl = (url) => {
-    if (!url) return "";
-    try {
-      const u = new URL(url);
-      if (u.hostname.includes("youtube.com") && u.pathname.startsWith("/embed/")) {
-        return url;
-      }
-      if (u.hostname === "youtu.be") {
-        const id = u.pathname.replace("/", "");
-        return id ? `https://www.youtube.com/embed/${id}` : "";
-      }
-      const v = u.searchParams.get("v");
-      if (v) {
-        const list = u.searchParams.get("list");
-        return list
-          ? `https://www.youtube.com/embed/${v}?list=${encodeURIComponent(list)}`
-          : `https://www.youtube.com/embed/${v}`;
-      }
-      return "";
-    } catch {
-      return "";
-    }
-  };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/users/me', {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user', error);
+        const res = await fetch("/api/users/me", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error(err);
       }
     };
+
     fetchUser();
   }, []);
 
@@ -79,43 +122,47 @@ function CourseDetail() {
     const fetchCourse = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/academy/courses/${id}`);
-        if (!response.ok) {
-          throw new Error('Course not found');
-        }
-        const data = await response.json();
+        const res = await fetch(`/api/academy/courses/${id}`);
+        if (!res.ok) throw new Error("Course not found");
+        const data = await res.json();
         setCourse(data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching course:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
+
     if (id) fetchCourse();
   }, [id]);
 
   useEffect(() => {
-    if (user && course) {
-      const enrolled = user.enrolledCourses?.includes(course._id);
-      setIsEnrolled(enrolled);
-    }
+    setIsEnrolled(includesId(user?.enrolledCourses, course?._id));
   }, [user, course]);
 
-  const handleBack = () => {
-    navigate('/academy/courses');
+  const toggleModule = (moduleId) => {
+    setExpandedModules((prev) => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
   };
+
+  const toggleVideo = (moduleId) => {
+    setOpenVideos((prev) => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
+  };
+
+  const handleBack = () => navigate("/academy/courses");
 
   const handleContinueLearning = () => {
     navigate(`/academy/courses/${id}/learn`);
   };
 
   const handleEnroll = async () => {
-    if (!course) {
-      console.warn("handleEnroll called with no course");
-      return;
-    }
+    if (!course) return;
 
     if (!user) {
       navigate(`/login?returnTo=/academy/courses/${id}`);
@@ -125,32 +172,21 @@ function CourseDetail() {
     try {
       setEnrolling(true);
 
-      const res = await fetch(
-        "/api/payments/create-checkout-session",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            courseId: course._id,
-          }),
-        }
-      );
+      const res = await fetch("/api/payments/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ courseId: course._id })
+      });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Payment initialization failed");
-      }
+      if (!res.ok) throw new Error(data.error || "Payment failed");
 
       if (data.free) {
-        alert("You've been enrolled in this free course!");
         setIsEnrolled(true);
-        const userRes = await fetch('/api/users/me', { credentials: 'include' });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUser(userData);
-        }
+        const refreshed = await fetch("/api/users/me", { credentials: "include" });
+        if (refreshed.ok) setUser(await refreshed.json());
         return;
       }
 
@@ -159,160 +195,120 @@ function CourseDetail() {
         return;
       }
 
-      throw new Error("Invalid response from server");
-
+      throw new Error("Invalid server response");
     } catch (err) {
-      console.error("Enrollment failed:", err);
-      alert(`Enrollment failed: ${err.message}`);
+      console.error(err);
+      alert(err.message);
     } finally {
       setEnrolling(false);
     }
   };
 
+  const modules = Array.isArray(course?.modules) ? course.modules : [];
+
+  const lectureCount = useMemo(
+    () => modules.reduce((t, m) => t + getLectureCount(m), 0),
+    [modules]
+  );
+
+  const totalMinutes = formatMinutes(course?.estimatedMinutes) || course?.duration || "Self-paced";
+
   if (loading) {
     return (
-      <div className="course-detail-page">
-        <div className="course-detail-container">
-          <div className="loading-message">Loading course...</div>
-        </div>
+      <div className="min-h-screen bg-main-bg flex items-center justify-center">
+        Loading course...
       </div>
     );
   }
 
   if (error || !course) {
     return (
-      <div className="course-detail-page">
-        <div className="course-detail-container">
-          <button className="back-button" onClick={handleBack}>
-            <FiArrowLeft size={18} /> Back to Courses
+      <div className="min-h-screen bg-main-bg flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Course Not Found</h2>
+          <button onClick={handleBack} className="mt-4 underline">
+            Back to Courses
           </button>
-          <div className="error-message">
-            <h2>Course Not Found</h2>
-            <p>{error || 'The course you are looking for does not exist.'}</p>
-          </div>
         </div>
       </div>
     );
   }
 
+  const highlights = (course.learningPoints?.length
+    ? course.learningPoints
+    : fallbackLearningPoints
+  ).slice(0, 6);
+
   return (
-    <div className="course-detail-page">
-      <div className="course-detail-container">
-        <button className="back-button" onClick={handleBack}>
-          <FiArrowLeft size={18} /> Back to Courses
-        </button>
+    <div className="min-h-screen bg-main-bg px-6 py-8 font-academy">
+      <button onClick={handleBack} className="mb-6 flex items-center gap-2">
+        <FiArrowLeft /> Back
+      </button>
 
-        <div className="course-header-section">
-          <div className="course-hero">
-            <div className="course-hero-image">
-              {course.thumbnail ? (
-                <img src={course.thumbnail} alt={course.title} />
-              ) : (
-                <div className="placeholder-hero-image">📚</div>
-              )}
-            </div>
+      <div className="grid lg:grid-cols-2 gap-8">
+        <div>
+          <h1 className="text-4xl font-bold">{course.title}</h1>
+          <p className="mt-2 text-dark-secondary">{course.description}</p>
 
-            <div className="course-hero-content">
-              <div className="course-badges">
-                {course.isLiteVersion && (
-                  <span className="lite-badge">Lite Version</span>
-                )}
-                <span className="difficulty-badge">
-                  {course.difficulty || "Beginner"}
-                </span>
-                <span className="category-badge">
-                  {course.category || "General"}
-                </span>
-              </div>
+          <div className="mt-4 flex gap-4 text-sm">
+            <span><FiUser /> {course.instructor?.name}</span>
+            <span><FiCalendar /> {formatDate(course.updatedAt)}</span>
+            <span><FiClock /> {totalMinutes}</span>
+          </div>
 
-              <h1>{course.title}</h1>
+          <button
+            onClick={isEnrolled ? handleContinueLearning : handleEnroll}
+            disabled={enrolling}
+            className="mt-6 bg-accent text-white px-6 py-3 rounded-full"
+          >
+            {isEnrolled
+              ? "Continue Learning"
+              : enrolling
+              ? "Processing..."
+              : "Enroll"}
+          </button>
 
-              <div className="course-meta">
-                <div>
-                  <FiClock /> {course.duration || "N/A"}
-                </div>
-                <div>
-                  <FiDollarSign />{" "}
-                  {course.isFree ? "Free" : `$${course.priceAmount}`}
-                </div>
-              </div>
-            </div>
+          <div className="mt-8">
+            <h3 className="font-semibold">What You’ll Learn</h3>
+            <ul className="mt-3 space-y-2">
+              {highlights.map((p, i) => (
+                <li key={i} className="flex gap-2">
+                  <FiCheck /> {p}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="course-section">
-          <h2>Course Overview</h2>
-          <p>{course.description}</p>
-        </div>
+        <div>
+          <div className="bg-white rounded-xl p-4">
+            <h3 className="font-semibold mb-4">Modules</h3>
 
-        {course.modules?.length > 0 && (
-          <div className="course-section">
-            <h2>Course Modules</h2>
-
-            {course.modules.map((module, index) => {
-              const key = module._id || index;
-              const embedUrl = toYouTubeEmbedUrl(module.videoUrl);
+            {modules.map((m, i) => {
+              const key = m._id || i;
+              const open = expandedModules[key];
 
               return (
-                <div key={key} className="module-card">
-                  <div
-                    className="module-card-header"
+                <div key={key} className="border-b py-2">
+                  <button
                     onClick={() => toggleModule(key)}
+                    className="flex justify-between w-full"
                   >
-                    <h3>{module.title}</h3>
-                    <span>{expandedModules[key] ? "−" : "+"}</span>
-                  </div>
+                    <span>{m.title}</span>
+                    <FiChevronDown className={open ? "rotate-180" : ""} />
+                  </button>
 
-                  {expandedModules[key] && (
-                    <div className="module-content">
-                      <p>{module.description}</p>
-
-                      {embedUrl && (
-                        <>
-                          <button onClick={() => toggleVideo(key)}>
-                            Watch Video
-                          </button>
-
-                          {openVideos[key] && (
-                            <iframe
-                              src={embedUrl}
-                              title={module.title}
-                              allowFullScreen
-                            />
-                          )}
-                        </>
-                      )}
+                  {open && (
+                    <div className="mt-2 text-sm text-dark-secondary">
+                      {m.description}
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
-        )}
-
-        {isEnrolled ? (
-          <button
-            className="continue-learning-button"
-            onClick={handleContinueLearning}
-          >
-            Continue Learning →
-          </button>
-        ) : (
-          <button
-            className="enroll-button"
-            onClick={handleEnroll}
-            disabled={enrolling}
-          >
-            {course.isFree
-              ? enrolling ? "Enrolling..." : "Enroll Free"
-              : enrolling
-              ? "Starting Checkout..."
-              : `Enroll for $${course.priceAmount}`}
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );
 }
-
-export default CourseDetail;

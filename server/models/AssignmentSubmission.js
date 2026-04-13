@@ -35,6 +35,7 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
     enum: ["question-based", "part-based"],
     default: "part-based"
   },
+
   assignmentData: {
     parts: [{
       partNumber: Number,
@@ -48,16 +49,19 @@ const AssignmentSubmissionSchema = new mongoose.Schema({
   },
 
   submittedAt: { type: Date, default: Date.now },
+
   partAnswers: {
     type: Map,
     of: String,
     default: {}
   },
+
   answers: {
     type: Map,
     of: mongoose.Schema.Types.Mixed,
     default: {}
   },
+
   fileUrl: { type: String, default: "" },
 
   status: {

@@ -7,11 +7,13 @@ function GradingInterface() {
   const navigate = useNavigate();
 
   const [submission, setSubmission] = useState(null);
+  const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Grades state: { partNumber: { points: number, comment: string } }
+  // For question-based: { questionNumber: { points: number, comment: string, autoGraded: boolean } }
+  // For part-based: { partNumber: { points: number, maxPoints: number, comment: string } }
   const [grades, setGrades] = useState({});
   const [overallFeedback, setOverallFeedback] = useState('');
 
@@ -45,22 +47,63 @@ function GradingInterface() {
       const data = await response.json();
       setSubmission(data);
 
-      // Initialize grades structure
-      const initialGrades = {};
-      if (data.assignmentData?.parts) {
-        data.assignmentData.parts.forEach((part) => {
-          const criterion = data.assignmentData.gradingCriteria.find(
-            c => c.name.includes(`Part ${part.partNumber}`) || c.name.includes(part.title)
-          );
-          
-          initialGrades[part.partNumber] = {
-            points: 0,
-            maxPoints: criterion?.points || 0,
-            comment: ''
-          };
+      // Fetch course to get assignment questions
+      if (data.assignmentType === 'question-based') {
+        const courseRes = await fetch(`/api/academy/courses/${data.course}`, {
+          credentials: 'include'
         });
+        const course = await courseRes.json();
+        setCourseData(course);
+
+        // Find the module and assignment
+        const module = course.modules.find(m => m._id === data.module);
+        const assignment = module?.assignment;
+
+        if (assignment?.questions) {
+          // Auto-grade multiple-choice and true/false
+          const initialGrades = {};
+          
+          assignment.questions.forEach((question) => {
+            const studentAnswer = data.answers?.[question.questionNumber];
+            let points = 0;
+            let autoGraded = false;
+
+            // Auto-grade multiple-choice and true/false
+            if (question.type === 'multiple-choice' || question.type === 'true-false') {
+              if (studentAnswer === question.correctAnswer) {
+                points = question.points;
+              }
+              autoGraded = true;
+            }
+
+            initialGrades[question.questionNumber] = {
+              points,
+              maxPoints: question.points,
+              comment: '',
+              autoGraded
+            };
+          });
+
+          setGrades(initialGrades);
+        }
+      } else {
+        // Old part-based assignment
+        const initialGrades = {};
+        if (data.assignmentData?.parts) {
+          data.assignmentData.parts.forEach((part) => {
+            const criterion = data.assignmentData.gradingCriteria.find(
+              c => c.name.includes(`Part ${part.partNumber}`) || c.name.includes(part.title)
+            );
+            
+            initialGrades[part.partNumber] = {
+              points: 0,
+              maxPoints: criterion?.points || 0,
+              comment: ''
+            };
+          });
+        }
+        setGrades(initialGrades);
       }
-      setGrades(initialGrades);
 
     } catch (err) {
       console.error('Error fetching submission:', err);
@@ -75,11 +118,11 @@ function GradingInterface() {
     fetchSubmission();
   }, [fetchSubmission]);
 
-  const handleGradeChange = (partNumber, field, value) => {
+  const handleGradeChange = (itemNumber, field, value) => {
     setGrades(prev => ({
       ...prev,
-      [partNumber]: {
-        ...prev[partNumber],
+      [itemNumber]: {
+        ...prev[itemNumber],
         [field]: field === 'points' ? Number(value) : value
       }
     }));
@@ -100,19 +143,19 @@ function GradingInterface() {
   };
 
   const handleSubmitGrade = async () => {
-    // Validate all parts are graded
-    const allPartsGraded = Object.values(grades).every(grade => 
+    // Validate all items are graded
+    const allItemsGraded = Object.values(grades).every(grade => 
       grade.points >= 0 && grade.points <= grade.maxPoints
     );
 
-    if (!allPartsGraded) {
-      alert('Please grade all parts before submitting');
+    if (!allItemsGraded) {
+      alert('Please grade all items before submitting');
       return;
     }
 
     // Confirm submission
     const percentage = calculatePercentage();
-    const passed = percentage >= 70;
+    const passed = percentage >= (submission.passingScore || 70);
     const confirmMessage = `Submit grade: ${calculateTotalScore()}/${calculateMaxScore()} (${percentage}%)\n\nStatus: ${passed ? 'PASSED ✓' : 'NOT PASSED ✗'}\n\nAre you sure?`;
     
     if (!window.confirm(confirmMessage)) {
@@ -209,6 +252,121 @@ function GradingInterface() {
       alert("AI grading failed");
     } finally {
       setAiLoading(false);
+      
+  const renderQuestionAnswer = (question, studentAnswer) => {
+    switch (question.type) {
+      case 'multiple-choice':
+        return (
+          <div className="mc-answer-display">
+            {question.options.map((option, idx) => (
+              <div 
+                key={idx} 
+                className={`mc-option ${
+                  idx === studentAnswer ? 'selected' : ''
+                } ${
+                  idx === question.correctAnswer ? 'correct' : ''
+                } ${
+                  idx === studentAnswer && idx !== question.correctAnswer ? 'incorrect' : ''
+                }`}
+              >
+                <span className="option-letter">{String.fromCharCode(65 + idx)}.</span>
+                <span className="option-text">{option}</span>
+                {idx === question.correctAnswer && <span className="correct-badge">✓ Correct</span>}
+                {idx === studentAnswer && idx !== question.correctAnswer && <span className="incorrect-badge">✗ Incorrect</span>}
+                {idx === studentAnswer && <span className="selected-badge">Student's Answer</span>}
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'true-false':
+        const tfOptions = ['True', 'False'];
+        return (
+          <div className="tf-answer-display">
+            {tfOptions.map((option, idx) => (
+              <div 
+                key={idx}
+                className={`tf-option ${
+                  idx === studentAnswer ? 'selected' : ''
+                } ${
+                  idx === question.correctAnswer ? 'correct' : ''
+                } ${
+                  idx === studentAnswer && idx !== question.correctAnswer ? 'incorrect' : ''
+                }`}
+              >
+                <span className="option-text">{option}</span>
+                {idx === question.correctAnswer && <span className="correct-badge">✓ Correct</span>}
+                {idx === studentAnswer && idx !== question.correctAnswer && <span className="incorrect-badge">✗ Incorrect</span>}
+                {idx === studentAnswer && <span className="selected-badge">Student's Answer</span>}
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'written':
+        return (
+          <div className="written-answer-display">
+            <div className="answer-text">{studentAnswer || <em>No answer provided</em>}</div>
+            {question.wordLimit > 0 && studentAnswer && (
+              <div className="word-count-info">
+                Word count: {studentAnswer.split(/\s+/).filter(w => w).length} / {question.wordLimit}
+              </div>
+            )}
+            {question.rubric && (
+              <div className="rubric-display">
+                <strong>Grading Rubric:</strong>
+                <p>{question.rubric}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'matching':
+        return (
+          <div className="matching-answer-display">
+            {question.matchPairs.map((pair, idx) => {
+              const studentMatch = studentAnswer?.[idx];
+              const isCorrect = studentMatch === pair.right;
+              
+              return (
+                <div key={idx} className={`matching-pair ${isCorrect ? 'correct' : 'incorrect'}`}>
+                  <span className="match-left">{pair.left}</span>
+                  <span className="match-arrow">→</span>
+                  <span className="match-right">{studentMatch || <em>No answer</em>}</span>
+                  {isCorrect ? (
+                    <span className="correct-badge">✓</span>
+                  ) : (
+                    <span className="incorrect-info">
+                      ✗ (Correct: {pair.right})
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 'pdf-upload':
+        return (
+          <div className="pdf-answer-display">
+            {studentAnswer ? (
+              <a href={studentAnswer} target="_blank" rel="noopener noreferrer" className="file-link">
+                📎 View Submitted File →
+              </a>
+            ) : (
+              <em>No file submitted</em>
+            )}
+            {question.fileRequirements && (
+              <div className="file-requirements-display">
+                <strong>Requirements:</strong>
+                <p>{question.fileRequirements}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return <div>{String(studentAnswer) || <em>No answer</em>}</div>;
     }
   };
 
@@ -231,7 +389,11 @@ function GradingInterface() {
   const totalScore = calculateTotalScore();
   const maxScore = calculateMaxScore();
   const percentage = calculatePercentage();
-  const passed = percentage >= 70;
+  const passed = percentage >= (submission.passingScore || 70);
+
+  // Get assignment questions if question-based
+  const module = courseData?.modules?.find(m => m._id === submission.module);
+  const assignment = module?.assignment;
 
   return (
     <div className="grading-interface-page">
@@ -250,6 +412,9 @@ function GradingInterface() {
             {aiLoading ? "Thinking..." : "✨ AI Suggest Grades"}
           </button>
           <h1>Grade Assignment</h1>
+          {isQuestionBased && (
+            <span className="assignment-type-badge">Question-Based Assignment</span>
+          )}
         </div>
 
         {/* Student & Course Info */}
@@ -263,7 +428,7 @@ function GradingInterface() {
                     <img src={submission.student.avatar} alt={submission.studentName} />
                   ) : (
                     <div className="avatar-placeholder-large">
-                      {submission.studentName.charAt(0).toUpperCase()}
+                      {submission.studentName?.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -300,10 +465,77 @@ function GradingInterface() {
           </div>
         </div>
 
-        {/* Grading Sections */}
+        {/* Grading Content */}
         <div className="grading-content">
-          {/* Assignment Parts */}
-          {submission.assignmentData?.parts?.map((part, index) => {
+          {/* QUESTION-BASED ASSIGNMENT */}
+          {isQuestionBased && assignment?.questions && assignment.questions.map((question, index) => {
+            const questionNumber = question.questionNumber;
+            const studentAnswer = submission.answers?.[questionNumber];
+            const grade = grades[questionNumber] || { points: 0, maxPoints: question.points, comment: '', autoGraded: false };
+
+            return (
+              <div key={index} className="grading-question-card">
+                <div className="question-header-grade">
+                  <div className="question-info">
+                    <h3>Question {questionNumber}</h3>
+                    <span className="question-type-badge-grade">{question.type}</span>
+                    {grade.autoGraded && (
+                      <span className="auto-graded-badge">🤖 Auto-Graded</span>
+                    )}
+                  </div>
+                  <span className="max-points-badge">
+                    Max: {question.points} pts
+                  </span>
+                </div>
+
+                <div className="question-text-grade">
+                  <strong>Question:</strong>
+                  <p>{question.question}</p>
+                </div>
+
+                <div className="student-answer-section">
+                  <strong>Student's Answer:</strong>
+                  {renderQuestionAnswer(question, studentAnswer)}
+                </div>
+
+                {/* Grading Inputs */}
+                <div className="grading-inputs">
+                  <div className="points-input-section">
+                    <label>Grade (Points):</label>
+                    <div className="points-input-group">
+                      <input
+                        type="number"
+                        min="0"
+                        max={grade.maxPoints}
+                        value={grade.points}
+                        onChange={(e) => handleGradeChange(questionNumber, 'points', e.target.value)}
+                        className="points-input"
+                        disabled={grade.autoGraded}
+                      />
+                      <span className="points-max">/ {grade.maxPoints}</span>
+                      {grade.autoGraded && (
+                        <span className="auto-grade-note">(Auto-graded)</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="comment-input-section">
+                    <label>Feedback for this question:</label>
+                    <textarea
+                      value={grade.comment}
+                      onChange={(e) => handleGradeChange(questionNumber, 'comment', e.target.value)}
+                      placeholder="Provide constructive feedback..."
+                      rows={3}
+                      className="comment-textarea"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* PART-BASED ASSIGNMENT (OLD) */}
+          {!isQuestionBased && submission.assignmentData?.parts?.map((part, index) => {
             const partNumber = part.partNumber;
             const studentAnswer = getPartAnswer(partNumber);
             const grade = grades[partNumber] || { points: 0, maxPoints: 0, comment: '' };
@@ -392,11 +624,12 @@ function GradingInterface() {
           <div className="score-summary-card">
             <h3>Score Summary</h3>
             <div className="score-breakdown">
-              {Object.entries(grades).map(([partNum, grade]) => (
-                <div key={partNum} className="score-item">
-                  <span>Part {partNum}</span>
+              {Object.entries(grades).map(([itemNum, grade]) => (
+                <div key={itemNum} className="score-item">
+                  <span>{isQuestionBased ? `Question ${itemNum}` : `Part ${itemNum}`}</span>
                   <span className="score-value">
                     {grade.points} / {grade.maxPoints} pts
+                    {grade.autoGraded && <span className="auto-badge-small">🤖</span>}
                   </span>
                 </div>
               ))}

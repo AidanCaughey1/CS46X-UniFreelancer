@@ -90,6 +90,7 @@ function AssignmentQuestionBuilder({ onAddQuestion }) {
           <option value="written">Written Response</option>
           <option value="matching">Matching</option>
           <option value="pdf-upload">PDF Upload</option>
+          <option value="true-false">True/False</option>
         </select>
       </div>
 
@@ -152,6 +153,20 @@ function AssignmentQuestionBuilder({ onAddQuestion }) {
           </div>
         </>
       )}
+
+    {questionType === 'true-false' && (
+    <div className="form-group">
+        <label>Correct Answer</label>
+        <select
+        value={question.correctAnswer ?? ''}
+        onChange={(e) => setQuestion({ ...question, correctAnswer: parseInt(e.target.value) })}
+        >
+        <option value="">Select correct answer...</option>
+        <option value={0}>True</option>
+        <option value={1}>False</option>
+        </select>
+    </div>
+    )}
 
       {questionType === 'written' && (
         <>
