@@ -170,7 +170,7 @@ function Header({ user }) {
           </Link>
         </div>
 
-        <nav className="order-3 flex w-full grow items-center justify-start gap-5 overflow-x-auto lg:order-none lg:w-auto lg:justify-center xl:gap-8">
+        <nav className="order-3 flex w-full grow items-center justify-start gap-5 overflow-x-auto lg:order-none lg:w-auto lg:justify-center lg:overflow-x-visible xl:gap-8">
           <NavItem to="/" isActive={isActive}>Home</NavItem>
           <NavItem to="/find-work" isActive={isActive}>Find Work</NavItem>
           <NavItem to="/browse-freelancers" isActive={isActive}>Browse Freelancers</NavItem>
@@ -184,7 +184,7 @@ function Header({ user }) {
             <NavItem
               to="/instructor/dashboard"
               isActive={isActive}
-              className="rounded-md bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 py-2 font-semibold text-white shadow-[0_4px_12px_rgba(102,126,234,0.4)] after:hidden hover:-translate-y-0.5 hover:text-white"
+              className="rounded-md bg-gradient-to-br from-accent to-accent-secondary px-4 py-2 font-semibold text-white shadow-accent after:hidden hover:-translate-y-0.5 hover:text-white hover:shadow-accent-hover"
             >
               Dashboard
             </NavItem>
@@ -194,7 +194,7 @@ function Header({ user }) {
             <NavItem
               to="/admin"
               isActive={isActive}
-              className="rounded-md bg-gradient-to-br from-[#667eea] to-[#764ba2] px-4 py-2 font-semibold text-white shadow-[0_4px_12px_rgba(102,126,234,0.4)] after:hidden hover:-translate-y-0.5 hover:text-white"
+              className="rounded-md bg-gradient-to-br from-accent to-accent-secondary px-4 py-2 font-semibold text-white shadow-accent after:hidden hover:-translate-y-0.5 hover:text-white hover:shadow-accent-hover"
             >
               Admin
             </NavItem>

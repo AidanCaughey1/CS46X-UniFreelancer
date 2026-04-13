@@ -5,19 +5,82 @@ const { protect, authorizeAccountTypes } = require("../middleware/authMiddleware
 
 const router = express.Router();
 
+const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 router.use(protect, authorizeAccountTypes("admin"));
 
 router.get("/audit-logs", async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+    const action = String(req.query.action || "").trim();
+    const actor = String(req.query.actor || "").trim();
+    const target = String(req.query.target || "").trim();
+    const from = String(req.query.from || "").trim();
+    const to = String(req.query.to || "").trim();
+    const sortBy = String(req.query.sortBy || "createdAt").trim();
+    const sortOrder = String(req.query.sortOrder || "desc").trim().toLowerCase();
+
+    const andClauses = [];
+
+    if (action) {
+      andClauses.push({ action });
+    }
+
+    if (actor) {
+      const regex = new RegExp(escapeRegex(actor), "i");
+      andClauses.push({
+        $or: [
+          { "actor.email": regex },
+          { "actor.username": regex },
+          { "actor.identifier": regex },
+        ],
+      });
+    }
+
+    if (target) {
+      const regex = new RegExp(escapeRegex(target), "i");
+      andClauses.push({
+        $or: [
+          { "target.email": regex },
+          { "target.username": regex },
+          { "target.tutorialId": regex },
+        ],
+      });
+    }
+
+    const createdAt = {};
+    if (from) {
+      const fromDate = new Date(from);
+      if (!Number.isNaN(fromDate.getTime())) {
+        createdAt.$gte = fromDate;
+      }
+    }
+
+    if (to) {
+      const toDate = new Date(to);
+      if (!Number.isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        createdAt.$lte = toDate;
+      }
+    }
+
+    if (Object.keys(createdAt).length > 0) {
+      andClauses.push({ createdAt });
+    }
+
+    const query = andClauses.length > 0 ? { $and: andClauses } : {};
+    const allowedLogSortFields = new Set(["createdAt", "action", "actor.email", "target.email"]);
+    const safeSortField = allowedLogSortFields.has(sortBy) ? sortBy : "createdAt";
+    const safeSortOrder = sortOrder === "asc" ? 1 : -1;
+    const sort = { [safeSortField]: safeSortOrder, _id: -1 };
 
     const [logs, total] = await Promise.all([
-      AdminAuditLog.find()
-        .sort({ createdAt: -1 })
+      AdminAuditLog.find(query)
+        .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit),
-      AdminAuditLog.countDocuments(),
+      AdminAuditLog.countDocuments(query),
     ]);
 
     res.json({
@@ -34,13 +97,36 @@ router.get("/audit-logs", async (req, res) => {
   }
 });
 
+router.get("/audit-logs/critical", async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 5, 1), 20);
+
+    const criticalLogs = await AdminAuditLog.find({
+      action: { $in: ["PROMOTE_USER", "DEMOTE_USER", "CHANGE_ACCOUNT_TYPE"] },
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    res.json({ logs: criticalLogs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/users", async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 50);
     const search = String(req.query.search || "").trim();
+    const accountType = String(req.query.accountType || "").trim().toLowerCase();
+    const sortBy = String(req.query.sortBy || "createdAt").trim();
+    const sortOrder = String(req.query.sortOrder || "desc").trim().toLowerCase();
 
     const query = {};
+    if (["student", "instructor", "admin"].includes(accountType)) {
+      query.accountType = accountType;
+    }
+
     if (search) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       query.$or = [
@@ -51,10 +137,15 @@ router.get("/users", async (req, res) => {
       ];
     }
 
+    const allowedUserSortFields = new Set(["createdAt", "firstName", "username", "email", "accountType"]);
+    const safeSortField = allowedUserSortFields.has(sortBy) ? sortBy : "createdAt";
+    const safeSortOrder = sortOrder === "asc" ? 1 : -1;
+    const sort = { [safeSortField]: safeSortOrder, _id: -1 };
+
     const [users, total] = await Promise.all([
       User.find(query)
         .select("firstName lastName username email accountType createdAt")
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit),
       User.countDocuments(query),
@@ -68,6 +159,28 @@ router.get("/users", async (req, res) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/user-stats", async (req, res) => {
+  try {
+    const [totalUsers, students, instructors, admins] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ accountType: "student" }),
+      User.countDocuments({ accountType: "instructor" }),
+      User.countDocuments({ accountType: "admin" }),
+    ]);
+
+    res.json({
+      roleCounts: {
+        student: students,
+        instructor: instructors,
+        admin: admins,
+      },
+      totalUsers,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

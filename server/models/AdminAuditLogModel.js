@@ -42,5 +42,7 @@ AdminAuditLogSchema.index({ createdAt: -1 });
 AdminAuditLogSchema.index({ action: 1, createdAt: -1 });
 AdminAuditLogSchema.index({ "actor.userId": 1, createdAt: -1 });
 AdminAuditLogSchema.index({ "target.userId": 1, createdAt: -1 });
+AdminAuditLogSchema.index({ "actor.email": 1, createdAt: -1 });
+AdminAuditLogSchema.index({ "target.email": 1, createdAt: -1 });
 
 module.exports = mongoose.model("AdminAuditLog", AdminAuditLogSchema);
