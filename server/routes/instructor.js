@@ -245,37 +245,44 @@ router.post("/submissions/:id/grade", protect, isInstructor, async (req, res) =>
 // -------------------------------------
 // GET students for a specific course
 // -------------------------------------
+const mongoose = require("mongoose");
+
 router.get("/courses/:courseId/students", protect, isInstructor, async (req, res) => {
   try {
     const { courseId } = req.params;
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseObjectId);
     if (!course || course.instructor._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Access denied" });
     }
 
     const students = await User.find({
-      enrolledCourses: courseId
-    }).select("firstName lastName username email avatar enrolledAt");
+      enrolledCourses: courseObjectId
+    }).select("firstName lastName username email avatar learning");
+
+    console.log("Students found:", students.length);
 
     const studentsWithProgress = await Promise.all(
       students.map(async (student) => {
         const submissions = await AssignmentSubmission.find({
           student: student._id,
-          course: courseId
+          course: courseObjectId
         });
 
         const totalSubmissions = submissions.length;
         const gradedSubmissions = submissions.filter(s => s.status === 'graded');
+
         const avgGrade = gradedSubmissions.length > 0
           ? Math.round(
-              gradedSubmissions.reduce((sum, s) => sum + (s.totalScore / s.maxScore) * 100, 0) /
-              gradedSubmissions.length
+              gradedSubmissions.reduce((sum, s) =>
+                sum + (s.totalScore / s.maxScore) * 100, 0
+              ) / gradedSubmissions.length
             )
           : 0;
 
         const learningEntry = student.learning?.byCourse?.find(
-          entry => entry.courseId.equals(courseId)
+          entry => entry.courseId.equals(courseObjectId)
         );
 
         const totalSeconds = learningEntry?.totalSeconds || 0;
@@ -290,7 +297,7 @@ router.get("/courses/:courseId/students", protect, isInstructor, async (req, res
           gradedSubmissions: gradedSubmissions.length,
           averageGrade: avgGrade,
           learningSeconds: totalSeconds,
-          learningHours: learningHours
+          learningHours
         };
       })
     );
@@ -302,7 +309,6 @@ router.get("/courses/:courseId/students", protect, isInstructor, async (req, res
     res.status(500).json({ error: err.message });
   }
 });
-
 // -------------------------------------
 // GET course stats
 // -------------------------------------
