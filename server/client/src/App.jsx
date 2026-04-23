@@ -143,6 +143,33 @@ function NavItem({ to, isActive, children, className = '' }) {
 
 function Header({ user }) {
   const location = useLocation();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Always show at the very top
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+      } 
+      // Scrolling down (and past the 100px threshold to avoid immediate hide on load)
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } 
+      // Scrolling up
+      else if (currentScrollY < lastScrollY) {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const isSeminarJoinRoute = /^\/academy\/seminars\/[^/]+\/join$/.test(location.pathname);
 
   if (isSeminarJoinRoute) {
@@ -161,7 +188,7 @@ function Header({ user }) {
     'U';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white shadow-sm">
+    <header className={`sticky top-0 z-50 border-b border-border bg-white shadow-sm transition-transform duration-300 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-4 px-8 py-4 lg:flex-nowrap">
         <div className="shrink-0">
           <Link to="/" className="text-inherit no-underline">
