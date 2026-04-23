@@ -52,7 +52,35 @@ function InstructorDashboard() {
       setLoading(false);
     }
   };
+  const handleDeleteCourse = async (courseId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this course? This cannot be undone."
+    );
 
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/instructor/courses/${courseId}`, {
+        method: "DELETE",
+        credentials: "include", // IMPORTANT since you're using cookies elsewhere
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete course");
+      }
+
+      // remove from UI immediately
+      setCourses(prev => prev.filter(course => course._id !== courseId));
+
+      console.log("Course deleted:", data.message);
+
+    } catch (err) {
+      console.error("Delete error:", err.message);
+      alert(err.message);
+    }
+  };
   const handleGradeSubmission = (submissionId) => {
     navigate(`/instructor/grade/${submissionId}`);
   };
@@ -169,6 +197,7 @@ function InstructorDashboard() {
                       course={course}
                       onView={handleViewCourse}
                       onEdit={handleEditCourse}
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>
@@ -215,6 +244,7 @@ function InstructorDashboard() {
                       course={course}
                       onView={handleViewCourse}
                       onEdit={handleEditCourse}
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>

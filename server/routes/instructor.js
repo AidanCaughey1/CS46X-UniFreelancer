@@ -357,4 +357,35 @@ router.get("/courses/:courseId/stats", protect, isInstructor, async (req, res) =
   }
 });
 
+router.delete("/courses/:courseId", protect, isInstructor, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    if (course.instructor._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized to delete this course" });
+    }
+
+    // delete course
+    await Course.findByIdAndDelete(courseId);
+
+    // optional cleanup (recommended)
+    await User.updateMany(
+      { enrolledCourses: courseId },
+      { $pull: { enrolledCourses: courseId } }
+    );
+
+    res.json({ message: "Course deleted successfully" });
+
+  } catch (err) {
+    console.error("Error deleting course:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
