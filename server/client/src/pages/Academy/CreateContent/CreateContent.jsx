@@ -74,8 +74,8 @@ function CreateContent({ user }) {
           {activeTab === 'course' && (
             <div className="animate-fade-in-up">
               <div className="mx-auto max-w-[700px]">
-                <h2 className="mb-5 text-[22px] font-bold text-dark sm:text-[26px] md:text-4xl">Create a Course</h2>
-                <p className="mb-8 text-md leading-[1.7] text-dark-secondary md:text-[17px]">
+                <h2 className="mb-5 text-lg font-bold text-dark sm:text-xl md:text-3xl">Create a Course</h2>
+                <p className="mb-8 text-sm leading-[1.7] text-dark-secondary">
                   Courses are comprehensive, structured learning programs designed to teach students a 
                   complete skill or subject. They typically include multiple modules, lessons, and assessments.
                 </p>
@@ -92,7 +92,7 @@ function CreateContent({ user }) {
                   </ul>
                 </div>
 
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-[17px]" onClick={handleCreateCourse}>
+                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateCourse}>
                   Start Creating Course
                 </button>
               </div>
@@ -102,8 +102,8 @@ function CreateContent({ user }) {
           {activeTab === 'seminar' && (
             <div className="animate-fade-in-up">
               <div className="mx-auto max-w-[700px]">
-                <h2 className="mb-5 text-[22px] font-bold text-dark sm:text-[26px] md:text-4xl">Create a Seminar</h2>
-                <p className="mb-8 text-md leading-[1.7] text-dark-secondary md:text-[17px]">
+                <h2 className="mb-5 text-lg font-bold text-dark sm:text-xl md:text-3xl">Create a Seminar</h2>
+                <p className="mb-8 text-sm leading-[1.7] text-dark-secondary">
                   Seminars are live or recorded webinar sessions focused on specific topics. They're perfect 
                   for workshops, presentations, and interactive learning experiences.
                 </p>
@@ -120,7 +120,7 @@ function CreateContent({ user }) {
                   </ul>
                 </div>
 
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-[17px]" onClick={handleCreateSeminar}>
+                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateSeminar}>
                   Start Creating Seminar
                 </button>
               </div>
@@ -130,8 +130,8 @@ function CreateContent({ user }) {
           {isAdmin && activeTab === 'tutorial' && (
             <div className="animate-fade-in-up">
               <div className="mx-auto max-w-[700px]">
-                <h2 className="mb-5 text-[22px] font-bold text-dark sm:text-[26px] md:text-4xl">Create a Tutorial</h2>
-                <p className="mb-8 text-md leading-[1.7] text-dark-secondary md:text-[17px]">
+                <h2 className="mb-5 text-lg font-bold text-dark sm:text-xl md:text-3xl">Create a Tutorial</h2>
+                <p className="mb-8 text-sm leading-[1.7] text-dark-secondary">
                   Tutorials are quick, focused lessons that teach a specific skill or technique. They're 
                   perfect for step-by-step guides and practical how-to content.
                 </p>
@@ -149,7 +149,7 @@ function CreateContent({ user }) {
                 </div>
 
 
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-[17px]" onClick={handleCreateTutorial}>
+                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateTutorial}>
                   Start Creating Tutorial
                 </button>
               </div>

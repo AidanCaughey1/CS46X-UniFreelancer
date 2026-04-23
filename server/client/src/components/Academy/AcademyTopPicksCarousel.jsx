@@ -97,8 +97,8 @@ function AcademyTopPicksCarousel({ featuredLoading, featuredTracks }) {
     <section className="relative my-10 mb-8 overflow-hidden rounded-[30px] border border-border bg-light-tertiary p-8 shadow-card backdrop-blur-[8px] before:absolute before:left-0 before:top-0 before:h-full before:w-2 before:bg-[linear-gradient(180deg,rgba(244,102,62,0.22)_0%,rgba(244,102,62,1)_16%,rgba(244,102,62,1)_84%,rgba(244,102,62,0.22)_100%)] before:content-[''] md:p-6" aria-label="Featured learning carousel">
       <div className="mb-6 flex items-end justify-start gap-5 md:flex-col md:items-start">
         <div>
-          <span className="mb-1.5 inline-block text-[11px] font-bold uppercase tracking-[2px] text-accent">Top Picks</span>
-          <h3 className="text-[30px] text-dark-primary md:text-2xl">Current academy highlights</h3>
+          <span className="mb-1.5 inline-block text-[9px] font-bold uppercase tracking-[2px] text-accent">Top Picks</span>
+          <h3 className="text-2xl text-dark-primary">Current academy highlights</h3>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ function AcademyTopPicksCarousel({ featuredLoading, featuredTracks }) {
                   key={`${track.id || track.title}-${index}`}
                 >
                   <div className="min-w-0">
-                    <span className="mb-4 inline-flex rounded-full bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-dark-primary">{track.label}</span>
+                    <span className="mb-4 inline-flex rounded-full bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[1px] text-dark-primary">{track.label}</span>
                     <h4 className="mb-4 max-w-[700px] text-3xl text-dark-primary md:text-2xl">{track.title}</h4>
                     <div className="mb-4 flex flex-wrap gap-2.5">
                       <span className="rounded-full bg-light-secondary px-2.5 py-1.5 text-xs text-[#666]">{track.level}</span>

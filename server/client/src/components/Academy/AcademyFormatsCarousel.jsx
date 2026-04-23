@@ -126,8 +126,8 @@ function AcademyFormatsCarousel() {
   return (
     <section className="my-6 mb-8 rounded-[30px] border border-border bg-light-tertiary p-8 shadow-card backdrop-blur-[8px] md:p-6" aria-label="Learning format highlights">
       <div className="mb-5">
-        <span className="mb-1.5 inline-block text-[11px] font-bold uppercase tracking-[2px] text-accent">Explore Formats</span>
-        <h3 className="text-[30px] text-dark-primary md:text-2xl">Choose how you want to learn</h3>
+        <span className="mb-1.5 inline-block text-[9px] font-bold uppercase tracking-[2px] text-accent">Explore Formats</span>
+        <h3 className="text-2xl text-dark-primary">Choose how you want to learn</h3>
       </div>
 
       <div
@@ -138,13 +138,13 @@ function AcademyFormatsCarousel() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex gap-4 transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${activeSlide * slideStep}px)` }}>
+        <div className="flex gap-3 transition-transform duration-700 ease-in-out md:gap-4" style={{ transform: `translateX(-${activeSlide * slideStep}px)` }}>
           {formatSlides.map((slide) => {
             const Icon = slide.icon;
 
             return (
               <article
-                className={`min-w-[calc(100%-120px)] flex-[0_0_calc(100%-120px)] rounded-2xl border border-border bg-main-bg p-6 md:min-w-[calc(100%-24px)] md:flex-[0_0_calc(100%-24px)] md:p-[22px] ${slide.route ? 'cursor-pointer transition-all duration-[250ms] ease-in-out hover:-translate-y-[3px] hover:border-accent/50 hover:shadow-card-hover focus-visible:-translate-y-[3px] focus-visible:border-accent/50 focus-visible:shadow-card-hover focus-visible:outline-none' : 'cursor-default'}`}
+                className={`min-w-[calc(100%-24px)] flex-[0_0_calc(100%-24px)] rounded-2xl border border-border bg-main-bg p-6 md:min-w-[calc(100%-120px)] md:flex-[0_0_calc(100%-120px)] md:p-[22px] ${slide.route ? 'cursor-pointer transition-all duration-[250ms] ease-in-out hover:-translate-y-[3px] hover:border-accent/50 hover:shadow-card-hover focus-visible:-translate-y-[3px] focus-visible:border-accent/50 focus-visible:shadow-card-hover focus-visible:outline-none' : 'cursor-default'}`}
                 key={slide.title}
                 role={slide.route ? 'button' : undefined}
                 tabIndex={slide.route ? 0 : -1}
@@ -164,11 +164,11 @@ function AcademyFormatsCarousel() {
                 <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-md bg-light-secondary text-[#111]" aria-hidden="true">
                   <Icon className="h-5 w-5" strokeWidth={2.1} />
                 </span>
-                <h4 className="mb-2 text-[26px] text-dark-primary">{slide.title}</h4>
+                <h4 className="mb-2 text-xl text-dark-primary">{slide.title}</h4>
                 <p className="mb-4 text-md leading-[1.6] text-dark-secondary">{slide.description}</p>
                 <div className="flex flex-wrap gap-2">
                   {slide.points.map((point) => (
-                    <span key={point} className="inline-flex rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold tracking-[0.4px] text-[#666]">
+                    <span key={point} className="inline-flex rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold tracking-[0.4px] text-[#666]">
                       {point}
                     </span>
                   ))}

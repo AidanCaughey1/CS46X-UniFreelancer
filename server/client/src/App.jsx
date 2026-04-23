@@ -165,8 +165,8 @@ function Header({ user }) {
       <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-4 px-8 py-4 lg:flex-nowrap">
         <div className="shrink-0">
           <Link to="/" className="text-inherit no-underline">
-            <h1 className="mb-0.5 text-[22px] font-bold tracking-wide text-body">UniFreelancer</h1>
-            <p className="text-[10px] font-medium uppercase tracking-[1.5px] text-muted">FREELANCE PORTAL</p>
+            <h1 className="mb-0.5 text-lg font-bold tracking-wide text-body">UniFreelancer</h1>
+            <p className="text-[8px] font-medium uppercase tracking-[1.5px] text-muted">FREELANCE PORTAL</p>
           </Link>
         </div>
 

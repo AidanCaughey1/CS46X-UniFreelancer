@@ -9,7 +9,7 @@ function AcademyHero({ onBrowseCourses, onCreateContent }) {
           <span className="mb-4 inline-flex items-center rounded-full border border-accent/[0.16] bg-accent/[0.08] px-4 py-3 text-base font-bold uppercase tracking-[2.4px] text-accent">
             UniFreelancer Academy
           </span>
-          <h1 className="mb-5 text-balance text-[clamp(2.2rem,5.2vw,3.95rem)] font-bold leading-none tracking-tight text-dark-primary md:text-[34px] lg:text-[46px]">
+          <h1 className="mb-5 text-balance text-[clamp(1.76rem,4.16vw,3.16rem)] font-bold leading-none tracking-tight text-dark-primary md:text-4xl lg:text-5xl">
             Build a freelancing career with confidence.
           </h1>
           <p className="mb-8 max-w-[730px] text-lg leading-[1.78] text-dark-secondary md:text-base">
@@ -58,10 +58,10 @@ function AcademyHero({ onBrowseCourses, onCreateContent }) {
               className="block h-full w-full object-cover"
             />
           </div>
-          <span className="absolute right-[6px] top-[14px] z-[3] inline-flex items-center rounded-full border border-border bg-light-tertiary px-3 py-2 text-[10px] font-bold uppercase tracking-[0.4px] text-dark-primary shadow-card animate-nudge-float">
+          <span className="absolute right-[6px] top-[14px] z-[3] inline-flex items-center rounded-full border border-border bg-light-tertiary px-3 py-2 text-[8px] font-bold uppercase tracking-[0.4px] text-dark-primary shadow-card animate-nudge-float">
             Self-paced learning
           </span>
-          <span className="absolute -bottom-2 left-[10px] z-[3] inline-flex items-center rounded-full border border-border bg-light-tertiary px-3 py-2 text-[10px] font-bold uppercase tracking-[0.4px] text-dark-primary shadow-card animate-[nudge-float_6.4s_ease-in-out_infinite]">
+          <span className="absolute -bottom-2 left-[10px] z-[3] inline-flex items-center rounded-full border border-border bg-light-tertiary px-3 py-2 text-[8px] font-bold uppercase tracking-[0.4px] text-dark-primary shadow-card animate-[nudge-float_6.4s_ease-in-out_infinite]">
             Creator-led sessions
           </span>
         </div>
