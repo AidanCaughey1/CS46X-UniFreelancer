@@ -12,6 +12,7 @@ function InstructorDashboard() {
   const [stats, setStats] = useState(null);
   const [courses, setCourses] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -43,11 +44,20 @@ function InstructorDashboard() {
       // CRITICAL FIX: Ensure pendingSubmissions is always an array
       setPendingSubmissions(Array.isArray(pendingData) ? pendingData : []);
 
+      const draftsRes = await fetch('/api/academy/drafts', {
+        credentials: 'include'
+      });
+      if (draftsRes.ok) {
+        const draftsData = await draftsRes.json();
+        setDrafts(Array.isArray(draftsData) ? draftsData : []);
+      }
+
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       // Set empty arrays on error to prevent crashes
       setCourses([]);
       setPendingSubmissions([]);
+      setDrafts([]);
     } finally {
       setLoading(false);
     }
@@ -78,6 +88,24 @@ function InstructorDashboard() {
 
     } catch (err) {
       console.error("Delete error:", err.message);
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteDraft = async (draftId) => {
+    const confirmed = window.confirm("Are you sure you want to delete this draft?");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/academy/drafts/${draftId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete draft");
+      setDrafts(prev => prev.filter(draft => draft._id !== draftId));
+    } catch (err) {
+      console.error("Delete draft error:", err.message);
       alert(err.message);
     }
   };
@@ -126,6 +154,15 @@ function InstructorDashboard() {
             onClick={() => setActiveTab('courses')}
           >
             📚 My Courses
+          </button>
+          <button
+            className={`tab ${activeTab === 'drafts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('drafts')}
+          >
+            📝 Drafts
+            {drafts && drafts.length > 0 && (
+              <span className="badge">{drafts.length}</span>
+            )}
           </button>
           <button
             className={`tab ${activeTab === 'submissions' ? 'active' : ''}`}
@@ -246,6 +283,79 @@ function InstructorDashboard() {
                       onEdit={handleEditCourse}
                       onDelete={handleDeleteCourse}
                     />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'drafts' && (
+            <div className="courses-tab">
+              <div className="tab-header">
+                <h2>My Drafts ({drafts ? drafts.length : 0})</h2>
+                <button
+                  className="create-course-button-secondary"
+                  onClick={() => navigate('/academy/create')}
+                >
+                  + New Content
+                </button>
+              </div>
+
+              {!drafts || drafts.length === 0 ? (
+                <div className="empty-state">
+                  <h3>No drafts yet</h3>
+                  <p>Incomplete courses, tutorials, and seminars will appear here.</p>
+                </div>
+              ) : (
+                <div className="courses-grid">
+                  {drafts.map((draft) => (
+                    <div key={draft._id} className="instructor-course-card">
+                      {/* Thumbnail area - reused as a type banner */}
+                      <div className="course-card-thumbnail">
+                        <div className="placeholder-thumbnail draft-thumbnail">
+                          {draft.contentType === 'course' ? '📚' : draft.contentType === 'seminar' ? '🎤' : '📝'}
+                        </div>
+                        <span className="lite-badge-card draft-badge">Draft</span>
+                      </div>
+
+                      {/* Content */}
+                      <div className="course-card-content">
+                        <h3 className="course-card-title">{draft.contentData?.title || '(Untitled)'}</h3>
+
+                        <div className="course-card-meta">
+                          <span className="meta-item" style={{textTransform: 'capitalize'}}>
+                            📁 {draft.contentType}
+                          </span>
+                          <span className="meta-item">
+                            🕒 {new Date(draft.lastSavedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="course-card-price">
+                          <span className="difficulty-badge">
+                            {draft.contentData?.description
+                              ? draft.contentData.description.substring(0, 40) + '...'
+                              : 'No description'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="course-card-actions">
+                        <button 
+                          className="action-button view-button" 
+                          onClick={() => navigate(`/academy/create/${draft.contentType}?draftId=${draft._id}`)}
+                        >
+                          ✏️ Resume
+                        </button>
+                        <button 
+                          className="action-button edit-button" 
+                          onClick={() => handleDeleteDraft(draft._id)}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

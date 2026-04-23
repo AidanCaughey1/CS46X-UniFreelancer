@@ -1,12 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit3, FiX, FiTrash2 } from 'react-icons/fi';
 
 function CreateContent({ user }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('course');
+  const [drafts, setDrafts] = useState([]);
+  const [draftPickerType, setDraftPickerType] = useState(null); // null = closed, 'course'|'seminar'|'tutorial' = open
   const isAdmin = user?.accountType === 'admin';
+
+  useEffect(() => {
+    const fetchDrafts = async () => {
+      try {
+        const response = await fetch('/api/academy/drafts', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setDrafts(data);
+        }
+      } catch (error) {
+        console.error("Error fetching drafts:", error);
+      }
+    };
+    fetchDrafts();
+  }, []);
+
+  // Helper to find ALL drafts for a given type
+  const getDraftsForType = (type) => {
+    return drafts.filter(draft => draft.contentType === type);
+  };
+
+  const handleResumeDraft = (type) => {
+    const typeDrafts = getDraftsForType(type);
+    if (typeDrafts.length === 1) {
+      // Only one draft — go directly
+      navigate(`/academy/create/${type}?draftId=${typeDrafts[0]._id}`);
+    } else {
+      // Multiple drafts — open picker modal
+      setDraftPickerType(type);
+    }
+  };
+
+  const handleDeleteDraft = async (draftId) => {
+    try {
+      const res = await fetch(`/api/academy/drafts/${draftId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setDrafts(prev => prev.filter(d => d._id !== draftId));
+        // Close modal if no more drafts of this type
+        if (draftPickerType) {
+          const remaining = drafts.filter(d => d._id !== draftId && d.contentType === draftPickerType);
+          if (remaining.length === 0) setDraftPickerType(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting draft:', err);
+    }
+  };
 
   const handleBackToAcademy = () => {
     navigate('/academy');
@@ -32,6 +84,8 @@ function CreateContent({ user }) {
     }`;
 
   const liClasses = "relative py-2 pl-7 text-sm leading-relaxed text-dark-secondary before:absolute before:left-0 before:font-bold before:text-accent before:content-['\\2713'] sm:py-2.5 sm:pl-[30px] sm:text-md";
+
+  const pickerDrafts = draftPickerType ? getDraftsForType(draftPickerType) : [];
 
   return (
     <div className="min-h-screen bg-main-bg px-[15px] pt-5 md:px-6 md:pt-[100px]">
@@ -92,9 +146,20 @@ function CreateContent({ user }) {
                   </ul>
                 </div>
 
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateCourse}>
-                  Start Creating Course
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button className="flex-1 rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateCourse}>
+                    Start Creating Course
+                  </button>
+                  {getDraftsForType('course').length > 0 && (
+                    <button 
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded border border-border bg-white px-7 py-3.5 text-base font-semibold text-dark shadow-sm transition-all duration-300 hover:bg-light-secondary md:px-8 md:py-4 md:text-sm" 
+                      onClick={() => handleResumeDraft('course')}
+                    >
+                      <FiEdit3 />
+                      Resume Draft {getDraftsForType('course').length > 1 ? `(${getDraftsForType('course').length})` : ''}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -120,9 +185,20 @@ function CreateContent({ user }) {
                   </ul>
                 </div>
 
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateSeminar}>
-                  Start Creating Seminar
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button className="flex-1 rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateSeminar}>
+                    Start Creating Seminar
+                  </button>
+                  {getDraftsForType('seminar').length > 0 && (
+                    <button 
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded border border-border bg-white px-7 py-3.5 text-base font-semibold text-dark shadow-sm transition-all duration-300 hover:bg-light-secondary md:px-8 md:py-4 md:text-sm" 
+                      onClick={() => handleResumeDraft('seminar')}
+                    >
+                      <FiEdit3 />
+                      Resume Draft {getDraftsForType('seminar').length > 1 ? `(${getDraftsForType('seminar').length})` : ''}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -148,15 +224,86 @@ function CreateContent({ user }) {
                   </ul>
                 </div>
 
-
-                <button className="w-full rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateTutorial}>
-                  Start Creating Tutorial
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button className="flex-1 rounded bg-accent px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-300 hover:bg-accent-tertiary md:px-8 md:py-4 md:text-sm" onClick={handleCreateTutorial}>
+                    Start Creating Tutorial
+                  </button>
+                  {getDraftsForType('tutorial').length > 0 && (
+                    <button 
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded border border-border bg-white px-7 py-3.5 text-base font-semibold text-dark shadow-sm transition-all duration-300 hover:bg-light-secondary md:px-8 md:py-4 md:text-sm" 
+                      onClick={() => handleResumeDraft('tutorial')}
+                    >
+                      <FiEdit3 />
+                      Resume Draft {getDraftsForType('tutorial').length > 1 ? `(${getDraftsForType('tutorial').length})` : ''}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Draft Picker Modal */}
+      {draftPickerType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDraftPickerType(null)}>
+          <div 
+            className="relative mx-4 w-full max-w-lg rounded-[24px] border border-border bg-white p-6 shadow-xl sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="absolute right-4 top-4 rounded-full p-2 text-dark-secondary transition hover:bg-light-secondary hover:text-dark"
+              onClick={() => setDraftPickerType(null)}
+            >
+              <FiX size={20} />
+            </button>
+
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              {draftPickerType}s
+            </p>
+            <h2 className="mt-1 text-2xl font-bold text-dark">Select a Draft</h2>
+            <p className="mt-2 text-sm text-dark-secondary">
+              You have {pickerDrafts.length} saved draft{pickerDrafts.length > 1 ? 's' : ''}. Choose one to resume editing.
+            </p>
+
+            <div className="mt-6 flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
+              {pickerDrafts.map((draft) => (
+                <div 
+                  key={draft._id} 
+                  className="group flex items-center gap-4 rounded-2xl border border-border bg-light-tertiary p-4 transition hover:border-accent/30 hover:shadow-sm"
+                >
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/academy/create/${draftPickerType}?draftId=${draft._id}`)}>
+                    <h3 className="truncate text-sm font-bold text-dark">
+                      {draft.contentData?.title || '(Untitled)'}
+                    </h3>
+                    <p className="mt-1 truncate text-xs text-dark-secondary">
+                      {draft.contentData?.description || draft.contentData?.overview || 'No description'}
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-dark-secondary/60">
+                      Last saved {new Date(draft.lastSavedAt).toLocaleDateString()} at {new Date(draft.lastSavedAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      className="rounded-full bg-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-accent-tertiary"
+                      onClick={() => navigate(`/academy/create/${draftPickerType}?draftId=${draft._id}`)}
+                    >
+                      Resume
+                    </button>
+                    <button
+                      className="rounded-full p-2 text-dark-secondary/40 transition hover:bg-red-50 hover:text-error"
+                      onClick={() => handleDeleteDraft(draft._id)}
+                      title="Delete draft"
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

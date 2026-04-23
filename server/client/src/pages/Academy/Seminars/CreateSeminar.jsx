@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FiArrowLeft, FiPlus, FiVideo } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
+import AlertModal from '../../../components/UI/AlertModal';
 
 const inputClasses =
   "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
@@ -41,7 +42,17 @@ const formatDurationLabel = (minutes) => {
 
 function CreateSeminar() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const draftIdFromUrl = searchParams.get('draftId');
   const [currentStep, setCurrentStep] = useState("basic-info");
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -136,6 +147,68 @@ function CreateSeminar() {
   }, [isCameraOpen]);
 
   useEffect(() => () => stopCamera(), []);
+
+  // Load draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftIdFromUrl) return;
+    const loadDraft = async () => {
+      try {
+        const res = await fetch(`/api/academy/drafts/${draftIdFromUrl}`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          if (draft.contentData && Object.keys(draft.contentData).length > 0) {
+            setFormData(prev => ({ ...prev, ...draft.contentData }));
+            setLastSaved(new Date(draft.lastSavedAt));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      }
+    };
+    loadDraft();
+  }, [draftIdFromUrl]);
+
+  // Auto-save draft (debounced 2s after changes)
+  const saveDraft = useCallback(async (data) => {
+    if (isSavingDraft) return;
+    setIsSavingDraft(true);
+    try {
+      if (draftId) {
+        const res = await fetch(`/api/academy/drafts/${draftId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentData: data })
+        });
+        if (res.ok) setLastSaved(new Date());
+      } else {
+        const res = await fetch('/api/academy/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentType: 'seminar', contentData: data })
+        });
+        if (res.ok) {
+          const newDraft = await res.json();
+          setDraftId(newDraft._id);
+          setLastSaved(new Date());
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save draft error:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isSavingDraft]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.title || formData.description) {
+        saveDraft(formData);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [formData, saveDraft]);
 
   const captureSpeakerAvatar = () => {
     const video = videoRef.current;
@@ -252,9 +325,9 @@ function CreateSeminar() {
   const handleNext = () => {
     if (!isStepValid(currentStep)) {
       if (currentStep === "basic-info") {
-        alert("Please fill in title and description before continuing.");
+        showAlert("Validation Error", "Please fill in title and description before continuing.");
       } else if (currentStep === "speaker") {
-        alert("Please provide the speaker name before continuing.");
+        showAlert("Validation Error", "Please provide the speaker name before continuing.");
       }
       return;
     }
@@ -271,9 +344,9 @@ function CreateSeminar() {
         const stepToValidate = steps[i].id;
         if (!isStepValid(stepToValidate)) {
           if (stepToValidate === "basic-info") {
-            alert("Please fill in title and description before continuing.");
+            showAlert("Validation Error", "Please fill in title and description before continuing.");
           } else if (stepToValidate === "speaker") {
-            alert("Please provide the speaker name before continuing.");
+            showAlert("Validation Error", "Please provide the speaker name before continuing.");
           }
           return;
         }
@@ -295,7 +368,7 @@ function CreateSeminar() {
 
     const { startAtLocal, endAtLocal, valid } = getScheduleTimes(formData);
     if (!valid || !startAtLocal || !endAtLocal) {
-      alert("Please provide a valid date/time range. End time must be after start time.");
+      showAlert("Validation Error", "Please provide a valid date/time range. End time must be after start time.");
       return;
     }
 
@@ -338,11 +411,16 @@ function CreateSeminar() {
         throw new Error(errorData.error || "Failed to create seminar.");
       }
 
-      alert("Seminar created successfully!");
-      navigate("/academy/seminars");
+      showAlert("Success", "Seminar created successfully!", "success");
+      if (draftId) {
+        try { await fetch(`/api/academy/drafts/${draftId}`, { method: 'DELETE', credentials: 'include' }); } catch (e) { /* ignore */ }
+      }
+      setTimeout(() => {
+        navigate("/academy/seminars");
+      }, 1500);
     } catch (error) {
       console.error("Error creating seminar:", error);
-      alert(error.message || "An unexpected error occurred while creating the seminar.");
+      showAlert("Error", error.message || "An unexpected error occurred while creating the seminar.");
     }
   };
 
@@ -363,12 +441,22 @@ function CreateSeminar() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
               Seminars
             </p>
-            <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
-              Create New Seminar
-            </h1>
+            <div className="mt-2 flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-dark sm:text-5xl">
+                Create New Seminar
+              </h1>
+              <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
+                Draft
+              </span>
+            </div>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
               Schedule a live seminar, define the speaker profile, and prepare the
               Zoom access details used by the current branch.
+              {lastSaved && (
+                <span className="ml-2 text-xs text-dark-secondary/60">
+                  • Auto-saved {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
             </p>
           </div>
 
@@ -746,6 +834,14 @@ function CreateSeminar() {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

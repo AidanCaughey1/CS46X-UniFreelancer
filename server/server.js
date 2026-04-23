@@ -65,6 +65,7 @@ const assignmentRoutes = require("./routes/assignments");
 const aiRoutes = require("./routes/ai");
 const learningRoutes = require("./routes/learningRoutes");
 const adminRoutes = require("./routes/admin");
+const draftsRoutes = require("./routes/drafts");
 
 app.use("/api/academy", academyRoutes);
 app.use("/api/academy/courses", coursesRoutes);
@@ -80,6 +81,7 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/learning", learningRoutes);
+app.use("/api/academy/drafts", draftsRoutes);
 
 // ------------------------------
 // HEALTH CHECK

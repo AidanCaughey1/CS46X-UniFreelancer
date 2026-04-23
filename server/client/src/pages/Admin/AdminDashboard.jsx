@@ -795,14 +795,18 @@ function AdminDashboard() {
             <div className="flex flex-col gap-3">
               {logs.map((log) => {
                 const actorName = log.actor?.email || log.actor?.username || log.actor?.identifier || 'Unknown actor';
-                const targetName = log.target?.email || log.target?.username || log.target?.tutorialId || 'Target';
+                const targetName = log.target?.email || log.target?.username || log.target?.title || log.target?.tutorialId || 'Target';
+                const targetId = log.target?.tutorialId;
 
                 return (
                   <div key={log._id} className="rounded-lg border border-light-secondary bg-white px-3 py-2.5">
                     <p className="text-sm text-dark-secondary">
                       <strong>{log.action}</strong> by <strong>{actorName}</strong>
                     </p>
-                    <p className="mt-0.5 text-sm text-dark-secondary">Target: {targetName}</p>
+                    {targetName && <p className="mt-0.5 text-sm text-dark-secondary">Target: {targetName}</p>}
+                    {targetId && targetName !== targetId && (
+                      <p className="mt-0.5 text-xs text-dark-tertiary">ID: {targetId}</p>
+                    )}
                     {log.before?.accountType || log.after?.accountType ? (
                       <p className="mt-0.5 text-sm text-dark-secondary">
                         Role: {log.before?.accountType || 'n/a'} -&gt; {log.after?.accountType || 'n/a'}

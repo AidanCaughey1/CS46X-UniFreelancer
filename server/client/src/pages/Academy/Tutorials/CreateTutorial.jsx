@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
+import AlertModal from '../../../components/UI/AlertModal';
 
 const inputClasses =
   "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
@@ -11,8 +12,18 @@ const textareaClasses =
 function CreateTutorial() {
   const navigate = useNavigate();
   const { id: tutorialId } = useParams();
+  const [searchParams] = useSearchParams();
+  const draftIdFromUrl = searchParams.get('draftId');
   const isEditMode = Boolean(tutorialId);
   const [currentStep, setCurrentStep] = useState("basic-info");
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -28,8 +39,7 @@ function CreateTutorial() {
     thumbnail: "",
     videoUrl: "",
     writtenContent: "",
-    resources: [],
-    instructorName: ""
+    resources: []
   });
 
   useEffect(() => {
@@ -60,12 +70,11 @@ function CreateTutorial() {
                   return resource?.url || "";
                 })
                 .filter(Boolean)
-            : [],
-          instructorName: tutorial.instructor?.name || ""
+            : []
         });
       } catch (error) {
         console.error("Error loading tutorial:", error);
-        alert("Failed to load tutorial for editing.");
+        showAlert("Error", "Failed to load tutorial for editing.");
         navigate("/academy/tutorials");
       } finally {
         setLoadingTutorial(false);
@@ -74,6 +83,69 @@ function CreateTutorial() {
 
     fetchTutorialForEdit();
   }, [isEditMode, navigate, tutorialId]);
+
+  // Load draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftIdFromUrl || isEditMode) return;
+    const loadDraft = async () => {
+      try {
+        const res = await fetch(`/api/academy/drafts/${draftIdFromUrl}`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          if (draft.contentData && Object.keys(draft.contentData).length > 0) {
+            setFormData(prev => ({ ...prev, ...draft.contentData }));
+            setLastSaved(new Date(draft.lastSavedAt));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      }
+    };
+    loadDraft();
+  }, [draftIdFromUrl, isEditMode]);
+
+  // Auto-save draft (debounced 2s after changes)
+  const saveDraft = useCallback(async (data) => {
+    if (isEditMode || isSavingDraft) return;
+    setIsSavingDraft(true);
+    try {
+      if (draftId) {
+        const res = await fetch(`/api/academy/drafts/${draftId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentData: data })
+        });
+        if (res.ok) setLastSaved(new Date());
+      } else {
+        const res = await fetch('/api/academy/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentType: 'tutorial', contentData: data })
+        });
+        if (res.ok) {
+          const newDraft = await res.json();
+          setDraftId(newDraft._id);
+          setLastSaved(new Date());
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save draft error:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isEditMode, isSavingDraft]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const timer = setTimeout(() => {
+      if (formData.title || formData.description) {
+        saveDraft(formData);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [formData, isEditMode, saveDraft]);
 
   const steps = [
     { id: "basic-info", label: "Basic Info" },
@@ -136,8 +208,7 @@ function CreateTutorial() {
       return (
         formData.title.trim() !== "" &&
         formData.description.trim() !== "" &&
-        formData.category.trim() !== "" &&
-        formData.instructorName.trim() !== ""
+        formData.category.trim() !== ""
       );
     }
 
@@ -154,9 +225,9 @@ function CreateTutorial() {
   const handleNext = () => {
     if (!isStepValid(currentStep)) {
       if (currentStep === "basic-info") {
-        alert("Please fill in all required fields before continuing.");
+        showAlert("Validation Error", "Please fill in all required fields before continuing.");
       } else if (currentStep === "content") {
-        alert("Please add a video URL or written content before continuing.");
+        showAlert("Validation Error", "Please add a video URL or written content before continuing.");
       }
       return;
     }
@@ -173,9 +244,9 @@ function CreateTutorial() {
         const stepToValidate = steps[i].id;
         if (!isStepValid(stepToValidate)) {
           if (stepToValidate === "basic-info") {
-            alert("Please fill in all required fields before continuing.");
+            showAlert("Validation Error", "Please fill in all required fields before continuing.");
           } else if (stepToValidate === "content") {
-            alert("Please add a video URL or written content before continuing.");
+            showAlert("Validation Error", "Please add a video URL or written content before continuing.");
           }
           return;
         }
@@ -197,13 +268,7 @@ function CreateTutorial() {
 
     const durationMinutes = parseDurationMinutes(formData.duration);
     if (durationMinutes === null) {
-      alert("Duration must be a number of minutes (e.g., 15) or left blank for self-paced.");
-      return;
-    }
-
-    const trimmedInstructor = formData.instructorName.trim();
-    if (!trimmedInstructor) {
-      alert("Instructor name is required.");
+      showAlert("Validation Error", "Duration must be a number of minutes (e.g., 15) or left blank for self-paced.");
       return;
     }
 
@@ -218,7 +283,6 @@ function CreateTutorial() {
         thumbnail: formData.thumbnail,
         videoUrl: formData.videoUrl.trim(),
         writtenContent: formData.writtenContent.trim(),
-        instructor: { name: trimmedInstructor },
         resources: (formData.resources || [])
           .map((resourceUrl) => String(resourceUrl).trim())
           .filter(Boolean)
@@ -240,11 +304,16 @@ function CreateTutorial() {
         throw new Error(errorData.error || "Failed to save tutorial.");
       }
 
-      alert(`Tutorial ${isEditMode ? "updated" : "created"} successfully!`);
-      navigate(isEditMode ? `/academy/tutorials/${tutorialId}` : "/academy/tutorials");
+      showAlert("Success", `Tutorial ${isEditMode ? "updated" : "created"} successfully!`, "success");
+      if (draftId) {
+        try { await fetch(`/api/academy/drafts/${draftId}`, { method: 'DELETE', credentials: 'include' }); } catch (e) { /* ignore */ }
+      }
+      setTimeout(() => {
+        navigate(isEditMode ? `/academy/tutorials/${tutorialId}` : "/academy/tutorials");
+      }, 1500);
     } catch (error) {
       console.error("Error saving tutorial:", error);
-      alert(error.message || "An unexpected error occurred while saving the tutorial.");
+      showAlert("Error", error.message || "An unexpected error occurred while saving the tutorial.");
     } finally {
       setIsSubmitting(false);
     }
@@ -267,8 +336,8 @@ function CreateTutorial() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          alert("Tutorial was already deleted.");
-          navigate("/academy/tutorials");
+          showAlert("Info", "Tutorial was already deleted.");
+          setTimeout(() => navigate("/academy/tutorials"), 1500);
           return;
         }
 
@@ -276,11 +345,11 @@ function CreateTutorial() {
         throw new Error(errorData.error || "Failed to delete tutorial.");
       }
 
-      alert("Tutorial deleted successfully.");
-      navigate("/academy/tutorials");
+      showAlert("Success", "Tutorial deleted successfully.", "success");
+      setTimeout(() => navigate("/academy/tutorials"), 1500);
     } catch (error) {
       console.error("Error deleting tutorial:", error);
-      alert(error.message || "Failed to delete tutorial.");
+      showAlert("Error", error.message || "Failed to delete tutorial.");
     } finally {
       setIsSubmitting(false);
     }
@@ -314,13 +383,25 @@ function CreateTutorial() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 Tutorials
               </p>
-              <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
-                {isEditMode ? "Edit Tutorial" : "Create New Tutorial"}
-              </h1>
+              <div className="mt-2 flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-dark sm:text-5xl">
+                  {isEditMode ? "Edit Tutorial" : "Create New Tutorial"}
+                </h1>
+                {!isEditMode && (
+                  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
+                    Draft
+                  </span>
+                )}
+              </div>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
                 {isEditMode
                   ? "Update the tutorial details, resources, and learning content."
                   : "Set up a focused tutorial with video, written notes, and downloadable resources."}
+                {lastSaved && !isEditMode && (
+                  <span className="ml-2 text-xs text-dark-secondary/60">
+                    • Auto-saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -440,19 +521,6 @@ function CreateTutorial() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-dark">
-                    Instructor *
-                  </label>
-                  <input
-                    type="text"
-                    name="instructorName"
-                    className={inputClasses}
-                    placeholder="e.g., Jane Doe"
-                    value={formData.instructorName}
-                    onChange={handleChange}
-                  />
-                </div>
 
                 <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
                   <ImageUpload
@@ -601,6 +669,14 @@ function CreateTutorial() {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

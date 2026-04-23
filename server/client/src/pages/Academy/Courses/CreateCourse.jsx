@@ -1,15 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import ImageUpload from '../../../components/ImageUpload';
 import ModuleBuilder from './ModuleBuilder';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function CreateCourse() {
   const navigate = useNavigate();
   const { courseId } = useParams(); 
+  const [searchParams] = useSearchParams();
+  const draftIdFromUrl = searchParams.get('draftId');
   const [isEditMode, setIsEditMode] = useState(false); 
   const [currentStep, setCurrentStep] = useState(1);
   const [aiOutcomesLoading, setAiOutcomesLoading] = useState(false);
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -145,7 +156,7 @@ function CreateCourse() {
       
     } catch (err) {
       console.error('Error fetching course:', err);
-      alert('Failed to load course for editing');
+      showAlert("Error", "Failed to load course for editing");
       navigate('/instructor/dashboard');
     }
   };
@@ -162,15 +173,78 @@ useEffect(() => {
   }
 }, [courseId]);
 
+  // Load draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftIdFromUrl || courseId) return;
+    const loadDraft = async () => {
+      try {
+        const res = await fetch(`/api/academy/drafts/${draftIdFromUrl}`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          if (draft.contentData && Object.keys(draft.contentData).length > 0) {
+            setCourseData(prev => ({ ...prev, ...draft.contentData }));
+            setLastSaved(new Date(draft.lastSavedAt));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      }
+    };
+    loadDraft();
+  }, [draftIdFromUrl, courseId]);
+
+  // Auto-save draft (debounced 2s after changes)
+  const saveDraft = useCallback(async (data) => {
+    if (isEditMode || isSavingDraft) return;
+    setIsSavingDraft(true);
+    try {
+      if (draftId) {
+        const res = await fetch(`/api/academy/drafts/${draftId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentData: data })
+        });
+        if (res.ok) setLastSaved(new Date());
+      } else {
+        const res = await fetch('/api/academy/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentType: 'course', contentData: data })
+        });
+        if (res.ok) {
+          const newDraft = await res.json();
+          setDraftId(newDraft._id);
+          setLastSaved(new Date());
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save draft error:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isEditMode, isSavingDraft]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const timer = setTimeout(() => {
+      if (courseData.title || courseData.overview) {
+        saveDraft(courseData);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [courseData, isEditMode, saveDraft]);
+
   const validateStep = (step) => {
     if (step === 1) {
       if (!courseData.title.trim() || !courseData.overview.trim()) {
-        alert("Please fill in all required fields (Course Title, Course Overview) in Step 1.");
+        showAlert("Validation Error", "Please fill in all required fields (Course Title, Course Overview) in Step 1.");
         return false;
       }
     } else if (step === 2) {
       if (!courseData.instructor.name.trim()) {
-        alert("Instructor Name is required in Step 2.");
+        showAlert("Validation Error", "Instructor Name is required in Step 2.");
         return false;
       }
     }
@@ -252,15 +326,15 @@ useEffect(() => {
 
   const addQuestionToTest = () => {
     if (!currentQuestion.question) {
-      alert('Please enter a question');
+      showAlert('Validation Error', 'Please enter a question');
       return;
     }
     if (currentQuestion.options.some(opt => !opt.trim())) {
-      alert('Please fill in all answer options');
+      showAlert('Validation Error', 'Please fill in all answer options');
       return;
     }
     if (currentQuestion.correctAnswer === '') {
-      alert('Please specify the correct answer');
+      showAlert('Validation Error', 'Please specify the correct answer');
       return;
     }
 
@@ -298,15 +372,15 @@ useEffect(() => {
 const handleSubmit = async () => {
   try {
     if (!courseData.title || !courseData.overview) {
-      alert('Please fill in course title and overview');
+      showAlert('Validation Error', 'Please fill in course title and overview');
       return;
     }
     if (!courseData.instructor.name) {
-      alert('Please fill in instructor information');
+      showAlert('Validation Error', 'Please fill in instructor information');
       return;
     }
     if (courseData.modules.length === 0) {
-      alert('Please add at least one module');
+      showAlert('Validation Error', 'Please add at least one module');
       return;
     }
 
@@ -355,16 +429,23 @@ const handleSubmit = async () => {
     
     if (!res.ok) {
       console.error('Server error response:', responseData);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
+      showAlert('Error', `Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
       return;
     }
 
-    alert(`Course ${isEditMode ? 'updated' : 'created'} successfully!`);
-    navigate('/instructor/dashboard');
+    // Delete the draft on successful publish
+    if (draftId) {
+      try {
+        await fetch(`/api/academy/drafts/${draftId}`, { method: 'DELETE', credentials: 'include' });
+      } catch (e) { /* ignore cleanup errors */ }
+    }
+
+    showAlert('Success', `Course ${isEditMode ? 'updated' : 'created'} successfully!`, 'success');
+    setTimeout(() => navigate('/instructor/dashboard'), 1500);
 
   } catch (err) {
     console.error('Error saving course:', err);
-    alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
+    showAlert('Error', `Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
   }
 };
 
@@ -1117,11 +1198,23 @@ useEffect(() => {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 Courses
               </p>
-              <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
-                {isEditMode ? "Edit Course" : "Create New Course"}
-              </h1>
+              <div className="mt-2 flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-dark sm:text-5xl">
+                  {isEditMode ? "Edit Course" : "Create New Course"}
+                </h1>
+                {!isEditMode && (
+                  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
+                    Draft
+                  </span>
+                )}
+              </div>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
                 Fill in the details to create a new course
+                {lastSaved && !isEditMode && (
+                  <span className="ml-2 text-xs text-dark-secondary/60">
+                    • Auto-saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -1188,6 +1281,14 @@ useEffect(() => {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

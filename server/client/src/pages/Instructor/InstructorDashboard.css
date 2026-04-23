@@ -1288,3 +1288,16 @@
   font-style: italic;
 }
 }
+
+/* ================================================
+   DRAFT CARDS
+   ================================================ */
+
+.draft-thumbnail {
+  background: var(--accent-primary-color) !important;
+}
+
+.draft-badge {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
