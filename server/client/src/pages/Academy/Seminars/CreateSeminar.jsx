@@ -42,6 +42,10 @@ const formatDurationLabel = (minutes) => {
 function CreateSeminar() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("basic-info");
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
   const [highlightDraft, setHighlightDraft] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
@@ -260,6 +264,24 @@ function CreateSeminar() {
     }
   };
 
+  const handleStepClick = (targetStepId) => {
+    const targetIndex = steps.findIndex(s => s.id === targetStepId);
+    if (targetIndex > currentStepIndex) {
+      for (let i = currentStepIndex; i < targetIndex; i++) {
+        const stepToValidate = steps[i].id;
+        if (!isStepValid(stepToValidate)) {
+          if (stepToValidate === "basic-info") {
+            alert("Please fill in title and description before continuing.");
+          } else if (stepToValidate === "speaker") {
+            alert("Please provide the speaker name before continuing.");
+          }
+          return;
+        }
+      }
+    }
+    setCurrentStep(targetStepId);
+  };
+
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
       setCurrentStep(steps[currentStepIndex - 1].id);
@@ -360,7 +382,7 @@ function CreateSeminar() {
                     ? "bg-dark text-white shadow-md"
                     : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
                 }`}
-                onClick={() => setCurrentStep(step.id)}
+                onClick={() => handleStepClick(step.id)}
               >
                 <span
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${

@@ -13,6 +13,11 @@ function CreateTutorial() {
   const { id: tutorialId } = useParams();
   const isEditMode = Boolean(tutorialId);
   const [currentStep, setCurrentStep] = useState("basic-info");
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
+  
   const [loadingTutorial, setLoadingTutorial] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -159,6 +164,24 @@ function CreateTutorial() {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStep(steps[currentStepIndex + 1].id);
     }
+  };
+
+  const handleStepClick = (targetStepId) => {
+    const targetIndex = steps.findIndex(s => s.id === targetStepId);
+    if (targetIndex > currentStepIndex) {
+      for (let i = currentStepIndex; i < targetIndex; i++) {
+        const stepToValidate = steps[i].id;
+        if (!isStepValid(stepToValidate)) {
+          if (stepToValidate === "basic-info") {
+            alert("Please fill in all required fields before continuing.");
+          } else if (stepToValidate === "content") {
+            alert("Please add a video URL or written content before continuing.");
+          }
+          return;
+        }
+      }
+    }
+    setCurrentStep(targetStepId);
   };
 
   const handlePrevious = () => {
@@ -324,7 +347,7 @@ function CreateTutorial() {
                     ? "bg-dark text-white shadow-md"
                     : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
                 }`}
-                onClick={() => setCurrentStep(step.id)}
+                onClick={() => handleStepClick(step.id)}
               >
                 <span
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${

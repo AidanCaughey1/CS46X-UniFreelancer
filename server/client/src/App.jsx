@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Academy from './pages/Academy/Academy';
@@ -20,6 +20,27 @@ import CourseLearning from './pages/Academy/Courses/CourseLearning';
 import InstructorDashboard from './pages/Instructor/InstructorDashboard';
 import GradingInterface from './pages/Instructor/GradingInterface';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const previousPathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    const prev = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
+
+    if (prev === pathname) return;
+
+    const hubTabs = ['/academy/courses', '/academy/seminars', '/academy/tutorials'];
+    const isHubTransition = hubTabs.includes(pathname) && hubTabs.includes(prev);
+    
+    if (!isHubTransition) {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
+
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,6 +76,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen">
         <Header user={user} />
         <Routes>
