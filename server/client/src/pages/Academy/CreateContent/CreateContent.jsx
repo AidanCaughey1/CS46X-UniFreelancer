@@ -265,6 +265,9 @@ function CreateContent({ user }) {
             <p className="mt-2 text-sm text-dark-secondary">
               You have {pickerDrafts.length} saved draft{pickerDrafts.length > 1 ? 's' : ''}. Choose one to resume editing.
             </p>
+            <p className="mt-1 text-xs text-dark-secondary/50">
+              ⏳ Drafts are automatically removed after 30 days of inactivity.
+            </p>
 
             <div className="mt-6 flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
               {pickerDrafts.map((draft) => (
@@ -281,6 +284,13 @@ function CreateContent({ user }) {
                     </p>
                     <p className="mt-1.5 text-[11px] text-dark-secondary/60">
                       Last saved {new Date(draft.lastSavedAt).toLocaleDateString()} at {new Date(draft.lastSavedAt).toLocaleTimeString()}
+                      {' • '}
+                      <span style={{color: (() => {
+                        const days = Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)));
+                        return days <= 7 ? '#e74c3c' : days <= 14 ? '#f39c12' : 'inherit';
+                      })()}}>
+                        {Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)))} days remaining
+                      </span>
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

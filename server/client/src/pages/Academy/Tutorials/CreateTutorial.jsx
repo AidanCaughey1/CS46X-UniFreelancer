@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
@@ -19,6 +19,7 @@ function CreateTutorial() {
   const [draftId, setDraftId] = useState(draftIdFromUrl || null);
   const [lastSaved, setLastSaved] = useState(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const lastSavedDataRef = useRef(null);
   const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
 
   const showAlert = (title, message, type = "error") => {
@@ -104,9 +105,14 @@ function CreateTutorial() {
     loadDraft();
   }, [draftIdFromUrl, isEditMode]);
 
-  // Auto-save draft (debounced 2s after changes)
+  // Auto-save draft (debounced 5s after changes, with dirty checking)
   const saveDraft = useCallback(async (data) => {
     if (isEditMode || isSavingDraft) return;
+
+    // Dirty check: skip save if content hasn't changed since last save
+    const serialized = JSON.stringify(data);
+    if (lastSavedDataRef.current === serialized) return;
+
     setIsSavingDraft(true);
     try {
       if (draftId) {
@@ -116,7 +122,10 @@ function CreateTutorial() {
           credentials: 'include',
           body: JSON.stringify({ contentData: data })
         });
-        if (res.ok) setLastSaved(new Date());
+        if (res.ok) {
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
       } else {
         const res = await fetch('/api/academy/drafts', {
           method: 'POST',
@@ -128,6 +137,7 @@ function CreateTutorial() {
           const newDraft = await res.json();
           setDraftId(newDraft._id);
           setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
         }
       }
     } catch (err) {
@@ -143,7 +153,7 @@ function CreateTutorial() {
       if (formData.title || formData.description) {
         saveDraft(formData);
       }
-    }, 2000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [formData, isEditMode, saveDraft]);
 
@@ -397,7 +407,12 @@ function CreateTutorial() {
                 {isEditMode
                   ? "Update the tutorial details, resources, and learning content."
                   : "Set up a focused tutorial with video, written notes, and downloadable resources."}
-                {lastSaved && !isEditMode && (
+                {!isEditMode && isSavingDraft && (
+                  <span className="ml-2 text-xs text-accent/70">
+                    • Saving...
+                  </span>
+                )}
+                {lastSaved && !isEditMode && !isSavingDraft && (
                   <span className="ml-2 text-xs text-dark-secondary/60">
                     • Auto-saved {lastSaved.toLocaleTimeString()}
                   </span>

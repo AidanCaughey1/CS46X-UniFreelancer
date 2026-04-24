@@ -16,6 +16,7 @@ function CreateCourse() {
   const [draftId, setDraftId] = useState(draftIdFromUrl || null);
   const [lastSaved, setLastSaved] = useState(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const lastSavedDataRef = useRef(null);
   const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
 
   const showAlert = (title, message, type = "error") => {
@@ -193,9 +194,14 @@ useEffect(() => {
     loadDraft();
   }, [draftIdFromUrl, courseId]);
 
-  // Auto-save draft (debounced 2s after changes)
+  // Auto-save draft (debounced 5s after changes, with dirty checking)
   const saveDraft = useCallback(async (data) => {
     if (isEditMode || isSavingDraft) return;
+
+    // Dirty check: skip save if content hasn't changed since last save
+    const serialized = JSON.stringify(data);
+    if (lastSavedDataRef.current === serialized) return;
+
     setIsSavingDraft(true);
     try {
       if (draftId) {
@@ -205,7 +211,10 @@ useEffect(() => {
           credentials: 'include',
           body: JSON.stringify({ contentData: data })
         });
-        if (res.ok) setLastSaved(new Date());
+        if (res.ok) {
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
       } else {
         const res = await fetch('/api/academy/drafts', {
           method: 'POST',
@@ -217,6 +226,7 @@ useEffect(() => {
           const newDraft = await res.json();
           setDraftId(newDraft._id);
           setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
         }
       }
     } catch (err) {
@@ -232,7 +242,7 @@ useEffect(() => {
       if (courseData.title || courseData.overview) {
         saveDraft(courseData);
       }
-    }, 2000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [courseData, isEditMode, saveDraft]);
 
@@ -1210,7 +1220,12 @@ useEffect(() => {
               </div>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
                 Fill in the details to create a new course
-                {lastSaved && !isEditMode && (
+                {!isEditMode && isSavingDraft && (
+                  <span className="ml-2 text-xs text-accent/70">
+                    • Saving...
+                  </span>
+                )}
+                {lastSaved && !isEditMode && !isSavingDraft && (
                   <span className="ml-2 text-xs text-dark-secondary/60">
                     • Auto-saved {lastSaved.toLocaleTimeString()}
                   </span>

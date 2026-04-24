@@ -305,6 +305,7 @@ function InstructorDashboard() {
                 <div className="empty-state">
                   <h3>No drafts yet</h3>
                   <p>Incomplete courses, tutorials, and seminars will appear here.</p>
+                  <p style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>Drafts are automatically removed after 30 days of inactivity.</p>
                 </div>
               ) : (
                 <div className="courses-grid">
@@ -328,6 +329,12 @@ function InstructorDashboard() {
                           </span>
                           <span className="meta-item">
                             🕒 {new Date(draft.lastSavedAt).toLocaleDateString()}
+                          </span>
+                          <span className="meta-item" style={{color: (() => {
+                            const days = Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)));
+                            return days <= 7 ? '#e74c3c' : days <= 14 ? '#f39c12' : '#888';
+                          })()}}>
+                            ⏳ {Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)))}d left
                           </span>
                         </div>
 
