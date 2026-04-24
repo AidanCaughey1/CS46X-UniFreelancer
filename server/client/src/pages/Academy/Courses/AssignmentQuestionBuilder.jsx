@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function AssignmentQuestionBuilder({ onAddQuestion }) {
+function AssignmentQuestionBuilder({ onAddQuestion, showAlert }) {
   const [questionType, setQuestionType] = useState('multiple-choice');
   const [question, setQuestion] = useState({
     type: 'multiple-choice',
@@ -25,25 +25,25 @@ function AssignmentQuestionBuilder({ onAddQuestion }) {
 
   const handleAddQuestion = () => {
     if (!question.question.trim()) {
-      alert('Please enter a question');
+      showAlert('Validation Error', 'Please enter a question');
       return;
     }
 
     // Validate based on type
     if (question.type === 'multiple-choice') {
       if (question.options.some(opt => !opt.trim())) {
-        alert('Please fill in all answer options');
+        showAlert('Validation Error', 'Please fill in all answer options');
         return;
       }
       if (question.correctAnswer === null) {
-        alert('Please select the correct answer');
+        showAlert('Validation Error', 'Please select the correct answer');
         return;
       }
     }
 
     if (question.type === 'matching') {
       if (question.matchPairs.some(pair => !pair.left.trim() || !pair.right.trim())) {
-        alert('Please fill in all matching pairs');
+        showAlert('Validation Error', 'Please fill in all matching pairs');
         return;
       }
     }

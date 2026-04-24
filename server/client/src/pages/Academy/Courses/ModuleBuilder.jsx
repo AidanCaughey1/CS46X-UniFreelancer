@@ -11,7 +11,8 @@ function ModuleBuilder({
   addLearningOutcome,
   removeLearningOutcome,
   onGenerateOutcomes,
-  aiOutcomesLoading
+  aiOutcomesLoading,
+  showAlert
 }) {
 
   /* ===============================
@@ -25,15 +26,15 @@ function ModuleBuilder({
   =============================== */
   const handleSaveModule = () => {
     if (!currentModule.title) {
-      alert('Please enter a module title');
+      showAlert('Validation Error', 'Please enter a module title');
       return;
     }
     if (!currentModule.overview) {
-      alert('Please enter a module overview');
+      showAlert('Validation Error', 'Please enter a module overview');
       return;
     }
     if (currentModule.learningOutcomes.length === 0) {
-      alert('Please add at least one learning outcome');
+      showAlert('Validation Error', 'Please add at least one learning outcome');
       return;
     }
 
@@ -64,7 +65,7 @@ function ModuleBuilder({
 
   const handleCreateAssignment = () => {
     if (assignmentQuestions.length === 0) {
-      alert('Please add at least one question');
+      showAlert('Validation Error', 'Please add at least one question');
       return;
     }
 
@@ -194,6 +195,7 @@ function ModuleBuilder({
               learningMaterials: materials
             })
           }
+          showAlert={showAlert}
         />
       </div>
 
@@ -218,6 +220,7 @@ function ModuleBuilder({
 
             <AssignmentQuestionBuilder
               onAddQuestion={handleAddQuestion}
+              showAlert={showAlert}
             />
 
             {assignmentQuestions.length > 0 && (

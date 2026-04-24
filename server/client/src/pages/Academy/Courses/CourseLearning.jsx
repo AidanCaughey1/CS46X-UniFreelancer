@@ -11,6 +11,7 @@ import QuizLesson from './QuizLesson';
 import FinalTest from './FinalTest';
 import CourseCompleteModal from './CourseCompleteModal';
 import './CourseLearning.css';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function CourseLearning() {
   const { id } = useParams();
@@ -23,6 +24,11 @@ function CourseLearning() {
   const [loading, setLoading] = useState(true);
   const [showFinalTest, setShowFinalTest] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   // --- Learning time tracking (per-course + overall) ---
   useEffect(() => {
@@ -198,7 +204,7 @@ function CourseLearning() {
 
       } catch (err) {
         console.error('Error loading course:', err);
-        alert('Failed to load course');
+        showAlert('Error', 'Failed to load course');
         navigate('/academy/my-courses');
       } finally {
         setLoading(false);
@@ -242,7 +248,7 @@ function CourseLearning() {
       );
 
       if (!allPreviousCompleted) {
-        alert('Please complete previous lessons first');
+        showAlert('Locked Lesson', 'Please complete previous lessons first', 'warning');
         return;
       }
     }
@@ -459,6 +465,14 @@ function CourseLearning() {
           }}
         />
       )}
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

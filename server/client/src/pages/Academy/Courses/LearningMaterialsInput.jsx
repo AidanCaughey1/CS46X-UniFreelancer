@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function LearningMaterialsInput({ materials, setMaterials }) {
+function LearningMaterialsInput({ materials, setMaterials, showAlert }) {
   const [activeTab, setActiveTab] = useState('readings');
   
   const [newReading, setNewReading] = useState({
@@ -22,7 +22,7 @@ function LearningMaterialsInput({ materials, setMaterials }) {
 
   const addReading = () => {
     if (!newReading.title || !newReading.citation) {
-      alert('Please fill in at least title and citation');
+      showAlert('Validation Error', 'Please fill in at least title and citation');
       return;
     }
 
@@ -36,7 +36,7 @@ function LearningMaterialsInput({ materials, setMaterials }) {
 
   const addPodcast = () => {
     if (!newPodcast.link) {
-      alert('Please enter a podcast link');
+      showAlert('Validation Error', 'Please enter a podcast link');
       return;
     }
 
@@ -50,7 +50,7 @@ function LearningMaterialsInput({ materials, setMaterials }) {
 
   const addVideo = () => {
     if (!newVideo.link) {
-      alert('Please enter a video link');
+      showAlert('Validation Error', 'Please enter a video link');
       return;
     }
 

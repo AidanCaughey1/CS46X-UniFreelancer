@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import './CourseLearning.css';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function FinalTest({ courseId, finalTest, onComplete }) {
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   const handleAnswerChange = (questionIndex, answerIndex) => {
     setAnswers(prev => ({
@@ -14,7 +20,7 @@ function FinalTest({ courseId, finalTest, onComplete }) {
 
   const handleSubmit = async () => {
     if (Object.keys(answers).length < finalTest.questions.length) {
-      alert('Please answer all questions');
+      showAlert('Validation Error', 'Please answer all questions');
       return;
     }
 
@@ -38,13 +44,13 @@ function FinalTest({ courseId, finalTest, onComplete }) {
       if (data.passed) {
         onComplete(true, data.badge);
       } else {
-        alert(`Score: ${data.score}%. You need ${finalTest.passingScore}% to pass. Try again!`);
+        showAlert('Test Failed', `Score: ${data.score}%. You need ${finalTest.passingScore}% to pass. Try again!`, 'warning');
         setAnswers({});
       }
 
     } catch (err) {
       console.error('Error submitting test:', err);
-      alert('Failed to submit test');
+      showAlert('Error', 'Failed to submit test');
     } finally {
       setSubmitting(false);
     }
@@ -94,6 +100,14 @@ function FinalTest({ courseId, finalTest, onComplete }) {
           {submitting ? 'Submitting...' : 'Submit Final Test'}
         </button>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

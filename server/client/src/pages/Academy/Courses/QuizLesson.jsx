@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import './CourseLearning.css';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function QuizLesson({ courseId, lesson, onComplete, progress }) {
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   // Check if already passed
   const existingResult = progress?.quizResults?.find(
@@ -21,7 +27,7 @@ function QuizLesson({ courseId, lesson, onComplete, progress }) {
   const handleSubmit = async () => {
     // Validate all questions answered
     if (Object.keys(answers).length < lesson.questions.length) {
-      alert('Please answer all questions');
+      showAlert('Validation Error', 'Please answer all questions');
       return;
     }
 
@@ -51,7 +57,7 @@ function QuizLesson({ courseId, lesson, onComplete, progress }) {
 
     } catch (err) {
       console.error('Error submitting quiz:', err);
-      alert('Failed to submit quiz');
+      showAlert('Error', 'Failed to submit quiz');
     } finally {
       setSubmitting(false);
     }
@@ -145,6 +151,14 @@ function QuizLesson({ courseId, lesson, onComplete, progress }) {
           {submitting ? 'Submitting...' : 'Submit Quiz'}
         </button>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

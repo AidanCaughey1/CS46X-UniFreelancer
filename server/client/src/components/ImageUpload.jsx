@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import './ImageUpload.css';
+import AlertModal from './UI/AlertModal';
 
 function ImageUpload({ value, onChange, label }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value || '');
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      showAlert('Validation Error', 'Please select an image file');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      showAlert('Validation Error', 'Image size must be less than 5MB');
       return;
     }
 
@@ -48,7 +54,7 @@ function ImageUpload({ value, onChange, label }) {
 
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload image. Please try again.');
+      showAlert('Upload Error', 'Failed to upload image. Please try again.');
       setPreview('');
     } finally {
       setUploading(false);

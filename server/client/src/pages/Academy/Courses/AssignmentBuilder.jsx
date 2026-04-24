@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import AssignmentQuestionBuilder from './AssignmentQuestionBuilder';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function AssignmentBuilder({ assignment, onSave, onRemove }) {
   const [isBuilding, setIsBuilding] = useState(false);
-  const [assignmentType, setAssignmentType] = useState('question-based'); // 'question-based' or 'part-based'
+  const [assignmentType, setAssignmentType] = useState('question-based');
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
   
   // Question-based state
   const [assignmentQuestions, setAssignmentQuestions] = useState([]);
@@ -50,7 +56,7 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
   // Part-based handlers (your original)
   const addPart = () => {
     if (!newPart.title || !newPart.instructions) {
-      alert('Please fill in part title and instructions');
+      showAlert('Validation Error', 'Please fill in part title and instructions');
       return;
     }
 
@@ -71,7 +77,7 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
 
   const addCriterion = () => {
     if (!newCriterion.name || newCriterion.points <= 0) {
-      alert('Please fill in criterion name and points');
+      showAlert('Validation Error', 'Please fill in criterion name and points');
       return;
     }
 
@@ -94,7 +100,7 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
     if (assignmentType === 'question-based') {
       // Save question-based assignment
       if (assignmentQuestions.length === 0) {
-        alert('Please add at least one question');
+        showAlert('Validation Error', 'Please add at least one question');
         return;
       }
 
@@ -114,19 +120,19 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
     } else {
       // Save part-based assignment (your original)
       if (!assignmentData.title) {
-        alert('Please enter an assignment title');
+        showAlert('Validation Error', 'Please enter an assignment title');
         return;
       }
       if (!assignmentData.purpose) {
-        alert('Please enter the assignment purpose');
+        showAlert('Validation Error', 'Please enter the assignment purpose');
         return;
       }
       if (assignmentData.parts.length === 0) {
-        alert('Please add at least one part');
+        showAlert('Validation Error', 'Please add at least one part');
         return;
       }
       if (assignmentData.gradingCriteria.length === 0) {
-        alert('Please add grading criteria');
+        showAlert('Validation Error', 'Please add grading criteria');
         return;
       }
 
@@ -238,7 +244,7 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
       {/* Question-Based Builder */}
       {assignmentType === 'question-based' && (
         <div className="space-y-6">
-          <AssignmentQuestionBuilder onAddQuestion={handleAddQuestion} />
+          <AssignmentQuestionBuilder onAddQuestion={handleAddQuestion} showAlert={showAlert} />
 
           {assignmentQuestions.length > 0 && (
             <div className="rounded-[28px] border border-border bg-light-tertiary p-5 lg:p-6 shadow-sm mt-6">
@@ -450,6 +456,15 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
         </button>
       </div>
     </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
+    </>
   );
 }
 

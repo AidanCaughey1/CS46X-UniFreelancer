@@ -579,11 +579,11 @@ useEffect(() => {
   const handleGenerateOutcomesForCurrentModule = async () => {
     try {
       if (!courseData.title?.trim() || !courseData.overview?.trim()) {
-        alert("Please fill in course title and overview first.");
+        showAlert("Validation Error", "Please fill in course title and overview first.");
         return;
       }
       if (!currentModule.title?.trim()) {
-        alert("Please enter a module title first.");
+        showAlert("Validation Error", "Please enter a module title first.");
         return;
       }
 
@@ -605,7 +605,7 @@ useEffect(() => {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to generate outcomes");
+        showAlert("Error", data.error || "Failed to generate outcomes");
         return;
       }
 
@@ -615,7 +615,7 @@ useEffect(() => {
       }));
     } catch (err) {
       console.error(err);
-      alert("Failed to generate outcomes");
+      showAlert("Error", "Failed to generate outcomes");
     } finally {
       setAiOutcomesLoading(false);
     }
@@ -926,6 +926,7 @@ useEffect(() => {
               removeLearningOutcome={removeLearningOutcome}
               onGenerateOutcomes={handleGenerateOutcomesForCurrentModule}
               aiOutcomesLoading={aiOutcomesLoading}
+              showAlert={showAlert}
             />
 
             {courseData.modules.length > 0 && (
