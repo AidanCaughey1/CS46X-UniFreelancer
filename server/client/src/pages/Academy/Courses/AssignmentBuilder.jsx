@@ -206,8 +206,9 @@ function AssignmentBuilder({ assignment, onSave, onRemove }) {
   }
 
   return (
-    <div className="mt-6 rounded-[28px] border border-border bg-white p-5 lg:p-6 shadow-sm">
-      {/* Assignment Type Selector */}
+    <>
+      <div className="mt-6 rounded-[28px] border border-border bg-white p-5 lg:p-6 shadow-sm">
+        {/* Assignment Type Selector */}
       <div className="mb-8">
         <h4 className="text-lg font-bold text-dark mb-4">Assignment Type</h4>
         <div className="flex flex-col sm:flex-row gap-4">
