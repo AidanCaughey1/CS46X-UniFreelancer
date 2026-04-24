@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Signup.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 const Signup = () => {
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+    const showAlert = (title, message, type = 'error') => {
+        setAlertConfig({ isOpen: true, title, message, type });
+    };
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -27,21 +34,21 @@ const Signup = () => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match.");
+            showAlert('Validation Error', "Passwords do not match.");
             return;
         }
 
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            alert("Please enter a valid email address.");
+            showAlert('Validation Error', "Please enter a valid email address.");
             return;
         }
 
         // Password validation
         const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
-            alert("Password must be at least 8 characters long and contain at least one number and one special character.");
+            showAlert('Validation Error', "Password must be at least 8 characters long and contain at least one number and one special character.");
             return;
         }
 
@@ -74,11 +81,11 @@ const Signup = () => {
                 // Redirect and reload to update App state (Auto-login)
                 window.location.href = safeReturnTo || '/';
             } else {
-                alert(data.message || 'Signup failed');
+                showAlert('Signup Failed', data.message || 'Signup failed');
             }
         } catch (error) {
             console.error('Signup error:', error);
-            alert('An error occurred during signup.');
+            showAlert('Error', 'An error occurred during signup.');
         }
     };
 
@@ -249,6 +256,14 @@ const Signup = () => {
                     <Link to={`/login${location.search || ''}`} className="auth-link">Sign in</Link>
                 </div>
             </div>
+
+            <AlertModal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+            />
         </div>
     );
 };

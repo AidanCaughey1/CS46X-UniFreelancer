@@ -119,6 +119,14 @@ function ImageUpload({ value, onChange, label }) {
           </button>
         </div>
       )}
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

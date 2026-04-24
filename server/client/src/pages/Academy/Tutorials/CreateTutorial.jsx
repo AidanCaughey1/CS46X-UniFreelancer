@@ -22,8 +22,8 @@ function CreateTutorial() {
   const lastSavedDataRef = useRef(null);
   const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
 
-  const showAlert = (title, message, type = "error") => {
-    setAlertConfig({ isOpen: true, title, message, type });
+  const showAlert = (title, message, type = "error", onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
   };
 
   useEffect(() => {
@@ -332,37 +332,37 @@ function CreateTutorial() {
   const handleDeleteTutorial = async () => {
     if (!isEditMode) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this tutorial? This cannot be undone."
-    );
-    if (!confirmed) return;
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this tutorial? This cannot be undone.",
+      "confirm",
+      async () => {
+        try {
+          setIsSubmitting(true);
+          const response = await fetch(`/api/academy/tutorials/${tutorialId}`, {
+            method: "DELETE",
+            credentials: "include"
+          });
 
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(`/api/academy/tutorials/${tutorialId}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
+          if (!response.ok) {
+            if (response.status === 404) {
+              showAlert("Info", "Tutorial was already deleted.");
+              setTimeout(() => navigate("/academy/tutorials"), 1500);
+              return;
+            }
+            throw new Error("Failed to delete tutorial");
+          }
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          showAlert("Info", "Tutorial was already deleted.");
+          showAlert("Success", "Tutorial deleted successfully!", "success");
           setTimeout(() => navigate("/academy/tutorials"), 1500);
-          return;
+        } catch (error) {
+          console.error("Error deleting tutorial:", error);
+          showAlert("Error", error.message || "An unexpected error occurred while deleting the tutorial.");
+        } finally {
+          setIsSubmitting(false);
         }
-
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete tutorial.");
       }
-
-      showAlert("Success", "Tutorial deleted successfully.", "success");
-      setTimeout(() => navigate("/academy/tutorials"), 1500);
-    } catch (error) {
-      console.error("Error deleting tutorial:", error);
-      showAlert("Error", error.message || "Failed to delete tutorial.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   if (loadingTutorial) {
@@ -688,6 +688,10 @@ function CreateTutorial() {
       <AlertModal
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type}

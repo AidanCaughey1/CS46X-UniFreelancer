@@ -5,6 +5,7 @@ import InstructorCourseCard from './InstructorCourseCard';
 import PendingSubmissions from './PendingSubmissions';
 import StudentsList from './StudentsList';
 import './InstructorDashboard.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 function InstructorDashboard() {
   const navigate = useNavigate();
@@ -15,6 +16,11 @@ function InstructorDashboard() {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error", onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -63,12 +69,6 @@ function InstructorDashboard() {
     }
   };
   const handleDeleteCourse = async (courseId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this course? This cannot be undone."
-    );
-
-    if (!confirmed) return;
-
     try {
       const res = await fetch(`/api/instructor/courses/${courseId}`, {
         method: "DELETE",
@@ -88,26 +88,31 @@ function InstructorDashboard() {
 
     } catch (err) {
       console.error("Delete error:", err.message);
-      alert(err.message);
+      showAlert("Error", err.message);
     }
   };
 
   const handleDeleteDraft = async (draftId) => {
-    const confirmed = window.confirm("Are you sure you want to delete this draft?");
-    if (!confirmed) return;
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this draft?",
+      "confirm",
+      async () => {
+        try {
+          const res = await fetch(`/api/academy/drafts/${draftId}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
 
-    try {
-      const res = await fetch(`/api/academy/drafts/${draftId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete draft");
-      setDrafts(prev => prev.filter(draft => draft._id !== draftId));
-    } catch (err) {
-      console.error("Delete draft error:", err.message);
-      alert(err.message);
-    }
+          if (!res.ok) throw new Error("Failed to delete draft");
+          setDrafts(prev => prev.filter(draft => draft._id !== draftId));
+          showAlert("Success", "Draft deleted successfully", "success");
+        } catch (err) {
+          console.error("Delete draft error:", err.message);
+          showAlert("Error", err.message);
+        }
+      }
+    );
   };
   const handleGradeSubmission = (submissionId) => {
     navigate(`/instructor/grade/${submissionId}`);
@@ -235,6 +240,7 @@ function InstructorDashboard() {
                       onView={handleViewCourse}
                       onEdit={handleEditCourse}
                       onDelete={handleDeleteCourse}
+                      showAlert={showAlert}
                     />
                   ))}
                 </div>
@@ -422,6 +428,18 @@ function InstructorDashboard() {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

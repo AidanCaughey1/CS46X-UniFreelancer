@@ -1,16 +1,15 @@
 import React from 'react';
 import './InstructorDashboard.css';
 
-function InstructorCourseCard({ course, onView, onEdit, onDelete }) {
+function InstructorCourseCard({ course, onView, onEdit, onDelete, showAlert }) {
 
   const handleDelete = () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this course? This action cannot be undone."
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this course? This action cannot be undone.",
+      "confirm",
+      () => onDelete(course._id)
     );
-
-    if (confirmed) {
-      onDelete(course._id);
-    }
   };
 
   return (
