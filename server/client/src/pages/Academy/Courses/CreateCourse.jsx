@@ -185,6 +185,7 @@ useEffect(() => {
           if (draft.contentData && Object.keys(draft.contentData).length > 0) {
             setCourseData(prev => ({ ...prev, ...draft.contentData }));
             setLastSaved(new Date(draft.lastSavedAt));
+            lastSavedDataRef.current = JSON.stringify({ ...courseData, ...draft.contentData });
           }
         }
       } catch (err) {
@@ -242,7 +243,7 @@ useEffect(() => {
       if (courseData.title || courseData.overview) {
         saveDraft(courseData);
       }
-    }, 5000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [courseData, isEditMode, saveDraft]);
 

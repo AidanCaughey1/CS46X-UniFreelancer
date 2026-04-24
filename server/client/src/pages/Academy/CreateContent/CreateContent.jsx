@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiEdit3, FiX, FiTrash2 } from 'react-icons/fi';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function CreateContent({ user }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('course');
   const [drafts, setDrafts] = useState([]);
   const [draftPickerType, setDraftPickerType] = useState(null); // null = closed, 'course'|'seminar'|'tutorial' = open
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
   const isAdmin = user?.accountType === 'admin';
+
+  const showAlert = (title, message, type = "error", onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
+  };
 
   useEffect(() => {
     const fetchDrafts = async () => {
@@ -42,22 +48,34 @@ function CreateContent({ user }) {
   };
 
   const handleDeleteDraft = async (draftId) => {
-    try {
-      const res = await fetch(`/api/academy/drafts/${draftId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      if (res.ok) {
-        setDrafts(prev => prev.filter(d => d._id !== draftId));
-        // Close modal if no more drafts of this type
-        if (draftPickerType) {
-          const remaining = drafts.filter(d => d._id !== draftId && d.contentType === draftPickerType);
-          if (remaining.length === 0) setDraftPickerType(null);
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this draft? This action cannot be undone.",
+      "confirm",
+      async () => {
+        try {
+          const res = await fetch(`/api/academy/drafts/${draftId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          if (res.ok) {
+            setDrafts(prev => prev.filter(d => d._id !== draftId));
+            // Close modal if no more drafts of this type
+            if (draftPickerType) {
+              const remaining = drafts.filter(d => d._id !== draftId && d.contentType === draftPickerType);
+              if (remaining.length === 0) setDraftPickerType(null);
+            }
+            showAlert("Success", "Draft deleted successfully", "success");
+          } else {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to delete draft");
+          }
+        } catch (err) {
+          console.error('Error deleting draft:', err);
+          showAlert("Error", err.message);
         }
       }
-    } catch (err) {
-      console.error('Error deleting draft:', err);
-    }
+    );
   };
 
   const handleBackToAcademy = () => {
@@ -314,6 +332,18 @@ function CreateContent({ user }) {
           </div>
         </div>
       )}
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

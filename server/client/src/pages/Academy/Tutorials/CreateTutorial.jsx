@@ -96,6 +96,7 @@ function CreateTutorial() {
           if (draft.contentData && Object.keys(draft.contentData).length > 0) {
             setFormData(prev => ({ ...prev, ...draft.contentData }));
             setLastSaved(new Date(draft.lastSavedAt));
+            lastSavedDataRef.current = JSON.stringify({ ...formData, ...draft.contentData });
           }
         }
       } catch (err) {
@@ -153,7 +154,7 @@ function CreateTutorial() {
       if (formData.title || formData.description) {
         saveDraft(formData);
       }
-    }, 5000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [formData, isEditMode, saveDraft]);
 

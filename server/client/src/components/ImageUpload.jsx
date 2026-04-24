@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ImageUpload.css';
 import AlertModal from './UI/AlertModal';
 
@@ -6,6 +6,13 @@ function ImageUpload({ value, onChange, label }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value || '');
   const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  // Sync preview with value when it changes (e.g. when draft is loaded)
+  useEffect(() => {
+    if (value !== undefined) {
+      setPreview(value || '');
+    }
+  }, [value]);
 
   const showAlert = (title, message, type = 'error') => {
     setAlertConfig({ isOpen: true, title, message, type });
