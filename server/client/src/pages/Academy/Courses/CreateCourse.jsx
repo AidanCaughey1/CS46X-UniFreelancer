@@ -1,16 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
-import './CreateCourse.css';
 import ImageUpload from '../../../components/ImageUpload';
 import ModuleBuilder from './ModuleBuilder';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function CreateCourse() {
   const navigate = useNavigate();
   const { courseId } = useParams(); 
+  const [searchParams] = useSearchParams();
+  const draftIdFromUrl = searchParams.get('draftId');
   const [isEditMode, setIsEditMode] = useState(false); 
   const [currentStep, setCurrentStep] = useState(1);
   const [aiOutcomesLoading, setAiOutcomesLoading] = useState(false);
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const lastSavedDataRef = useRef(null);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
 
   const [courseData, setCourseData] = useState({
     // Basic Info
@@ -142,7 +157,7 @@ function CreateCourse() {
       
     } catch (err) {
       console.error('Error fetching course:', err);
-      alert('Failed to load course for editing');
+      showAlert("Error", "Failed to load course for editing");
       navigate('/instructor/dashboard');
     }
   };
@@ -159,8 +174,106 @@ useEffect(() => {
   }
 }, [courseId]);
 
+  // Load draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftIdFromUrl || courseId) return;
+    const loadDraft = async () => {
+      try {
+        const res = await fetch(`/api/academy/drafts/${draftIdFromUrl}`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          if (draft.contentData && Object.keys(draft.contentData).length > 0) {
+            setCourseData(prev => ({ ...prev, ...draft.contentData }));
+            setLastSaved(new Date(draft.lastSavedAt));
+            lastSavedDataRef.current = JSON.stringify({ ...courseData, ...draft.contentData });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      }
+    };
+    loadDraft();
+  }, [draftIdFromUrl, courseId]);
+
+  // Auto-save draft (debounced 5s after changes, with dirty checking)
+  const saveDraft = useCallback(async (data) => {
+    if (isEditMode || isSavingDraft) return;
+
+    // Dirty check: skip save if content hasn't changed since last save
+    const serialized = JSON.stringify(data);
+    if (lastSavedDataRef.current === serialized) return;
+
+    setIsSavingDraft(true);
+    try {
+      if (draftId) {
+        const res = await fetch(`/api/academy/drafts/${draftId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentData: data })
+        });
+        if (res.ok) {
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
+      } else {
+        const res = await fetch('/api/academy/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentType: 'course', contentData: data })
+        });
+        if (res.ok) {
+          const newDraft = await res.json();
+          setDraftId(newDraft._id);
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save draft error:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isEditMode, isSavingDraft]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const timer = setTimeout(() => {
+      if (courseData.title || courseData.overview) {
+        saveDraft(courseData);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [courseData, isEditMode, saveDraft]);
+
+  const validateStep = (step) => {
+    if (step === 1) {
+      if (!courseData.title.trim() || !courseData.overview.trim()) {
+        showAlert("Validation Error", "Please fill in all required fields (Course Title, Course Overview) in Step 1.");
+        return false;
+      }
+    } else if (step === 2) {
+      if (!courseData.instructor.name.trim()) {
+        showAlert("Validation Error", "Instructor Name is required in Step 2.");
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleNext = () => {
+    if (!validateStep(currentStep)) return;
     if (currentStep < steps.length) setCurrentStep(currentStep + 1);
+  };
+
+  const handleStepClick = (targetStep) => {
+    if (targetStep > currentStep) {
+      for (let i = currentStep; i < targetStep; i++) {
+        if (!validateStep(i)) return;
+      }
+    }
+    setCurrentStep(targetStep);
   };
 
   const handlePrevious = () => {
@@ -224,15 +337,15 @@ useEffect(() => {
 
   const addQuestionToTest = () => {
     if (!currentQuestion.question) {
-      alert('Please enter a question');
+      showAlert('Validation Error', 'Please enter a question');
       return;
     }
     if (currentQuestion.options.some(opt => !opt.trim())) {
-      alert('Please fill in all answer options');
+      showAlert('Validation Error', 'Please fill in all answer options');
       return;
     }
     if (currentQuestion.correctAnswer === '') {
-      alert('Please specify the correct answer');
+      showAlert('Validation Error', 'Please specify the correct answer');
       return;
     }
 
@@ -270,15 +383,15 @@ useEffect(() => {
 const handleSubmit = async () => {
   try {
     if (!courseData.title || !courseData.overview) {
-      alert('Please fill in course title and overview');
+      showAlert('Validation Error', 'Please fill in course title and overview');
       return;
     }
     if (!courseData.instructor.name) {
-      alert('Please fill in instructor information');
+      showAlert('Validation Error', 'Please fill in instructor information');
       return;
     }
     if (courseData.modules.length === 0) {
-      alert('Please add at least one module');
+      showAlert('Validation Error', 'Please add at least one module');
       return;
     }
 
@@ -327,16 +440,23 @@ const handleSubmit = async () => {
     
     if (!res.ok) {
       console.error('Server error response:', responseData);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
+      showAlert('Error', `Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
       return;
     }
 
-    alert(`Course ${isEditMode ? 'updated' : 'created'} successfully!`);
-    navigate('/instructor/dashboard');
+    // Delete the draft on successful publish
+    if (draftId) {
+      try {
+        await fetch(`/api/academy/drafts/${draftId}`, { method: 'DELETE', credentials: 'include' });
+      } catch (e) { /* ignore cleanup errors */ }
+    }
+
+    showAlert('Success', `Course ${isEditMode ? 'updated' : 'created'} successfully!`, 'success');
+    setTimeout(() => navigate('/instructor/dashboard'), 1500);
 
   } catch (err) {
     console.error('Error saving course:', err);
-    alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
+    showAlert('Error', `Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
   }
 };
 
@@ -460,11 +580,11 @@ useEffect(() => {
   const handleGenerateOutcomesForCurrentModule = async () => {
     try {
       if (!courseData.title?.trim() || !courseData.overview?.trim()) {
-        alert("Please fill in course title and overview first.");
+        showAlert("Validation Error", "Please fill in course title and overview first.");
         return;
       }
       if (!currentModule.title?.trim()) {
-        alert("Please enter a module title first.");
+        showAlert("Validation Error", "Please enter a module title first.");
         return;
       }
 
@@ -486,7 +606,7 @@ useEffect(() => {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to generate outcomes");
+        showAlert("Error", data.error || "Failed to generate outcomes");
         return;
       }
 
@@ -496,7 +616,7 @@ useEffect(() => {
       }));
     } catch (err) {
       console.error(err);
-      alert("Failed to generate outcomes");
+      showAlert("Error", "Failed to generate outcomes");
     } finally {
       setAiOutcomesLoading(false);
     }
@@ -507,247 +627,295 @@ useEffect(() => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="form-section">
-            <h2>Course Information</h2>
-            <p className="section-subtitle">Basic details about your course</p>
-
-            <div className="form-group">
-              <label>Course Title *</label>
-              <input
-                type="text"
-                value={courseData.title}
-                onChange={(e) => handleInputChange(null, 'title', e.target.value)}
-                placeholder="e.g., Branding Yourself in Freelancing"
-              />
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 1
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Course Information</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Basic details about your course
+              </p>
             </div>
 
-            <div className="form-group">
-              <label>Course Overview *</label>
-              <textarea
-                value={courseData.overview}
-                onChange={(e) => handleInputChange(null, 'overview', e.target.value)}
-                placeholder="In today's competitive freelance market, your brand is your most powerful asset..."
-                rows={6}
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Duration</label>
+            <div className="grid gap-6">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Course Title *</label>
                 <input
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
                   type="text"
-                  value={courseData.duration}
-                  onChange={(e) => handleInputChange(null, 'duration', e.target.value)}
-                  placeholder="e.g., 4 weeks"
+                  value={courseData.title}
+                  onChange={(e) => handleInputChange(null, 'title', e.target.value)}
+                  placeholder="e.g., Branding Yourself in Freelancing"
                 />
               </div>
 
-              <div className="form-group">
-                <label>Difficulty Level</label>
-                <select
-                  value={courseData.difficulty}
-                  onChange={(e) => handleInputChange(null, 'difficulty', e.target.value)}
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Course Overview *</label>
+                <textarea
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 leading-7 text-dark outline-none transition focus:border-dark"
+                  value={courseData.overview}
+                  onChange={(e) => handleInputChange(null, 'overview', e.target.value)}
+                  placeholder="In today's competitive freelance market, your brand is your most powerful asset..."
+                  rows={6}
+                />
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Category</label>
-              <input
-                type="text"
-                value={courseData.category}
-                onChange={(e) => handleInputChange(null, 'category', e.target.value)}
-                placeholder="e.g., Digital Marketing, Design, Development"
-              />
-            </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Duration</label>
+                  <input
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                    type="text"
+                    value={courseData.duration}
+                    onChange={(e) => handleInputChange(null, 'duration', e.target.value)}
+                    placeholder="e.g., 4 weeks"
+                  />
+                </div>
 
-            <ImageUpload
-              value={courseData.thumbnail}
-              onChange={(url) => handleInputChange(null, 'thumbnail', url)}
-              label="Course Thumbnail"
-            />
-            <div className="form-group">
-              <label className="checkbox-label">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Difficulty Level</label>
+                  <select
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark appearance-none"
+                    value={courseData.difficulty}
+                    onChange={(e) => handleInputChange(null, 'difficulty', e.target.value)}
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Category</label>
                 <input
-                  type="checkbox"
-                  checked={courseData.isLiteVersion}
-                  onChange={(e) => handleInputChange(null, 'isLiteVersion', e.target.checked)}
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                  type="text"
+                  value={courseData.category}
+                  onChange={(e) => handleInputChange(null, 'category', e.target.value)}
+                  placeholder="e.g., Digital Marketing, Design, Development"
                 />
-                This is a Lite version (free tier with limited content)
-              </label>
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                <ImageUpload
+                  value={courseData.thumbnail}
+                  onChange={(url) => handleInputChange(null, 'thumbnail', url)}
+                  label="Course Thumbnail"
+                />
+              </div>
+              
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 rounded border-border text-dark focus:ring-dark"
+                    checked={courseData.isLiteVersion}
+                    onChange={(e) => handleInputChange(null, 'isLiteVersion', e.target.checked)}
+                  />
+                  <span className="text-sm font-semibold text-dark">This is a Lite version (free tier with limited content)</span>
+                </label>
+              </div>
             </div>
           </div>
         );
 
       case 2:
         return (
-          <div className="form-section">
-            <h2>Instructor Information</h2>
-            <p className="section-subtitle">Details about the course instructor</p>
-
-            <div className="form-group">
-              <label>Instructor Name *</label>
-              <input
-                type="text"
-                value={courseData.instructor.name}
-                onChange={(e) => handleInputChange('instructor', 'name', e.target.value)}
-                placeholder="e.g., Dr. Sarah Johnson"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Instructor Title/Role</label>
-              <input
-                type="text"
-                value={courseData.instructor.title}
-                onChange={(e) => handleInputChange('instructor', 'title', e.target.value)}
-                placeholder="e.g., Senior Marketing Consultant"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Instructor Bio</label>
-              <textarea
-                value={courseData.instructor.bio}
-                onChange={(e) => handleInputChange('instructor', 'bio', e.target.value)}
-                placeholder="Brief overview of the instructor's background and expertise..."
-                rows={4}
-              />
-            </div>
-
-            <ImageUpload
-              value={courseData.instructor.avatar}
-              onChange={(url) => handleInputChange('instructor', 'avatar', url)}
-              label="Instructor Avatar"
-            />
-            <div className="form-group">
-              <label>Or take a photo</label>
-
-              {courseData.instructor.avatar && (
-                <div style={{ marginBottom: 12 }}>
-                  <img
-                    src={courseData.instructor.avatar}
-                    alt="Instructor avatar preview"
-                    style={{
-                      width: 96,
-                      height: 96,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '1px solid #ddd'
-                    }}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {!cameraOpen ? (
-                  <button type="button" className="secondary-button" onClick={startCamera}>
-                    Use Camera
-                  </button>
-                ) : (
-                  <>
-                    <button type="button" className="primary-button" onClick={captureInstructorAvatar}>
-                      Take Photo
-                    </button>
-
-                    <button type="button" className="secondary-button" onClick={stopCamera}>
-                      Stop
-                    </button>
-
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => setFacingMode((m) => (m === 'user' ? 'environment' : 'user'))}
-                    >
-                      Switch Camera
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {cameraError && (
-                <p style={{ marginTop: 10, color: 'crimson' }}>{cameraError}</p>
-              )}
-
-              {cameraOpen && (
-                <div style={{ marginTop: 12 }}>
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    style={{
-                      width: '100%',
-                      maxWidth: 420,
-                      height: 260,
-                      background: '#000',
-                      borderRadius: 12
-                    }}
-                  />
-                  <canvas ref={canvasRef} style={{ display: 'none' }} />
-                </div>
-              )}
-
-              <p className="section-subtitle" style={{ marginTop: 10 }}>
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 2
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Instructor Information</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Details about the course instructor
               </p>
             </div>
+
+            <div className="grid gap-6">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Instructor Name *</label>
+                <input
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                  type="text"
+                  value={courseData.instructor.name}
+                  onChange={(e) => handleInputChange('instructor', 'name', e.target.value)}
+                  placeholder="e.g., Dr. Sarah Johnson"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Instructor Title/Role</label>
+                <input
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                  type="text"
+                  value={courseData.instructor.title}
+                  onChange={(e) => handleInputChange('instructor', 'title', e.target.value)}
+                  placeholder="e.g., Senior Marketing Consultant"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Instructor Bio</label>
+                <textarea
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 leading-7 text-dark outline-none transition focus:border-dark"
+                  value={courseData.instructor.bio}
+                  onChange={(e) => handleInputChange('instructor', 'bio', e.target.value)}
+                  placeholder="Brief overview of the instructor's background and expertise..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                <ImageUpload
+                  value={courseData.instructor.avatar}
+                  onChange={(url) => handleInputChange('instructor', 'avatar', url)}
+                  label="Instructor Avatar"
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-border">
+                <label className="mb-4 block text-sm font-semibold text-dark">Or take a photo</label>
+
+                {courseData.instructor.avatar && (
+                  <div className="mb-6">
+                    <img
+                      src={courseData.instructor.avatar}
+                      alt="Instructor avatar preview"
+                      className="h-24 w-24 rounded-full object-cover border border-border shadow-sm"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  {!cameraOpen ? (
+                    <button 
+                      type="button" 
+                      className="inline-flex items-center justify-center rounded-full border border-border bg-white px-6 py-3 text-sm font-bold text-dark transition hover:bg-light-secondary" 
+                      onClick={startCamera}
+                    >
+                      Use Camera
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        type="button" 
+                        className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-bold text-white transition hover:bg-dark-secondary" 
+                        onClick={captureInstructorAvatar}
+                      >
+                        Take Photo
+                      </button>
+
+                      <button 
+                        type="button" 
+                        className="inline-flex items-center justify-center rounded-full bg-error/10 text-error px-6 py-3 text-sm font-bold transition hover:bg-error/20" 
+                        onClick={stopCamera}
+                      >
+                        Stop
+                      </button>
+
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-full border border-border bg-white px-6 py-3 text-sm font-bold text-dark transition hover:bg-light-secondary"
+                        onClick={() => setFacingMode((m) => (m === 'user' ? 'environment' : 'user'))}
+                      >
+                        Switch Camera
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {cameraError && (
+                  <p className="mt-4 text-sm font-semibold text-error">{cameraError}</p>
+                )}
+
+                {cameraOpen && (
+                  <div className="mt-6 rounded-2xl overflow-hidden border-2 border-border max-w-[420px] bg-black">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-auto aspect-video object-cover"
+                    />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-            
         );
 
       case 3:
         return (
-          <div className="form-section">
-            <h2>Pricing Details</h2>
-            <p className="section-subtitle">Set the price for your course</p>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Price Amount</label>
-                <input
-                  type="number"
-                  value={courseData.pricing.amount}
-                  onChange={(e) => handleInputChange('pricing', 'amount', parseFloat(e.target.value) || 0)}
-                  placeholder="e.g., 299"
-                  min="0"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Currency</label>
-                <select
-                  value={courseData.pricing.currency}
-                  onChange={(e) => handleInputChange('pricing', 'currency', e.target.value)}
-                >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                </select>
-              </div>
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 3
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Pricing Details</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Set the price for your course
+              </p>
             </div>
 
-            <div className="form-group">
-              <label>Pricing Type</label>
-              <select
-                value={courseData.pricing.type}
-                onChange={(e) => handleInputChange('pricing', 'type', e.target.value)}
-              >
-                <option value="one-time">One-time payment</option>
-                <option value="subscription">Subscription</option>
-              </select>
+            <div className="grid gap-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Price Amount</label>
+                  <input
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                    type="number"
+                    value={courseData.pricing.amount}
+                    onChange={(e) => handleInputChange('pricing', 'amount', parseFloat(e.target.value) || 0)}
+                    placeholder="e.g., 299"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Currency</label>
+                  <select
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark appearance-none"
+                    value={courseData.pricing.currency}
+                    onChange={(e) => handleInputChange('pricing', 'currency', e.target.value)}
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Pricing Type</label>
+                <select
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark appearance-none"
+                  value={courseData.pricing.type}
+                  onChange={(e) => handleInputChange('pricing', 'type', e.target.value)}
+                >
+                  <option value="one-time">One-time payment</option>
+                  <option value="subscription">Subscription</option>
+                </select>
+              </div>
             </div>
           </div>
         );
 
       case 4:
         return (
-          <div className="form-section modules-section">
-            <h2>Course Modules</h2>
-            <p className="section-subtitle">Create modules with overview, learning outcomes, materials, and assignments</p>
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 4
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Course Modules</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Create modules with overview, learning outcomes, materials, and assignments
+              </p>
+            </div>
 
             <ModuleBuilder
               currentModule={currentModule}
@@ -759,41 +927,44 @@ useEffect(() => {
               removeLearningOutcome={removeLearningOutcome}
               onGenerateOutcomes={handleGenerateOutcomesForCurrentModule}
               aiOutcomesLoading={aiOutcomesLoading}
+              showAlert={showAlert}
             />
 
             {courseData.modules.length > 0 && (
-              <div className="modules-list">
-                <h3>Course Modules ({courseData.modules.length})</h3>
-                {courseData.modules.map((module, index) => (
-                  <div key={index} className="module-card">
-                    <div className="module-header">
-                      <div>
-                        <h4>Module {index + 1}: {module.title}</h4>
-                        <p className="module-overview">{module.overview}</p>
-                      </div>
-                      <button onClick={() => removeModule(index)} className="remove-button">
-                        Remove
-                      </button>
-                    </div>
-                    
-                    <div className="module-details">
-                      <div className="detail-section">
-                        <strong>Learning Outcomes:</strong> {module.learningOutcomes.length}
-                      </div>
-                      <div className="detail-section">
-                        <strong>Materials:</strong> {' '}
-                        {module.learningMaterials.readings.length} readings, {' '}
-                        {module.learningMaterials.podcasts.length} podcasts, {' '}
-                        {module.learningMaterials.videos.length} videos
-                      </div>
-                      {module.assignment && (
-                        <div className="detail-section">
-                          <strong>Assignment:</strong> {module.assignment.title}
+              <div className="space-y-6 mt-12">
+                <h3 className="text-2xl font-bold text-dark">Course Modules ({courseData.modules.length})</h3>
+                <div className="space-y-4">
+                  {courseData.modules.map((module, index) => (
+                    <div key={index} className="rounded-[28px] border border-border bg-white p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-dark mb-1">Module {index + 1}: {module.title}</h4>
+                          <p className="text-sm text-dark-secondary leading-6">{module.overview}</p>
                         </div>
-                      )}
+                        <button 
+                          onClick={() => removeModule(index)} 
+                          className="inline-flex items-center justify-center rounded-full bg-error/10 text-error px-4 py-2 text-sm font-semibold transition hover:bg-error/20 flex-shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-4 text-sm pt-4 border-t border-border">
+                        <div className="rounded-2xl bg-light-tertiary px-4 py-2 border border-border">
+                          <strong className="text-dark">Learning Outcomes:</strong> <span className="text-dark-secondary">{module.learningOutcomes.length}</span>
+                        </div>
+                        <div className="rounded-2xl bg-light-tertiary px-4 py-2 border border-border">
+                          <strong className="text-dark">Materials:</strong> <span className="text-dark-secondary">{module.learningMaterials.readings.length} readings, {module.learningMaterials.podcasts.length} podcasts, {module.learningMaterials.videos.length} videos</span>
+                        </div>
+                        {module.assignment && (
+                          <div className="rounded-2xl bg-[#f0fdf4] px-4 py-2 border border-[#bbf7d0]">
+                            <strong className="text-[#166534]">Assignment:</strong> <span className="text-[#15803d]">{module.assignment.title}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -801,176 +972,218 @@ useEffect(() => {
 
       case 5:
         return (
-          <div className="form-section">
-            <h2>Final Test</h2>
-            <p className="section-subtitle">Create a final test to assess student learning</p>
-
-            <div className="form-group">
-              <label>Test Title</label>
-              <input
-                type="text"
-                value={courseData.finalTest.title}
-                onChange={(e) => handleInputChange('finalTest', 'title', e.target.value)}
-                placeholder="Final Test"
-              />
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 5
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Final Test</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Create a final test to assess student learning
+              </p>
             </div>
 
-            <div className="form-group">
-              <label>Test Description</label>
-              <textarea
-                value={courseData.finalTest.description}
-                onChange={(e) => handleInputChange('finalTest', 'description', e.target.value)}
-                placeholder="Description of the final test..."
-                rows={3}
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Passing Score (%)</label>
+            <div className="grid gap-6">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Test Title</label>
                 <input
-                  type="number"
-                  value={courseData.finalTest.passingScore}
-                  onChange={(e) => handleInputChange('finalTest', 'passingScore', parseInt(e.target.value))}
-                  min="0"
-                  max="100"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Time Limit (minutes, 0 = no limit)</label>
-                <input
-                  type="number"
-                  value={courseData.finalTest.timeLimit}
-                  onChange={(e) => handleInputChange('finalTest', 'timeLimit', parseInt(e.target.value))}
-                  min="0"
-                />
-              </div>
-            </div>
-
-            <div className="question-builder">
-              <h4>Add Test Questions</h4>
-
-              <div className="form-group">
-                <label>Question</label>
-                <input
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
                   type="text"
-                  value={currentQuestion.question}
-                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
-                  placeholder="Enter your question..."
+                  value={courseData.finalTest.title}
+                  onChange={(e) => handleInputChange('finalTest', 'title', e.target.value)}
+                  placeholder="Final Test"
                 />
               </div>
 
-              <div className="form-group">
-                <label>Answer Options</label>
-                {currentQuestion.options.map((option, index) => (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Test Description</label>
+                <textarea
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 leading-7 text-dark outline-none transition focus:border-dark"
+                  value={courseData.finalTest.description}
+                  onChange={(e) => handleInputChange('finalTest', 'description', e.target.value)}
+                  placeholder="Description of the final test..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Passing Score (%)</label>
                   <input
-                    key={index}
-                    type="text"
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...currentQuestion.options];
-                      newOptions[index] = e.target.value;
-                      setCurrentQuestion({ ...currentQuestion, options: newOptions });
-                    }}
-                    placeholder={`Option ${index + 1}`}
-                    style={{ marginBottom: '8px' }}
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                    type="number"
+                    value={courseData.finalTest.passingScore}
+                    onChange={(e) => handleInputChange('finalTest', 'passingScore', parseInt(e.target.value))}
+                    min="0"
+                    max="100"
                   />
-                ))}
-              </div>
-
-              <div className="form-group">
-                <label>Correct Answer</label>
-                <select
-                  value={currentQuestion.correctAnswer}
-                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
-                >
-                  <option value="">Select correct answer...</option>
-                  {currentQuestion.options.map((option, index) => (
-                    <option key={index} value={index}>{option || `Option ${index + 1}`}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="button" onClick={addQuestionToTest} className="add-button">
-                Add Question
-              </button>
-
-              {courseData.finalTest.questions.length > 0 && (
-                <div className="items-list">
-                  <h5>Test Questions ({courseData.finalTest.questions.length})</h5>
-                  {courseData.finalTest.questions.map((q, index) => (
-                    <div key={index} className="list-item">
-                      <span>{index + 1}. {q.question}</span>
-                      <button onClick={() => removeQuestionFromTest(index)} className="remove-button">
-                        Remove
-                      </button>
-                    </div>
-                  ))}
                 </div>
-              )}
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-dark">Time Limit (minutes, 0 = no limit)</label>
+                  <input
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                    type="number"
+                    value={courseData.finalTest.timeLimit}
+                    onChange={(e) => handleInputChange('finalTest', 'timeLimit', parseInt(e.target.value))}
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-8 border-t border-border mt-8">
+                <h4 className="mb-6 text-xl font-bold text-dark">Add Test Questions</h4>
+
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-semibold text-dark">Question</label>
+                  <input
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                    type="text"
+                    value={currentQuestion.question}
+                    onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
+                    placeholder="Enter your question..."
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-semibold text-dark">Answer Options</label>
+                  <div className="space-y-3">
+                    {currentQuestion.options.map((option, index) => (
+                      <input
+                        key={index}
+                        className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                        type="text"
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...currentQuestion.options];
+                          newOptions[index] = e.target.value;
+                          setCurrentQuestion({ ...currentQuestion, options: newOptions });
+                        }}
+                        placeholder={`Option ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-semibold text-dark">Correct Answer</label>
+                  <select
+                    className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark appearance-none"
+                    value={currentQuestion.correctAnswer}
+                    onChange={(e) => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
+                  >
+                    <option value="">Select correct answer...</option>
+                    {currentQuestion.options.map((option, index) => (
+                      <option key={index} value={index}>{option || `Option ${index + 1}`}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={addQuestionToTest} 
+                  className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-bold text-white transition hover:bg-dark-secondary"
+                >
+                  Add Question
+                </button>
+
+                {courseData.finalTest.questions.length > 0 && (
+                  <div className="mt-8">
+                    <h5 className="mb-4 text-lg font-bold text-dark">Test Questions ({courseData.finalTest.questions.length})</h5>
+                    <div className="space-y-3">
+                      {courseData.finalTest.questions.map((q, index) => (
+                        <div key={index} className="flex items-center justify-between rounded-2xl border border-border bg-light-tertiary p-4">
+                          <span className="text-dark font-medium"><span className="text-accent font-bold mr-2">{index + 1}.</span> {q.question}</span>
+                          <button 
+                            onClick={() => removeQuestionFromTest(index)} 
+                            className="inline-flex items-center justify-center rounded-full bg-error/10 text-error px-4 py-2 text-sm font-semibold transition hover:bg-error/20 flex-shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
 
       case 6:
         return (
-          <div className="form-section">
-            <h2>Completion Badge</h2>
-            <p className="section-subtitle">Design a badge that students will earn upon completing the course</p>
-
-            <div className="form-group">
-              <label>Badge Name</label>
-              <input
-                type="text"
-                value={courseData.badge.name}
-                onChange={(e) => handleInputChange('badge', 'name', e.target.value)}
-                placeholder="e.g., Freelance Branding Expert"
-              />
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                Step 6
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-dark">Completion Badge</h2>
+              <p className="mt-3 text-sm leading-7 text-dark-secondary">
+                Design a badge that students will earn upon completing the course
+              </p>
             </div>
 
-            <div className="form-group">
-              <label>Badge Description</label>
-              <textarea
-                value={courseData.badge.description}
-                onChange={(e) => handleInputChange('badge', 'description', e.target.value)}
-                placeholder="Description of what this badge represents..."
-                rows={3}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Badge Color</label>
-              <input
-                type="color"
-                value={courseData.badge.color}
-                onChange={(e) => handleInputChange('badge', 'color', e.target.value)}
-              />
-            </div>
-
-            <ImageUpload
-              value={courseData.badge.imageUrl}
-              onChange={(url) => handleInputChange('badge', 'imageUrl', url)}
-              label="Badge Image (optional)"
-            />
-
-            {courseData.badge.name && (
-              <div className="badge-preview">
-                <h4>Badge Preview</h4>
-                <div 
-                  className="preview-badge"
-                  style={{ backgroundColor: courseData.badge.color }}
-                >
-                  {courseData.badge.imageUrl ? (
-                    <img src={courseData.badge.imageUrl} alt={courseData.badge.name} />
-                  ) : (
-                    <span className="badge-emoji">🏆</span>
-                  )}
-                </div>
-                <p><strong>{courseData.badge.name}</strong></p>
-                <p>{courseData.badge.description}</p>
+            <div className="grid gap-6">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Badge Name</label>
+                <input
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 text-dark outline-none transition focus:border-dark"
+                  type="text"
+                  value={courseData.badge.name}
+                  onChange={(e) => handleInputChange('badge', 'name', e.target.value)}
+                  placeholder="e.g., Freelance Branding Expert"
+                />
               </div>
-            )}
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Badge Description</label>
+                <textarea
+                  className="w-full rounded-2xl border border-border bg-white px-5 py-4 leading-7 text-dark outline-none transition focus:border-dark"
+                  value={courseData.badge.description}
+                  onChange={(e) => handleInputChange('badge', 'description', e.target.value)}
+                  placeholder="Description of what this badge represents..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-dark">Badge Color</label>
+                <input
+                  className="h-14 w-24 cursor-pointer rounded-xl border border-border bg-white p-1"
+                  type="color"
+                  value={courseData.badge.color}
+                  onChange={(e) => handleInputChange('badge', 'color', e.target.value)}
+                />
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
+                <ImageUpload
+                  value={courseData.badge.imageUrl}
+                  onChange={(url) => handleInputChange('badge', 'imageUrl', url)}
+                  label="Badge Image (optional)"
+                />
+              </div>
+
+              {courseData.badge.name && (
+                <div className="pt-8 border-t border-border mt-8">
+                  <h4 className="mb-6 text-xl font-bold text-dark">Badge Preview</h4>
+                  <div className="flex flex-col items-center justify-center rounded-[32px] border border-border bg-light-tertiary p-8 text-center max-w-sm mx-auto shadow-sm">
+                    <div 
+                      className="flex h-32 w-32 items-center justify-center rounded-full mb-6 shadow-md border-4 border-white"
+                      style={{ backgroundColor: courseData.badge.color }}
+                    >
+                      {courseData.badge.imageUrl ? (
+                        <img src={courseData.badge.imageUrl} alt={courseData.badge.name} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-5xl drop-shadow-sm">🏆</span>
+                      )}
+                    </div>
+                    <p className="text-xl font-bold text-dark mb-2">{courseData.badge.name}</p>
+                    <p className="text-sm leading-6 text-dark-secondary">{courseData.badge.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         );
 
@@ -980,39 +1193,88 @@ useEffect(() => {
   };
 
   return (
-    <div className="create-course-page">
-      <div className="create-course-container">
-        <button className="back-button" onClick={() => navigate(-1)}>
-          <FiArrowLeft size={18} /> Back
+    <div className="min-h-screen bg-main-bg px-4 py-8 font-academy sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-narrow">
+        <button
+          type="button"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:-translate-y-0.5 hover:bg-light-secondary"
+          onClick={() => navigate(-1)}
+        >
+          <FiArrowLeft />
+          <span>Back</span>
         </button>
 
-        <h1>{isEditMode ? 'Edit Course' : 'Create New Course'}</h1>
-        <p className="page-subtitle">Fill in the details to create a new course</p>
-
-        <div className="steps-indicator">
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className={`step ${currentStep === index + 1 ? 'active' : ''} ${
-                currentStep > index + 1 ? 'completed' : ''
-              }`}
-            >
-              <div className="step-number">{index + 1}</div>
-              <div className="step-label">{step}</div>
+        <section className="rounded-[32px] border border-border bg-light-tertiary p-6 shadow-card lg:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                Courses
+              </p>
+              <div className="mt-2 flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-dark sm:text-5xl">
+                  {isEditMode ? "Edit Course" : "Create New Course"}
+                </h1>
+                {!isEditMode && (
+                  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
+                    Draft
+                  </span>
+                )}
+              </div>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
+                Fill in the details to create a new course
+                {!isEditMode && isSavingDraft && (
+                  <span className="ml-2 text-xs text-accent/70">
+                    • Saving...
+                  </span>
+                )}
+                {lastSaved && !isEditMode && !isSavingDraft && (
+                  <span className="ml-2 text-xs text-dark-secondary/60">
+                    • Auto-saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="form-container">
+          <div className="mt-8 flex flex-wrap gap-3">
+            {steps.map((step, index) => (
+              <button
+                key={index}
+                type="button"
+                className={`inline-flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition ${
+                  currentStep === index + 1
+                    ? "bg-dark text-white shadow-md"
+                    : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
+                }`}
+                onClick={() => handleStepClick(index + 1)}
+              >
+                <span
+                  className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${
+                    currentStep === index + 1
+                      ? "bg-white/15 text-white"
+                      : currentStep > index + 1
+                      ? "bg-accent text-white"
+                      : "bg-light-tertiary text-dark"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-[32px] border border-border bg-white p-6 shadow-card lg:p-8">
           {renderStepContent()}
-        </div>
+        </section>
 
-        <div className="form-actions">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="secondary-button"
+            className="inline-flex items-center justify-center rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold text-dark transition hover:bg-light-secondary disabled:cursor-not-allowed disabled:opacity-60"
           >
             Previous
           </button>
@@ -1021,7 +1283,7 @@ useEffect(() => {
             <button
               type="button"
               onClick={handleNext}
-              className="primary-button"
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
             >
               Next
             </button>
@@ -1029,13 +1291,21 @@ useEffect(() => {
             <button
               type="button"
               onClick={handleSubmit}
-              className="primary-button"
+              className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent-tertiary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isEditMode ? 'Update Course' : 'Create Course'}
             </button>
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

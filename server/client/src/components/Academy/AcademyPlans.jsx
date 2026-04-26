@@ -32,8 +32,8 @@ function AcademyPlans() {
   return (
     <section className="my-5 mb-10 rounded-[30px] border border-border bg-light-tertiary p-8 shadow-card md:p-6" aria-label="Subscription plans">
       <div className="mb-5">
-        <span className="mb-1.5 inline-block text-[11px] font-bold uppercase tracking-[2px] text-accent">Subscriptions</span>
-        <h3 className="mb-2 text-[30px] text-dark-primary md:text-2xl">Pick the plan that fits your pace</h3>
+        <span className="mb-1.5 inline-block text-[9px] font-bold uppercase tracking-[2px] text-accent">Subscriptions</span>
+        <h3 className="mb-2 text-2xl text-dark-primary">Pick the plan that fits your pace</h3>
         <p className="text-md text-dark-secondary">Start free, then upgrade when you want deeper access and more live experiences.</p>
       </div>
 
@@ -70,7 +70,7 @@ function AcademyPlans() {
         </article>
 
         <article className="relative flex min-h-[530px] flex-col overflow-hidden rounded-[22px] border border-accent/50 bg-main-bg p-6 shadow-accent transition-all duration-[250ms] ease-in-out before:absolute before:left-0 before:top-0 before:h-[5px] before:w-full before:bg-accent-secondary before:content-[''] hover:-translate-y-1 hover:shadow-card-hover">
-          <span className="absolute right-3 top-3 inline-flex rounded-full bg-accent px-[9px] py-[5px] text-[10px] font-bold uppercase tracking-[0.5px] text-white">Most popular</span>
+          <span className="absolute right-3 top-3 inline-flex rounded-full bg-accent px-[9px] py-[5px] text-[8px] font-bold uppercase tracking-[0.5px] text-white">Most popular</span>
           <h4 className="mb-1 text-2xl text-dark-primary">Plus</h4>
           <p className="mb-1.5 text-3xl font-bold text-accent">$14.99/mo</p>
           <p className="mb-3.5 text-sm text-dark-secondary">Best for consistent learners</p>
@@ -94,7 +94,7 @@ function AcademyPlans() {
             <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />Unlimited AI feedback (Fair Use)</li>
             <li className="flex items-center gap-2 text-sm leading-[1.65] text-dark-secondary"><FiCheck aria-hidden="true" className={checkIconClasses} />AI-assisted creator tools</li>
           </ul>
-          <p className="-mt-1.5 mb-3.5 text-[11px] leading-[1.4] text-[#666]">Unlimited AI is subject to fair use and anti-abuse protections.</p>
+          <p className="-mt-1.5 mb-3.5 text-[9px] leading-[1.4] text-[#666]">Unlimited AI is subject to fair use and anti-abuse protections.</p>
           <button className="w-full rounded-full border-none bg-accent-secondary px-3.5 py-2.5 text-sm font-bold text-white" type="button">Go Premium</button>
         </article>
       </div>

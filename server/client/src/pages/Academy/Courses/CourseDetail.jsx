@@ -13,6 +13,7 @@ import {
   FiUser
 } from "react-icons/fi";
 import "./CourseDetail.css";
+import AlertModal from '../../../components/UI/AlertModal';
 
 const fallbackLearningPoints = [
   "Build a clearer freelance positioning strategy.",
@@ -102,6 +103,11 @@ export default function CourseDetail() {
   const [openVideos, setOpenVideos] = useState({});
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -198,7 +204,7 @@ export default function CourseDetail() {
       throw new Error("Invalid server response");
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      showAlert('Error', err.message);
     } finally {
       setEnrolling(false);
     }
@@ -309,6 +315,14 @@ export default function CourseDetail() {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

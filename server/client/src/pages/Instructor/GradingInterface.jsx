@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './GradingInterface.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 function GradingInterface() {
   const { submissionId } = useParams();
@@ -11,6 +12,11 @@ function GradingInterface() {
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error', onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
+  };
 
   // For question-based: { questionNumber: { points: number, comment: string, autoGraded: boolean } }
   // For part-based: { partNumber: { points: number, maxPoints: number, comment: string } }
@@ -51,7 +57,8 @@ function GradingInterface() {
 
       // Fetch course to get assignment questions
       if (data.assignmentType === 'question-based') {
-        const courseRes = await fetch(`/api/academy/courses/${data.course}`, {
+        const courseId = data.course?._id || data.course?.id || data.course;
+        const courseRes = await fetch(`/api/academy/courses/${courseId}`, {
           credentials: 'include'
         });
         const course = await courseRes.json();
@@ -109,8 +116,7 @@ function GradingInterface() {
 
     } catch (err) {
       console.error('Error fetching submission:', err);
-      alert('Failed to load submission');
-      navigate('/instructor/dashboard');
+      showAlert('Error', 'Failed to load submission');
     } finally {
       setLoading(false);
     }
@@ -151,7 +157,7 @@ function GradingInterface() {
     );
 
     if (!allItemsGraded) {
-      alert('Please grade all items before submitting');
+      showAlert('Validation Error', 'Please grade all items before submitting', 'warning');
       return;
     }
 
@@ -160,44 +166,45 @@ function GradingInterface() {
     const passed = percentage >= (submission.passingScore || 70);
     const confirmMessage = `Submit grade: ${calculateTotalScore()}/${calculateMaxScore()} (${percentage}%)\n\nStatus: ${passed ? 'PASSED ✓' : 'NOT PASSED ✗'}\n\nAre you sure?`;
     
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
+    showAlert('Confirm Grade', confirmMessage, 'confirm', async () => {
+      try {
+        setGrading(true);
 
-    try {
-      setGrading(true);
+        const response = await fetch(`/api/instructor/submissions/${submissionId}/grade`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            grades,
+            overallFeedback
+          })
+        });
 
-      const response = await fetch(`/api/instructor/submissions/${submissionId}/grade`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          grades,
-          overallFeedback
-        })
-      });
+        if (!response.ok) {
+          throw new Error('Failed to submit grade');
+        }
 
-      if (!response.ok) {
-        throw new Error('Failed to submit grade');
+        showAlert('Success', 'Grade submitted successfully!', 'success');
+        setTimeout(() => navigate('/instructor/dashboard'), 2000);
+
+      } catch (err) {
+        console.error('Error submitting grade:', err);
+        showAlert('Error', 'Failed to submit grade. Please try again.');
+      } finally {
+        setGrading(false);
       }
-
-      alert('Grade submitted successfully!');
-      navigate('/instructor/dashboard');
-
-    } catch (err) {
-      console.error('Error submitting grade:', err);
-      alert('Failed to submit grade. Please try again.');
-    } finally {
-      setGrading(false);
-    }
+    });
   };
 
   const handleCancel = () => {
-    if (window.confirm('Are you sure you want to cancel? Your grading progress will be lost.')) {
-      navigate('/instructor/dashboard');
-    }
+    showAlert(
+      'Cancel Grading', 
+      'Are you sure you want to cancel? Your grading progress will be lost.', 
+      'confirm', 
+      () => navigate('/instructor/dashboard')
+    );
   };
 
   const handleAiSuggestGrades = async () => {
@@ -212,7 +219,7 @@ function GradingInterface() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "AI grading failed");
+        showAlert('AI Error', data.error || "AI grading failed");
         return;
       }
 
@@ -226,7 +233,7 @@ function GradingInterface() {
       }
 
       if (Object.keys(nextGrades).length === 0) {
-        alert('AI returned feedback, but no usable numeric grades. This provider may not be reliably returning structured scores yet.');
+        showAlert('AI Note', 'AI returned feedback, but no usable numeric grades. This provider may not be reliably returning structured scores yet.', 'warning');
         return;
       }
 
@@ -251,7 +258,7 @@ function GradingInterface() {
 
     } catch (err) {
       console.error(err);
-      alert("AI grading failed");
+      showAlert('Error', "AI grading failed");
     } finally {
       setAiLoading(false);
     }
@@ -680,6 +687,18 @@ function GradingInterface() {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

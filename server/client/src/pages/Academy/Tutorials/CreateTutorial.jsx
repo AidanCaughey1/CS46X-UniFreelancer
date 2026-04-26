@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import ImageUpload from "../../../components/ImageUpload";
+import AlertModal from '../../../components/UI/AlertModal';
 
 const inputClasses =
   "w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark";
@@ -11,8 +12,24 @@ const textareaClasses =
 function CreateTutorial() {
   const navigate = useNavigate();
   const { id: tutorialId } = useParams();
+  const [searchParams] = useSearchParams();
+  const draftIdFromUrl = searchParams.get('draftId');
   const isEditMode = Boolean(tutorialId);
   const [currentStep, setCurrentStep] = useState("basic-info");
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const lastSavedDataRef = useRef(null);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error", onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
+  
   const [loadingTutorial, setLoadingTutorial] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,8 +40,7 @@ function CreateTutorial() {
     thumbnail: "",
     videoUrl: "",
     writtenContent: "",
-    resources: [],
-    instructorName: ""
+    resources: []
   });
 
   useEffect(() => {
@@ -55,12 +71,11 @@ function CreateTutorial() {
                   return resource?.url || "";
                 })
                 .filter(Boolean)
-            : [],
-          instructorName: tutorial.instructor?.name || ""
+            : []
         });
       } catch (error) {
         console.error("Error loading tutorial:", error);
-        alert("Failed to load tutorial for editing.");
+        showAlert("Error", "Failed to load tutorial for editing.");
         navigate("/academy/tutorials");
       } finally {
         setLoadingTutorial(false);
@@ -69,6 +84,79 @@ function CreateTutorial() {
 
     fetchTutorialForEdit();
   }, [isEditMode, navigate, tutorialId]);
+
+  // Load draft if draftId is present in URL
+  useEffect(() => {
+    if (!draftIdFromUrl || isEditMode) return;
+    const loadDraft = async () => {
+      try {
+        const res = await fetch(`/api/academy/drafts/${draftIdFromUrl}`, { credentials: 'include' });
+        if (res.ok) {
+          const draft = await res.json();
+          if (draft.contentData && Object.keys(draft.contentData).length > 0) {
+            setFormData(prev => ({ ...prev, ...draft.contentData }));
+            setLastSaved(new Date(draft.lastSavedAt));
+            lastSavedDataRef.current = JSON.stringify({ ...formData, ...draft.contentData });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      }
+    };
+    loadDraft();
+  }, [draftIdFromUrl, isEditMode]);
+
+  // Auto-save draft (debounced 5s after changes, with dirty checking)
+  const saveDraft = useCallback(async (data) => {
+    if (isEditMode || isSavingDraft) return;
+
+    // Dirty check: skip save if content hasn't changed since last save
+    const serialized = JSON.stringify(data);
+    if (lastSavedDataRef.current === serialized) return;
+
+    setIsSavingDraft(true);
+    try {
+      if (draftId) {
+        const res = await fetch(`/api/academy/drafts/${draftId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentData: data })
+        });
+        if (res.ok) {
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
+      } else {
+        const res = await fetch('/api/academy/drafts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contentType: 'tutorial', contentData: data })
+        });
+        if (res.ok) {
+          const newDraft = await res.json();
+          setDraftId(newDraft._id);
+          setLastSaved(new Date());
+          lastSavedDataRef.current = serialized;
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save draft error:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isEditMode, isSavingDraft]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const timer = setTimeout(() => {
+      if (formData.title || formData.description) {
+        saveDraft(formData);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [formData, isEditMode, saveDraft]);
 
   const steps = [
     { id: "basic-info", label: "Basic Info" },
@@ -131,8 +219,7 @@ function CreateTutorial() {
       return (
         formData.title.trim() !== "" &&
         formData.description.trim() !== "" &&
-        formData.category.trim() !== "" &&
-        formData.instructorName.trim() !== ""
+        formData.category.trim() !== ""
       );
     }
 
@@ -149,9 +236,9 @@ function CreateTutorial() {
   const handleNext = () => {
     if (!isStepValid(currentStep)) {
       if (currentStep === "basic-info") {
-        alert("Please fill in all required fields before continuing.");
+        showAlert("Validation Error", "Please fill in all required fields before continuing.");
       } else if (currentStep === "content") {
-        alert("Please add a video URL or written content before continuing.");
+        showAlert("Validation Error", "Please add a video URL or written content before continuing.");
       }
       return;
     }
@@ -159,6 +246,24 @@ function CreateTutorial() {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStep(steps[currentStepIndex + 1].id);
     }
+  };
+
+  const handleStepClick = (targetStepId) => {
+    const targetIndex = steps.findIndex(s => s.id === targetStepId);
+    if (targetIndex > currentStepIndex) {
+      for (let i = currentStepIndex; i < targetIndex; i++) {
+        const stepToValidate = steps[i].id;
+        if (!isStepValid(stepToValidate)) {
+          if (stepToValidate === "basic-info") {
+            showAlert("Validation Error", "Please fill in all required fields before continuing.");
+          } else if (stepToValidate === "content") {
+            showAlert("Validation Error", "Please add a video URL or written content before continuing.");
+          }
+          return;
+        }
+      }
+    }
+    setCurrentStep(targetStepId);
   };
 
   const handlePrevious = () => {
@@ -174,13 +279,7 @@ function CreateTutorial() {
 
     const durationMinutes = parseDurationMinutes(formData.duration);
     if (durationMinutes === null) {
-      alert("Duration must be a number of minutes (e.g., 15) or left blank for self-paced.");
-      return;
-    }
-
-    const trimmedInstructor = formData.instructorName.trim();
-    if (!trimmedInstructor) {
-      alert("Instructor name is required.");
+      showAlert("Validation Error", "Duration must be a number of minutes (e.g., 15) or left blank for self-paced.");
       return;
     }
 
@@ -195,7 +294,6 @@ function CreateTutorial() {
         thumbnail: formData.thumbnail,
         videoUrl: formData.videoUrl.trim(),
         writtenContent: formData.writtenContent.trim(),
-        instructor: { name: trimmedInstructor },
         resources: (formData.resources || [])
           .map((resourceUrl) => String(resourceUrl).trim())
           .filter(Boolean)
@@ -217,11 +315,16 @@ function CreateTutorial() {
         throw new Error(errorData.error || "Failed to save tutorial.");
       }
 
-      alert(`Tutorial ${isEditMode ? "updated" : "created"} successfully!`);
-      navigate(isEditMode ? `/academy/tutorials/${tutorialId}` : "/academy/tutorials");
+      showAlert("Success", `Tutorial ${isEditMode ? "updated" : "created"} successfully!`, "success");
+      if (draftId) {
+        try { await fetch(`/api/academy/drafts/${draftId}`, { method: 'DELETE', credentials: 'include' }); } catch (e) { /* ignore */ }
+      }
+      setTimeout(() => {
+        navigate(isEditMode ? `/academy/tutorials/${tutorialId}` : "/academy/tutorials");
+      }, 1500);
     } catch (error) {
       console.error("Error saving tutorial:", error);
-      alert(error.message || "An unexpected error occurred while saving the tutorial.");
+      showAlert("Error", error.message || "An unexpected error occurred while saving the tutorial.");
     } finally {
       setIsSubmitting(false);
     }
@@ -230,37 +333,37 @@ function CreateTutorial() {
   const handleDeleteTutorial = async () => {
     if (!isEditMode) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this tutorial? This cannot be undone."
-    );
-    if (!confirmed) return;
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this tutorial? This cannot be undone.",
+      "confirm",
+      async () => {
+        try {
+          setIsSubmitting(true);
+          const response = await fetch(`/api/academy/tutorials/${tutorialId}`, {
+            method: "DELETE",
+            credentials: "include"
+          });
 
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(`/api/academy/tutorials/${tutorialId}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
+          if (!response.ok) {
+            if (response.status === 404) {
+              showAlert("Info", "Tutorial was already deleted.");
+              setTimeout(() => navigate("/academy/tutorials"), 1500);
+              return;
+            }
+            throw new Error("Failed to delete tutorial");
+          }
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          alert("Tutorial was already deleted.");
-          navigate("/academy/tutorials");
-          return;
+          showAlert("Success", "Tutorial deleted successfully!", "success");
+          setTimeout(() => navigate("/academy/tutorials"), 1500);
+        } catch (error) {
+          console.error("Error deleting tutorial:", error);
+          showAlert("Error", error.message || "An unexpected error occurred while deleting the tutorial.");
+        } finally {
+          setIsSubmitting(false);
         }
-
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete tutorial.");
       }
-
-      alert("Tutorial deleted successfully.");
-      navigate("/academy/tutorials");
-    } catch (error) {
-      console.error("Error deleting tutorial:", error);
-      alert(error.message || "Failed to delete tutorial.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   if (loadingTutorial) {
@@ -291,13 +394,30 @@ function CreateTutorial() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                 Tutorials
               </p>
-              <h1 className="mt-2 text-4xl font-bold text-dark sm:text-5xl">
-                {isEditMode ? "Edit Tutorial" : "Create New Tutorial"}
-              </h1>
+              <div className="mt-2 flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-dark sm:text-5xl">
+                  {isEditMode ? "Edit Tutorial" : "Create New Tutorial"}
+                </h1>
+                {!isEditMode && (
+                  <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
+                    Draft
+                  </span>
+                )}
+              </div>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-dark-secondary">
                 {isEditMode
                   ? "Update the tutorial details, resources, and learning content."
                   : "Set up a focused tutorial with video, written notes, and downloadable resources."}
+                {!isEditMode && isSavingDraft && (
+                  <span className="ml-2 text-xs text-accent/70">
+                    • Saving...
+                  </span>
+                )}
+                {lastSaved && !isEditMode && !isSavingDraft && (
+                  <span className="ml-2 text-xs text-dark-secondary/60">
+                    • Auto-saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -324,7 +444,7 @@ function CreateTutorial() {
                     ? "bg-dark text-white shadow-md"
                     : "bg-white text-dark hover:-translate-y-0.5 hover:bg-light-secondary"
                 }`}
-                onClick={() => setCurrentStep(step.id)}
+                onClick={() => handleStepClick(step.id)}
               >
                 <span
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs ${
@@ -417,19 +537,6 @@ function CreateTutorial() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-dark">
-                    Instructor *
-                  </label>
-                  <input
-                    type="text"
-                    name="instructorName"
-                    className={inputClasses}
-                    placeholder="e.g., Jane Doe"
-                    value={formData.instructorName}
-                    onChange={handleChange}
-                  />
-                </div>
 
                 <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
                   <ImageUpload
@@ -578,6 +685,18 @@ function CreateTutorial() {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

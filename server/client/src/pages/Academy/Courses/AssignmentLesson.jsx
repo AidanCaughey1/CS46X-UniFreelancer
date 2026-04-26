@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './CourseLearning.css';
+import AlertModal from '../../../components/UI/AlertModal';
 
 function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
   const [answers, setAnswers] = useState({});
   const [fileUrl, setFileUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+  const showAlert = (title, message, type = 'error') => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   const assignment = lesson.assignmentData;
   const isQuestionBased = assignment?.questions && assignment.questions.length > 0;
@@ -90,7 +96,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
   const handleSubmit = async () => {
     if (!isQuestionBased) {
       if (!fileUrl.trim()) {
-        alert('Please provide a file URL or link to your submission');
+        showAlert('Validation Error', 'Please provide a file URL or link to your submission');
         return;
       }
     } else {
@@ -114,7 +120,7 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
       });
 
       if (unansweredQuestions.length > 0) {
-        alert(`Please answer all questions. Missing: Question ${unansweredQuestions.map(q => q.questionNumber).join(', ')}`);
+        showAlert('Validation Error', `Please answer all questions. Missing: Question ${unansweredQuestions.map(q => q.questionNumber).join(', ')}`);
         return;
       }
     }
@@ -155,13 +161,13 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
         throw new Error(data.error || 'Submission failed');
       }
 
-      alert('Assignment submitted successfully!');
+      showAlert('Success', 'Assignment submitted successfully!', 'success');
       setSubmitted(true);
       onComplete();
 
     } catch (err) {
       console.error('Error submitting assignment:', err);
-      alert(err.message || 'Failed to submit assignment. Please try again.');
+      showAlert('Error', err.message || 'Failed to submit assignment. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -347,6 +353,14 @@ function AssignmentLesson({ courseId, lesson, onComplete, progress }) {
           {submitting ? 'Submitting...' : 'Submit Assignment'}
         </button>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

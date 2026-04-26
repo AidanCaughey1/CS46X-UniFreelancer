@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Academy from './pages/Academy/Academy';
@@ -20,6 +20,27 @@ import CourseLearning from './pages/Academy/Courses/CourseLearning';
 import InstructorDashboard from './pages/Instructor/InstructorDashboard';
 import GradingInterface from './pages/Instructor/GradingInterface';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const previousPathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    const prev = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
+
+    if (prev === pathname) return;
+
+    const hubTabs = ['/academy/courses', '/academy/seminars', '/academy/tutorials'];
+    const isHubTransition = hubTabs.includes(pathname) && hubTabs.includes(prev);
+    
+    if (!isHubTransition) {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
+
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,6 +76,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen">
         <Header user={user} />
         <Routes>
@@ -143,6 +165,33 @@ function NavItem({ to, isActive, children, className = '' }) {
 
 function Header({ user }) {
   const location = useLocation();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Always show at the very top
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+      } 
+      // Scrolling down (and past the 100px threshold to avoid immediate hide on load)
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } 
+      // Scrolling up
+      else if (currentScrollY < lastScrollY) {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const isSeminarJoinRoute = /^\/academy\/seminars\/[^/]+\/join$/.test(location.pathname);
 
   if (isSeminarJoinRoute) {
@@ -161,12 +210,12 @@ function Header({ user }) {
     'U';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white shadow-sm">
+    <header className={`sticky top-0 z-50 border-b border-border bg-white shadow-sm transition-transform duration-300 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-4 px-8 py-4 lg:flex-nowrap">
         <div className="shrink-0">
           <Link to="/" className="text-inherit no-underline">
-            <h1 className="mb-0.5 text-[22px] font-bold tracking-wide text-body">UniFreelancer</h1>
-            <p className="text-[10px] font-medium uppercase tracking-[1.5px] text-muted">FREELANCE PORTAL</p>
+            <h1 className="mb-0.5 text-lg font-bold tracking-wide text-body">UniFreelancer</h1>
+            <p className="text-[8px] font-medium uppercase tracking-[1.5px] text-muted">FREELANCE PORTAL</p>
           </Link>
         </div>
 

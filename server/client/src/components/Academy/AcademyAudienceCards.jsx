@@ -15,16 +15,16 @@ function AcademyAudienceCards({ onBrowseCourses, onCreateContent }) {
           />
         </div>
         <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[2.3px] text-accent">For Learners</span>
-        <h2 className="mb-4 text-4xl leading-[1.2] text-dark-primary md:text-[26px]">Master freelancing skills</h2>
+        <h2 className="mb-4 text-4xl leading-[1.2] text-dark-primary md:text-xl">Master freelancing skills</h2>
         <p className="mb-5 text-md leading-[1.68] text-dark-secondary">
           Follow curated paths designed by working freelancers. Practice with real scenarios,
           get mentor feedback, and move from learning mode to earning mode faster.
         </p>
 
         <div className="mb-6 flex min-h-[56px] flex-wrap gap-2 md:min-h-0" aria-label="Learner highlights">
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Structured roadmap</span>
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Skill drills</span>
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Portfolio outcomes</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Structured roadmap</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Skill drills</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Portfolio outcomes</span>
         </div>
 
         <div className="mb-8 flex flex-grow flex-col gap-4">
@@ -63,16 +63,16 @@ function AcademyAudienceCards({ onBrowseCourses, onCreateContent }) {
           />
         </div>
         <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[2.3px] text-accent">For Creators</span>
-        <h2 className="mb-4 text-4xl leading-[1.2] text-dark-primary md:text-[26px]">Share your expertise</h2>
+        <h2 className="mb-4 text-4xl leading-[1.2] text-dark-primary md:text-xl">Share your expertise</h2>
         <p className="mb-5 text-md leading-[1.68] text-dark-secondary">
           Teach what you know through courses, seminars, and tutorials that are easy to launch.
           Grow your authority, help learners succeed, and create recurring income.
         </p>
 
         <div className="mb-6 flex min-h-[56px] flex-wrap gap-2 md:min-h-0" aria-label="Creator highlights">
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Creator toolkit</span>
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Audience growth</span>
-          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.4px] text-[#666]">Revenue options</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Creator toolkit</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Audience growth</span>
+          <span className="inline-flex items-center rounded-full border border-border bg-light-secondary px-[11px] py-1.5 text-[9px] font-bold uppercase tracking-[0.4px] text-[#666]">Revenue options</span>
         </div>
 
         <div className="mb-8 flex flex-grow flex-col gap-4">

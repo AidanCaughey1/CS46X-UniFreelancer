@@ -32,6 +32,13 @@ router.post("/", protect, authorizeAccountTypes("admin"), async (req, res) => {
     console.log("Incoming Tutorial Create Request:");
     console.log(JSON.stringify(req.body, null, 2));
 
+    // Auto-populate instructor from the logged-in admin
+    if (!req.body.instructor || !req.body.instructor.name) {
+      req.body.instructor = {
+        name: `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.username || req.user.email
+      };
+    }
+
     const tutorial = new Tutorial(req.body);
     const saved = await tutorial.save();
 
@@ -45,8 +52,6 @@ router.post("/", protect, authorizeAccountTypes("admin"), async (req, res) => {
       },
       target: {
         tutorialId: saved._id,
-      },
-      after: {
         title: saved.title,
       },
       reason: String(req.body.auditReason || "").trim(),

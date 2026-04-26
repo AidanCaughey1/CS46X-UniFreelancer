@@ -5,6 +5,7 @@ import InstructorCourseCard from './InstructorCourseCard';
 import PendingSubmissions from './PendingSubmissions';
 import StudentsList from './StudentsList';
 import './InstructorDashboard.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 function InstructorDashboard() {
   const navigate = useNavigate();
@@ -12,8 +13,14 @@ function InstructorDashboard() {
   const [stats, setStats] = useState(null);
   const [courses, setCourses] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error", onConfirm = null) => {
+    setAlertConfig({ isOpen: true, title, message, type, onConfirm });
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -43,22 +50,25 @@ function InstructorDashboard() {
       // CRITICAL FIX: Ensure pendingSubmissions is always an array
       setPendingSubmissions(Array.isArray(pendingData) ? pendingData : []);
 
+      const draftsRes = await fetch('/api/academy/drafts', {
+        credentials: 'include'
+      });
+      if (draftsRes.ok) {
+        const draftsData = await draftsRes.json();
+        setDrafts(Array.isArray(draftsData) ? draftsData : []);
+      }
+
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       // Set empty arrays on error to prevent crashes
       setCourses([]);
       setPendingSubmissions([]);
+      setDrafts([]);
     } finally {
       setLoading(false);
     }
   };
   const handleDeleteCourse = async (courseId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this course? This cannot be undone."
-    );
-
-    if (!confirmed) return;
-
     try {
       const res = await fetch(`/api/instructor/courses/${courseId}`, {
         method: "DELETE",
@@ -78,8 +88,31 @@ function InstructorDashboard() {
 
     } catch (err) {
       console.error("Delete error:", err.message);
-      alert(err.message);
+      showAlert("Error", err.message);
     }
+  };
+
+  const handleDeleteDraft = async (draftId) => {
+    showAlert(
+      "Confirm Delete",
+      "Are you sure you want to delete this draft?",
+      "confirm",
+      async () => {
+        try {
+          const res = await fetch(`/api/academy/drafts/${draftId}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+
+          if (!res.ok) throw new Error("Failed to delete draft");
+          setDrafts(prev => prev.filter(draft => draft._id !== draftId));
+          showAlert("Success", "Draft deleted successfully", "success");
+        } catch (err) {
+          console.error("Delete draft error:", err.message);
+          showAlert("Error", err.message);
+        }
+      }
+    );
   };
   const handleGradeSubmission = (submissionId) => {
     navigate(`/instructor/grade/${submissionId}`);
@@ -126,6 +159,15 @@ function InstructorDashboard() {
             onClick={() => setActiveTab('courses')}
           >
             📚 My Courses
+          </button>
+          <button
+            className={`tab ${activeTab === 'drafts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('drafts')}
+          >
+            📝 Drafts
+            {drafts && drafts.length > 0 && (
+              <span className="badge">{drafts.length}</span>
+            )}
           </button>
           <button
             className={`tab ${activeTab === 'submissions' ? 'active' : ''}`}
@@ -198,6 +240,7 @@ function InstructorDashboard() {
                       onView={handleViewCourse}
                       onEdit={handleEditCourse}
                       onDelete={handleDeleteCourse}
+                      showAlert={showAlert}
                     />
                   ))}
                 </div>
@@ -246,6 +289,86 @@ function InstructorDashboard() {
                       onEdit={handleEditCourse}
                       onDelete={handleDeleteCourse}
                     />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'drafts' && (
+            <div className="courses-tab">
+              <div className="tab-header">
+                <h2>My Drafts ({drafts ? drafts.length : 0})</h2>
+                <button
+                  className="create-course-button-secondary"
+                  onClick={() => navigate('/academy/create')}
+                >
+                  + New Content
+                </button>
+              </div>
+
+              {!drafts || drafts.length === 0 ? (
+                <div className="empty-state">
+                  <h3>No drafts yet</h3>
+                  <p>Incomplete courses, tutorials, and seminars will appear here.</p>
+                  <p style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>Drafts are automatically removed after 30 days of inactivity.</p>
+                </div>
+              ) : (
+                <div className="courses-grid">
+                  {drafts.map((draft) => (
+                    <div key={draft._id} className="instructor-course-card">
+                      {/* Thumbnail area - reused as a type banner */}
+                      <div className="course-card-thumbnail">
+                        <div className="placeholder-thumbnail draft-thumbnail">
+                          {draft.contentType === 'course' ? '📚' : draft.contentType === 'seminar' ? '🎤' : '📝'}
+                        </div>
+                        <span className="lite-badge-card draft-badge">Draft</span>
+                      </div>
+
+                      {/* Content */}
+                      <div className="course-card-content">
+                        <h3 className="course-card-title">{draft.contentData?.title || '(Untitled)'}</h3>
+
+                        <div className="course-card-meta">
+                          <span className="meta-item" style={{textTransform: 'capitalize'}}>
+                            📁 {draft.contentType}
+                          </span>
+                          <span className="meta-item">
+                            🕒 {new Date(draft.lastSavedAt).toLocaleDateString()}
+                          </span>
+                          <span className="meta-item" style={{color: (() => {
+                            const days = Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)));
+                            return days <= 7 ? '#e74c3c' : days <= 14 ? '#f39c12' : '#888';
+                          })()}}>
+                            ⏳ {Math.max(0, 30 - Math.floor((Date.now() - new Date(draft.updatedAt || draft.lastSavedAt).getTime()) / (1000 * 60 * 60 * 24)))}d left
+                          </span>
+                        </div>
+
+                        <div className="course-card-price">
+                          <span className="difficulty-badge">
+                            {draft.contentData?.description
+                              ? draft.contentData.description.substring(0, 40) + '...'
+                              : 'No description'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="course-card-actions">
+                        <button 
+                          className="action-button view-button" 
+                          onClick={() => navigate(`/academy/create/${draft.contentType}?draftId=${draft._id}`)}
+                        >
+                          ✏️ Resume
+                        </button>
+                        <button 
+                          className="action-button edit-button" 
+                          onClick={() => handleDeleteDraft(draft._id)}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -305,6 +428,18 @@ function InstructorDashboard() {
           )}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (alertConfig.onConfirm) alertConfig.onConfirm();
+          setAlertConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

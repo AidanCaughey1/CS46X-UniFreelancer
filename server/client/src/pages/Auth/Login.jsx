@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Login.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 const Login = () => {
     //const navigate = useNavigate();
@@ -12,6 +13,11 @@ const Login = () => {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+
+    const showAlert = (title, message, type = 'error') => {
+        setAlertConfig({ isOpen: true, title, message, type });
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -43,11 +49,11 @@ const Login = () => {
                 // Redirect and reload to update App state
                 window.location.href = safeReturnTo || '/';
             } else {
-                alert(data.message || 'Login failed');
+                showAlert('Login Failed', data.message || 'Login failed');
             }
         } catch (error) {
             console.error('Login error:', error);
-            alert('An error occurred during login.');
+            showAlert('Error', 'An error occurred during login.');
         }
     };
 
@@ -111,6 +117,14 @@ const Login = () => {
                     <Link to={`/signup${location.search || ''}`} className="auth-link">Sign up</Link>
                 </div>
             </div>
+
+            <AlertModal
+                isOpen={alertConfig.isOpen}
+                onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+            />
         </div>
     );
 };

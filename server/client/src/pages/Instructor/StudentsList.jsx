@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './InstructorDashboard.css';
+import AlertModal from '../../components/UI/AlertModal';
 
 function StudentsList({ courseId }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('name'); // name, submissions, grade
+  const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ isOpen: true, title, message, type });
+  };
 
   useEffect(() => {
     if (courseId) {
@@ -27,7 +33,7 @@ function StudentsList({ courseId }) {
         console.log(students);
     } catch (err) {
       console.error('Error fetching students:', err);
-      alert('Failed to load students');
+      showAlert("Error", "Failed to load students");
     } finally {
       setLoading(false);
     }
@@ -174,6 +180,14 @@ function StudentsList({ courseId }) {
           ))}
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+      />
     </div>
   );
 }

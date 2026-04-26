@@ -19,7 +19,7 @@ function AcademyBenefits() {
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-transparent text-xl text-[#111]" aria-hidden="true">
               <FiCompass className="block h-5 w-5" strokeWidth={2.1} />
             </span>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.9px] text-accent">Learning Design</span>
+            <span className="inline-block text-[8px] font-bold uppercase tracking-[0.9px] text-accent">Learning Design</span>
           </div>
           <h4 className="mb-2 text-base text-dark-primary">Guided, not overwhelming</h4>
           <p className="text-sm leading-[1.6] text-dark-secondary">Roadmaps remove guesswork so you can focus on progress, not planning.</p>
@@ -29,7 +29,7 @@ function AcademyBenefits() {
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-transparent text-xl text-[#111]" aria-hidden="true">
               <FiTool className="block h-5 w-5" strokeWidth={2.1} />
             </span>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.9px] text-accent">Hands-On</span>
+            <span className="inline-block text-[8px] font-bold uppercase tracking-[0.9px] text-accent">Hands-On</span>
           </div>
           <h4 className="mb-2 text-base text-dark-primary">Practice tied to outcomes</h4>
           <p className="text-sm leading-[1.6] text-dark-secondary">Every module ends with project output you can use in real client work.</p>
@@ -39,7 +39,7 @@ function AcademyBenefits() {
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-transparent text-xl text-[#111]" aria-hidden="true">
               <FiStar className="block h-5 w-5" strokeWidth={2.1} />
             </span>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.9px] text-accent">Career Lift</span>
+            <span className="inline-block text-[8px] font-bold uppercase tracking-[0.9px] text-accent">Career Lift</span>
           </div>
           <h4 className="mb-2 text-base text-dark-primary">Signal your capabilities</h4>
           <p className="text-sm leading-[1.6] text-dark-secondary">Show badges, deliverables, and progress artifacts that build trust fast.</p>
@@ -49,7 +49,7 @@ function AcademyBenefits() {
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-transparent text-xl text-[#111]" aria-hidden="true">
               <FiUsers className="block h-5 w-5" strokeWidth={2.1} />
             </span>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.9px] text-accent">Community</span>
+            <span className="inline-block text-[8px] font-bold uppercase tracking-[0.9px] text-accent">Community</span>
           </div>
           <h4 className="mb-2 text-base text-dark-primary">Momentum from peers</h4>
           <p className="text-sm leading-[1.6] text-dark-secondary">Stay accountable with creators and learners sharing wins each week.</p>
