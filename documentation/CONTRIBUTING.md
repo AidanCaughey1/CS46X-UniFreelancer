@@ -34,34 +34,45 @@ Before starting, make sure you have the following installed:
 **Project Setup:**
 
 **1. Clone the repository:**
-
+```bash
 git clone https://github.com/UniFreelancerAcademy/UniFreelancer.git
-
 cd UniFreelancer
+```
 
-**2. Install dependencies:**
+**2. Install dependencies for both server and client:**
+```bash
+cd server && npm install
+cd ../client && npm install
+```
 
-npm install
-
-**3. Create an environment file (.env):**
-
-MONGODB_URI=your_mongodb_connection_string
-
+**3. Create an environment file (.env) inside the `server/` directory:**
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
 STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+JWT_SECRET=your_jwt_secret
+FRONTEND_URL=http://localhost:3000
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-ZOOM_MEETING_SDK_SECRET =your_zoom_sdk_secret
+**4. Start the backend (Terminal 1):**
+```bash
+cd server
+npm run build
+npm start
+```
 
-PORT=3000
+**5. Start the frontend (Terminal 2):**
+```bash
+cd server 
+cd client
+npm start
+```
 
-Note: Never commit .env files to GitHub as these contain sensitive credentials. 
+**6. Verify Installation:**
 
-**4. Start the development server:**
-
-npm run dev
-
-**5. Verify Installation:**
-
-Visit http://localhost:3000 to confirm the frontend loads. 
+Visit http://localhost:3000 to confirm the frontend loads.
 
 **Environment and Secrets Handling:**
 
@@ -74,38 +85,49 @@ We follow strict security practices:
 
 We use a GitFlow-style workflow to keep our code organized and prevent conflicts between team members.
 
-**Main Branches:**
+**Main Branch:**
+- `react-main`: Holds stable, production-ready code.
 
-- main: Holds stable, production-ready code.
-- dev: Used for active development. All new features and fixes start here.
+**Project Structure:**
+- `server/` — Node.js/Express backend
+- `client/` — React frontend
 
 **Working on a Feature:**
 
-**1. Create a new branch from dev**
+**1. Create a new branch from react-main**
+```bash
+git checkout react-main
+git pull origin react-main
+git checkout -b feature/your-feature-name
+```
 
-git checkout dev
+**2. Make your changes in the relevant directory**
+```bash
+# Backend changes
+cd server
 
-git pull origin dev
+# Frontend changes
+cd client
+```
 
-git checkout -b feature/"file name"
+**3. Commit your changes**
+```bash
+git commit -m "feat: describe what you changed"
+```
 
-**2. Complete and commit the changes**
-
-ex. git commit -m "feat: add Stripe subscription page"
-
-**3. Pull the latest dev updates before pushing**
-
-git pull origin dev
-
-git push origin feature/"file name"
+**4. Pull the latest react-main updates before pushing**
+```bash
+git pull origin react-main
+git push origin feature/your-feature-name
+```
 
 **Merging:**
-
 - Only reviewed and tested code can be merged.
-- Merges into main happen only after full testing and approval from the team.
+- Merges into `react-main` happen only after full testing and approval from the team.
 - Use rebase before merging to keep history clean:
-ex:
-git pull --rebase origin dev
+```bash
+git pull --rebase origin react-main
+```
 
 ## Issues & Planning
 We use GitHub Issues to track all tasks, bugs, and feature requests.
@@ -299,7 +321,7 @@ If a job fails, correct the issue locally, commit the fix, and push again.
 A pull request can only be merged when:  
 - All CI jobs have passed successfully.  
 - At least one reviewer has approved the pull request.  
-- There are no merge conflicts with the `main` or `dev` branch.  
+- There are no merge conflicts with the `react-main` branch
 
 ## Security & Secrets  
 
@@ -316,8 +338,6 @@ Sensitive data includes but is not limited to:
 
 All secrets must be stored securely using environment variables in a local `.env` file.  
 Never commit `.env` or configuration files containing secrets to the repository.  
-
-Example `.env` file variables:  
 
 ### Reporting Security Issues  
 
