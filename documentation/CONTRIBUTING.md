@@ -46,15 +46,37 @@ cd ../client && npm install
 ```
 
 **3. Create an environment file (.env) inside the `server/` directory:**
-MONGO_URI=your_mongodb_connection_string
+```env
+# Server
 PORT=5000
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Database
+MONGO_URI=your_mongodb_connection_string
+
+# Authentication
 JWT_SECRET=your_jwt_secret
+
+# Frontend
 FRONTEND_URL=http://localhost:3000
+
+# Cloudinary (media uploads)
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Stripe (payments)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Zoom Meeting SDK
+ZOOM_MEETING_SDK_KEY=your_zoom_sdk_key
+ZOOM_MEETING_SDK_SECRET=your_zoom_sdk_secret
+
+# AI / LLM (Ollama)
+AI_PROVIDER=ollama
+REMOTE_LLM_URL=your_remote_ollama_url
+REMOTE_LLM_SECRET=your_remote_llm_secret
+```
 
 **4. Start the backend (Terminal 1):**
 ```bash
