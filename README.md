@@ -196,7 +196,7 @@ cd ../client && npm install
 
 **3. Create environment files:**
 
-Create `server/.env` and `client/.env` using the variable lists in the [Configuration](#configuration) section above.
+Create `server/.env` using the variable lists in the [Configuration](#configuration) section above.
 
 **4. Start the backend (Terminal 1):**
 ```bash
