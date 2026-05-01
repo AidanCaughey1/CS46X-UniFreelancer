@@ -257,7 +257,14 @@ CourseSchema.virtual("isFree").get(function () {
 CourseSchema.virtual("totalLessons").get(function () {
   const modules = Array.isArray(this.modules) ? this.modules : [];
   return modules.reduce((total, module) => {
-    return total + (module.lessons?.length || 0);
+    let count = 0;
+    if (module.learningMaterials) {
+      count += (module.learningMaterials.readings?.length || 0);
+      count += (module.learningMaterials.podcasts?.length || 0);
+      count += (module.learningMaterials.videos?.length || 0);
+    }
+    count += (module.lessons?.length || 0);
+    return total + count;
   }, 0);
 });
 

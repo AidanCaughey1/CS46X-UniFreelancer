@@ -64,6 +64,9 @@ function CreateCourse() {
       questions: []
     },
 
+    // Overall Learning Expectations
+    learningPoints: [],
+
     // Badge
     badge: {
       name: '',
@@ -86,6 +89,7 @@ function CreateCourse() {
   });
 
   const [newOutcome, setNewOutcome] = useState('');
+  const [newLearningPoint, setNewLearningPoint] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
     options: ['', '', '', ''],
@@ -144,6 +148,8 @@ function CreateCourse() {
           timeLimit: 0,
           questions: []
         },
+        
+        learningPoints: course.learningPoints || [],
         
         badge: course.badge || {
           name: '',
@@ -308,6 +314,23 @@ useEffect(() => {
     }));
   };
 
+  const addLearningPoint = () => {
+    if (newLearningPoint.trim()) {
+      setCourseData(prev => ({
+        ...prev,
+        learningPoints: [...(prev.learningPoints || []), newLearningPoint]
+      }));
+      setNewLearningPoint('');
+    }
+  };
+
+  const removeLearningPoint = (index) => {
+    setCourseData(prev => ({
+      ...prev,
+      learningPoints: prev.learningPoints.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleModuleSave = (module) => {
     setCourseData(prev => ({
       ...prev,
@@ -419,6 +442,7 @@ const handleSubmit = async () => {
         lessons: module.lessons || []
       })),
       
+      learningPoints: courseData.learningPoints,
       finalTest: courseData.finalTest.questions.length > 0 ? courseData.finalTest : null,
       badge: courseData.badge
     };
@@ -622,6 +646,44 @@ useEffect(() => {
     }
   };
 
+  const handleGenerateLearningPointsForCourse = async () => {
+    try {
+      if (!courseData.title?.trim() || !courseData.overview?.trim()) {
+        showAlert("Validation Error", "Please fill in course title and overview first.");
+        return;
+      }
+
+      setAiOutcomesLoading(true);
+
+      const res = await fetch("/api/ai/learning-outcomes/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          course: { title: courseData.title, description: courseData.overview },
+          module: { title: courseData.title, description: courseData.overview },
+          count: 6,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showAlert("Error", data.error || "Failed to generate expectations");
+        return;
+      }
+
+      setCourseData(prev => ({
+        ...prev,
+        learningPoints: Array.isArray(data.learningOutcomes) ? data.learningOutcomes : [],
+      }));
+    } catch (err) {
+      console.error(err);
+      showAlert("Error", "Failed to generate expectations");
+    } finally {
+      setAiOutcomesLoading(false);
+    }
+  };
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -697,6 +759,63 @@ useEffect(() => {
                   placeholder="e.g., Digital Marketing, Design, Development"
                 />
               </div>
+
+              <div className="mb-10 border-b border-border pb-8 last:border-b-0 last:pb-0">
+                <h3 className="mb-4 text-xl font-bold text-dark">Overall Learning Expectations</h3>
+                <p className="mb-6 text-sm text-dark-secondary">What will students achieve by the end of this course?</p>
+
+                <button
+                  type="button"
+                  className="mb-4 inline-flex items-center justify-center rounded-full border border-border bg-white px-5 py-2.5 text-sm font-semibold text-dark transition hover:bg-light-secondary disabled:opacity-50"
+                  onClick={handleGenerateLearningPointsForCourse}
+                  disabled={aiOutcomesLoading}
+                >
+                  {aiOutcomesLoading ? "Generating..." : "✨ Generate Expectations"}
+                </button>
+
+                <div className="mb-6">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      className="w-full flex-1 rounded-2xl border border-border bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-dark"
+                      type="text"
+                      value={newLearningPoint}
+                      onChange={(e) => setNewLearningPoint(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLearningPoint())}
+                      placeholder="e.g., Build a clearer freelance positioning strategy."
+                    />
+                    <button
+                      type="button"
+                      onClick={addLearningPoint}
+                      className="inline-flex items-center justify-center rounded-full bg-dark px-5 py-3 text-sm font-semibold text-white transition hover:bg-dark-secondary whitespace-nowrap"
+                    >
+                      Add Expectation
+                    </button>
+                  </div>
+                </div>
+
+                {courseData.learningPoints && courseData.learningPoints.length > 0 ? (
+                  <div className="space-y-3 rounded-2xl border border-border bg-light-tertiary p-5 shadow-sm">
+                    {courseData.learningPoints.map((point, index) => (
+                      <div key={index} className="flex items-start justify-between gap-3 rounded-xl bg-white p-4 shadow-sm">
+                        <span className="flex-1 text-sm leading-6 text-dark"><span className="font-bold text-accent mr-2">{index + 1}.</span> {point}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeLearningPoint(index)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-error/10 text-error transition hover:bg-error/20 flex-shrink-0"
+                          title="Remove Point"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-border bg-light-tertiary px-5 py-8 text-center text-sm text-dark-secondary">
+                    No learning expectations added yet
+                  </p>
+                )}
+              </div>
+
 
               <div className="rounded-[28px] border border-border bg-light-tertiary p-5">
                 <ImageUpload

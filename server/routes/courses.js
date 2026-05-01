@@ -63,9 +63,10 @@ router.post("/", protect, async (req, res) => {
       ...req.body,
       instructor: {
         _id: instructor._id,
-        name: `${instructor.firstName} ${instructor.lastName}`,
+        name: req.body.instructor?.name || `${instructor.firstName} ${instructor.lastName}`,
         email: instructor.email,
         title: req.body.instructor?.title || 'Instructor',
+        bio: req.body.instructor?.bio || '',
         avatar: req.body.instructor?.avatar || ''
       }
     };
@@ -99,6 +100,11 @@ router.put("/:id", protect, async (req, res) => {
     // Check if user is the instructor of this course
     if (course.instructor._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "You can only edit your own courses" });
+    }
+
+    // Ensure instructor _id is preserved to satisfy Mongoose validation
+    if (req.body.instructor && !req.body.instructor._id) {
+      req.body.instructor._id = course.instructor._id;
     }
 
     const updated = await Course.findByIdAndUpdate(
