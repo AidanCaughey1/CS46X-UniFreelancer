@@ -1,310 +1,500 @@
-/* global process */
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
+import './CreateCourse.css';
+import ImageUpload from '../../../components/ImageUpload';
+import ModuleBuilder from './ModuleBuilder';
 
 function CreateCourse() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState('basic-info');
-  const [learningPoint, setLearningPoint] = useState('');
-  const [modulePoint, setModulePoint] = useState('');
-  const [currentModule, setCurrentModule] = useState({
-    title: '',
-    description: '',
-    videoUrl: '',
-    articleContent: '',
-    pdfUrl: '',
-    learningPoints: [],
-    duration: '',
-    thumbnail: '',
-  });
+  const { courseId } = useParams(); 
+  const [isEditMode, setIsEditMode] = useState(false); 
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [courseData, setCourseData] = useState({
-    // basic info
+    // Basic Info
     title: '',
-    description: '',
+    overview: '',
     duration: '',
     difficulty: 'Beginner',
     category: '',
     thumbnail: '',
     isLiteVersion: false,
 
-    // instructor
-    instructorName: '',
-    instructorTitle: '',
-    instructorBio: '',
-    instructorAvatar: '',
+    // Instructor
+    instructor: {
+      name: '',
+      title: '',
+      bio: '',
+      avatar: ''
+    },
 
-    // pricing
-    priceAmount: '',
-    priceCurrency: 'USD',
-    pricingType: 'one-time',
+    // Pricing
+    pricing: {
+      amount: 0,
+      currency: 'USD',
+      type: 'one-time'
+    },
 
-    // subscription info
-    isSubscriptionCourse: false,
-    subscriptionTier: '',
-
-    // content
-    learningPoints: [],
-
-    // modules
+    // Modules (new structure)
     modules: [],
+
+    // Final Test
+    finalTest: {
+      title: 'Final Test',
+      description: '',
+      passingScore: 70,
+      timeLimit: 0,
+      questions: []
+    },
+
+    // Badge
+    badge: {
+      name: '',
+      description: '',
+      color: '#4F46E5',
+      imageUrl: ''
+    }
   });
 
-  const handleBack = () => {
-    navigate('/academy/create');
-  };
+  const [currentModule, setCurrentModule] = useState({
+    title: '',
+    overview: '',
+    learningOutcomes: [],
+    learningMaterials: {
+      readings: [],
+      podcasts: [],
+      videos: []
+    },
+    assignment: null
+  });
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setCourseData({
-      ...courseData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
+  const [newOutcome, setNewOutcome] = useState('');
+  const [currentQuestion, setCurrentQuestion] = useState({
+    question: '',
+    options: ['', '', '', ''],
+    correctAnswer: '',
+    points: 1
+  });
 
-  const handleAddLearningPoint = () => {
-    if (learningPoint.trim()) {
+  const steps = ['Basic Info', 'Instructor', 'Pricing', 'Modules', 'Final Test', 'Badge'];
+
+  const fetchCourseData = async () => {
+    try {
+      const response = await fetch(`/api/academy/courses/${courseId}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch course');
+      }
+      
+      const course = await response.json();
+      
+      // Pre-populate the form with existing data
       setCourseData({
-        ...courseData,
-        learningPoints: [...courseData.learningPoints, learningPoint.trim()],
+        title: course.title || '',
+        overview: course.description || '',
+        duration: course.duration || '',
+        difficulty: course.difficulty || 'Beginner',
+        category: course.category || '',
+        thumbnail: course.thumbnail || '',
+        isLiteVersion: course.isLiteVersion || false,
+        
+        instructor: {
+          _id: course.instructor?._id, 
+          name: course.instructor?.name || '',
+          title: course.instructor?.title || '',
+          bio: course.instructor?.bio || '',
+          avatar: course.instructor?.avatar || '',
+          email: course.instructor?.email || ''
+        },
+        
+        pricing: {
+          amount: course.pricing?.amount || 0,
+          currency: course.pricing?.currency || 'USD',
+          type: course.pricing?.type || 'one-time'
+        },
+        
+        modules: course.modules || [],
+        
+        finalTest: course.finalTest || {
+          title: 'Final Test',
+          description: '',
+          passingScore: 70,
+          timeLimit: 0,
+          questions: []
+        },
+        
+        badge: course.badge || {
+          name: '',
+          description: '',
+          color: '#4F46E5',
+          imageUrl: ''
+        }
       });
-      setLearningPoint('');
+      
+      setIsEditMode(true);
+      
+    } catch (err) {
+      console.error('Error fetching course:', err);
+      alert('Failed to load course for editing');
+      navigate('/instructor/dashboard');
     }
   };
 
-  const handleRemoveLearningPoint = (index) => {
-    setCourseData({
-      ...courseData,
-      learningPoints: courseData.learningPoints.filter((_, i) => i !== index),
-    });
+  // Fetch course data if editing
+useEffect(() => {
+  if (courseId) {
+    fetchCourseData();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [courseId]);
+
+  const handleNext = () => {
+    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
   };
 
-  const handleModuleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentModule({
-      ...currentModule,
-      [name]: value,
-    });
+  const handlePrevious = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleAddModulePoint = () => {
-    if (modulePoint.trim()) {
-      setCurrentModule({
-        ...currentModule,
-        learningPoints: [...currentModule.learningPoints, modulePoint.trim()],
-      });
-      setModulePoint('');
+  const handleInputChange = (section, field, value) => {
+    if (section) {
+      setCourseData(prev => ({
+        ...prev,
+        [section]: { ...prev[section], [field]: value }
+      }));
+    } else {
+      setCourseData(prev => ({ ...prev, [field]: value }));
     }
   };
 
-  const handleRemoveModulePoint = (index) => {
-    setCurrentModule({
-      ...currentModule,
-      learningPoints: currentModule.learningPoints.filter((_, i) => i !== index),
-    });
+  const addLearningOutcome = () => {
+    if (newOutcome.trim()) {
+      setCurrentModule(prev => ({
+        ...prev,
+        learningOutcomes: [...prev.learningOutcomes, newOutcome]
+      }));
+      setNewOutcome('');
+    }
   };
 
-  const handleAddModule = () => {
-    if (!currentModule.title.trim()) {
-      alert('Please enter a module title');
-      return;
-    }
+  const removeLearningOutcome = (index) => {
+    setCurrentModule(prev => ({
+      ...prev,
+      learningOutcomes: prev.learningOutcomes.filter((_, i) => i !== index)
+    }));
+  };
 
-    setCourseData({
-      ...courseData,
-      modules: [...courseData.modules, { ...currentModule, order: courseData.modules.length }],
-    });
-
+  const handleModuleSave = (module) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: [...prev.modules, { ...module, order: prev.modules.length }]
+    }));
+    
     // Reset current module
     setCurrentModule({
       title: '',
-      description: '',
-      videoUrl: '',
-      articleContent: '',
-      pdfUrl: '',
-      learningPoints: [],
-      duration: '',
-      thumbnail: '',
-    });
-    setModulePoint('');
-  };
-
-  const handleRemoveModule = (index) => {
-    setCourseData({
-      ...courseData,
-      modules: courseData.modules.filter((_, i) => i !== index),
+      overview: '',
+      learningOutcomes: [],
+      learningMaterials: {
+        readings: [],
+        podcasts: [],
+        videos: []
+      },
+      assignment: null
     });
   };
 
-  const validateForm = () => {
-    if (!courseData.title.trim()) {
-      alert('Please enter a course title');
-      setCurrentStep('basic-info');
-      return false;
-    }
-    if (!courseData.description.trim()) {
-      alert('Please enter a course description');
-      setCurrentStep('basic-info');
-      return false;
-    }
-    if (!courseData.instructorName.trim()) {
-      alert('Please enter an instructor name');
-      setCurrentStep('instructor');
-      return false;
-    }
-    return true;
+  const removeModule = (index) => {
+    setCourseData(prev => ({
+      ...prev,
+      modules: prev.modules.filter((_, i) => i !== index)
+    }));
   };
 
-  const handleCreateCourse = async () => {
-    if (!validateForm()) {
+  const addQuestionToTest = () => {
+    if (!currentQuestion.question) {
+      alert('Please enter a question');
+      return;
+    }
+    if (currentQuestion.options.some(opt => !opt.trim())) {
+      alert('Please fill in all answer options');
+      return;
+    }
+    if (currentQuestion.correctAnswer === '') {
+      alert('Please specify the correct answer');
       return;
     }
 
+    setCourseData(prev => ({
+      ...prev,
+      finalTest: {
+        ...prev.finalTest,
+        questions: [...prev.finalTest.questions, {
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          correctAnswer: parseInt(currentQuestion.correctAnswer),
+          points: currentQuestion.points
+        }]
+      }
+    }));
+
+    setCurrentQuestion({
+      question: '',
+      options: ['', '', '', ''],
+      correctAnswer: '',
+      points: 1
+    });
+  };
+
+  const removeQuestionFromTest = (index) => {
+    setCourseData(prev => ({
+      ...prev,
+      finalTest: {
+        ...prev.finalTest,
+        questions: prev.finalTest.questions.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+const handleSubmit = async () => {
+  try {
+    if (!courseData.title || !courseData.overview) {
+      alert('Please fill in course title and overview');
+      return;
+    }
+    if (!courseData.instructor.name) {
+      alert('Please fill in instructor information');
+      return;
+    }
+    if (courseData.modules.length === 0) {
+      alert('Please add at least one module');
+      return;
+    }
+
+    // Transform data to match backend schema
+    const backendData = {
+      title: courseData.title,
+      description: courseData.overview,
+      duration: courseData.duration,
+      difficulty: courseData.difficulty,
+      category: courseData.category,
+      thumbnail: courseData.thumbnail,
+      isLiteVersion: courseData.isLiteVersion,
+      
+      instructor: courseData.instructor,
+      pricing: courseData.pricing,
+      
+      // Include ALL the new fields
+      modules: courseData.modules.map(module => ({
+        title: module.title,
+        description: module.overview || module.description,
+        order: module.order,
+        learningOutcomes: module.learningOutcomes,
+        learningMaterials: module.learningMaterials,
+        assignment: module.assignment,
+        lessons: module.lessons || []
+      })),
+      
+      finalTest: courseData.finalTest.questions.length > 0 ? courseData.finalTest : null,
+      badge: courseData.badge
+    };
+
+    console.log('Sending course data:', JSON.stringify(backendData, null, 2));
+
+    // Determine if creating or updating
+    const url = isEditMode ? `/api/academy/courses/${courseId}` : '/api/academy/courses';
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(backendData)
+    });
+
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      console.error('Server error response:', responseData);
+      alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${responseData.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert(`Course ${isEditMode ? 'updated' : 'created'} successfully!`);
+    navigate('/instructor/dashboard');
+
+  } catch (err) {
+    console.error('Error saving course:', err);
+    alert(`Failed to ${isEditMode ? 'update' : 'create'} course: ${err.message}`);
+  }
+};
+
+  // Camera
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraStream, setCameraStream] = useState(null);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
+
+  const startCamera = async () => {
+    setCameraError('');
+
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/api/academy/courses`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: courseData.title,
-          description: courseData.description,
-          duration: courseData.duration,
-          difficulty: courseData.difficulty,
-          category: courseData.category,
-          thumbnail: courseData.thumbnail,
-          isLiteVersion: courseData.isLiteVersion,
-
-          instructor: {
-            name: courseData.instructorName,
-            title: courseData.instructorTitle,
-            bio: courseData.instructorBio,
-            avatar: courseData.instructorAvatar,
-          },
-
-          pricing: {
-            amount: courseData.priceAmount ? Number(courseData.priceAmount) : 0,
-            currency: courseData.priceCurrency,
-            type: courseData.pricingType,
-          },
-
-          subscription: {
-            isSubscriptionCourse: courseData.isSubscriptionCourse,
-            tier: courseData.subscriptionTier,
-          },
-
-          learningPoints: courseData.learningPoints,
-          modules: courseData.modules,
-        }),
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+        audio: false
       });
 
-      const data = await response.json();
+      setCameraStream(stream);
+      setCameraOpen(true);
 
-      if (response.ok) {
-        alert('Course created successfully!');
-        navigate('/academy/courses');
-      } else {
-        alert(`Failed to create course: ${data.error || data.message || 'Unknown error'}`);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
       }
-    } catch (error) {
-      console.error('Error creating course:', error);
-      alert('An error occurred while creating the course. Please try again.');
+    } catch (err) {
+      const msg =
+        err?.name === 'NotAllowedError'
+          ? 'Camera permission was denied.'
+          : err?.name === 'NotFoundError'
+          ? 'No camera device found.'
+          : 'Could not access the camera.';
+      setCameraError(msg);
+      setCameraOpen(false);
     }
   };
 
-  const handleCancel = () => {
-    if (window.confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-      navigate('/academy/create');
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+    }
+    setCameraStream(null);
+    setCameraOpen(false);
+  };
+
+  const captureInstructorAvatar = async () => {
+  const video = videoRef.current;
+  const canvas = canvasRef.current;
+  if (!video || !canvas) return;
+
+  const w = video.videoWidth || 640;
+  const h = video.videoHeight || 480;
+
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, w, h);
+
+  canvas.toBlob(async (blob) => {
+    try {
+      if (!blob) throw new Error("Failed to capture image");
+
+      const form = new FormData();
+      form.append("image", blob, "instructor-avatar.png");
+
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: form,
+        credentials: "include"
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      // Store Cloudinary URL (not base64)
+      handleInputChange("instructor", "avatar", data.url);
+
+      stopCamera();
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      setCameraError(err.message || "Failed to upload image");
+    }
+  }, "image/png", 0.92);
+};
+
+  // If camera is open and we switch cameras, restart stream
+useEffect(() => {
+  if (!cameraOpen) return;
+  if (!cameraStream) return;
+  if (!videoRef.current) return;
+
+  const video = videoRef.current;
+  video.srcObject = cameraStream;
+
+  const playVideo = async () => {
+    try {
+      await video.play();
+    } catch (err) {
+      console.warn('Video play error:', err);
     }
   };
 
-  const steps = [
-    { id: 'basic-info', label: 'Basic Info' },
-    { id: 'instructor', label: 'Instructor' },
-    { id: 'pricing', label: 'Pricing' },
-    { id: 'content', label: 'Content' },
-    { id: 'modules', label: 'Modules' },
-  ];
+  video.onloadedmetadata = playVideo;
+  playVideo();
 
-  return (
-    <div className="min-h-screen bg-main-bg pt-8 px-10 max-md:px-5">
-      <div className="max-w-narrow mx-auto">
-        <button className="bg-transparent border-none text-dark-primary text-base cursor-pointer mb-5 py-2 inline-flex items-center transition-colors duration-300 hover:text-dark-secondary" onClick={handleBack}>
-          <FiArrowLeft className="inline mr-1" /> Back
-        </button>
+}, [cameraOpen, cameraStream]);
 
-        <h1 className="text-5xl font-bold text-dark-primary mb-3">Create New Course</h1>
-        <p className="text-base text-dark-secondary mb-8">Fill in the details to create a new course</p>
 
-        <div className="flex flex-wrap max-md:overflow-x-auto max-md:flex-nowrap">
-          {steps.map((step) => (
-            <button
-              key={step.id}
-              className={`py-3 px-5 text-base font-semibold cursor-pointer border-none transition-colors duration-300 max-md:whitespace-nowrap ${currentStep === step.id ? 'bg-light-tertiary text-dark-primary' : 'bg-light-primary text-dark-tertiary hover:bg-light-secondary'}`}
-              onClick={() => setCurrentStep(step.id)}
-            >
-              {step.label}
-            </button>
-          ))}
-        </div>
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-        {currentStep === 'basic-info' && (
-          <div className="bg-light-tertiary p-8 mb-3">
-            <h2 className="text-2xl font-semibold text-dark-primary mb-2">Course Information</h2>
-            <p className="text-md text-dark-secondary mb-8">Basic details about your course</p>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">
-                Course Title <span className="text-accent">*</span>
-              </label>
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="form-section">
+            <h2>Course Information</h2>
+            <p className="section-subtitle">Basic details about your course</p>
+
+            <div className="form-group">
+              <label>Course Title *</label>
               <input
                 type="text"
-                name="title"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                placeholder="e.g., Complete Digital Marketing Masterclass"
                 value={courseData.title}
-                onChange={handleInputChange}
-                required
+                onChange={(e) => handleInputChange(null, 'title', e.target.value)}
+                placeholder="e.g., Branding Yourself in Freelancing"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">
-                Description <span className="text-accent">*</span>
-              </label>
+            <div className="form-group">
+              <label>Course Overview *</label>
               <textarea
-                name="description"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 resize-y min-h-[120px] focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                rows="5"
-                placeholder="Describe what students will learn in this course..."
-                value={courseData.description}
-                onChange={handleInputChange}
-                required
+                value={courseData.overview}
+                onChange={(e) => handleInputChange(null, 'overview', e.target.value)}
+                placeholder="In today's competitive freelance market, your brand is your most powerful asset..."
+                rows={6}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Duration</label>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Duration</label>
                 <input
                   type="text"
-                  name="duration"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  placeholder="e.g., 12 weeks"
                   value={courseData.duration}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange(null, 'duration', e.target.value)}
+                  placeholder="e.g., 4 weeks"
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Difficulty Level</label>
+              <div className="form-group">
+                <label>Difficulty Level</label>
                 <select
-                  name="difficulty"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans cursor-pointer bg-white transition-colors duration-300 focus:outline-none focus:border-dark-primary"
                   value={courseData.difficulty}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange(null, 'difficulty', e.target.value)}
                 >
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
@@ -313,435 +503,483 @@ function CreateCourse() {
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Category</label>
+            <div className="form-group">
+              <label>Category</label>
               <input
                 type="text"
-                name="category"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                placeholder="e.g., Digital Marketing"
                 value={courseData.category}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange(null, 'category', e.target.value)}
+                placeholder="e.g., Digital Marketing, Design, Development"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Thumbnail URL</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  name="thumbnail"
-                  className="w-full px-4 py-3 pr-[45px] border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  placeholder="https://example.com/image.jpg"
-                  value={courseData.thumbnail}
-                  onChange={handleInputChange}
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-dark-secondary cursor-pointer">⬆</span>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="flex items-center gap-2.5 cursor-pointer text-base text-dark-primary">
+            <ImageUpload
+              value={courseData.thumbnail}
+              onChange={(url) => handleInputChange(null, 'thumbnail', url)}
+              label="Course Thumbnail"
+            />
+            <div className="form-group">
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  name="isLiteVersion"
                   checked={courseData.isLiteVersion}
-                  onChange={handleInputChange}
-                  className="w-[18px] h-[18px] cursor-pointer"
+                  onChange={(e) => handleInputChange(null, 'isLiteVersion', e.target.checked)}
                 />
-                <span>This is a Lite version (free tier with limited content)</span>
+                This is a Lite version (free tier with limited content)
               </label>
             </div>
           </div>
-        )}
+        );
 
-        {currentStep === 'instructor' && (
-          <div className="bg-light-tertiary p-8 mb-3">
-            <h2 className="text-2xl font-semibold text-dark-primary mb-2">Instructor Information</h2>
-            <p className="text-md text-dark-secondary mb-8">Details about the course instructor</p>
+      case 2:
+        return (
+          <div className="form-section">
+            <h2>Instructor Information</h2>
+            <p className="section-subtitle">Details about the course instructor</p>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">
-                Instructor Name <span className="text-accent">*</span>
-              </label>
+            <div className="form-group">
+              <label>Instructor Name *</label>
               <input
                 type="text"
-                name="instructorName"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                placeholder="e.g., Alina Padilla-Miller"
-                value={courseData.instructorName}
-                onChange={handleInputChange}
-                required
+                value={courseData.instructor.name}
+                onChange={(e) => handleInputChange('instructor', 'name', e.target.value)}
+                placeholder="e.g., Dr. Sarah Johnson"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Instructor Title/Role</label>
+            <div className="form-group">
+              <label>Instructor Title/Role</label>
               <input
                 type="text"
-                name="instructorTitle"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                placeholder="e.g., Senior Freelance Designer"
-                value={courseData.instructorTitle}
-                onChange={handleInputChange}
+                value={courseData.instructor.title}
+                onChange={(e) => handleInputChange('instructor', 'title', e.target.value)}
+                placeholder="e.g., Senior Marketing Consultant"
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Instructor Bio</label>
+            <div className="form-group">
+              <label>Instructor Bio</label>
               <textarea
-                name="instructorBio"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 resize-y min-h-[120px] focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                rows="4"
-                placeholder="Short overview of the instructor's background..."
-                value={courseData.instructorBio}
-                onChange={handleInputChange}
+                value={courseData.instructor.bio}
+                onChange={(e) => handleInputChange('instructor', 'bio', e.target.value)}
+                placeholder="Brief overview of the instructor's background and expertise..."
+                rows={4}
               />
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Instructor Avatar URL</label>
-              <input
-                type="text"
-                name="instructorAvatar"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                placeholder="https://example.com/avatar.png"
-                value={courseData.instructorAvatar}
-                onChange={handleInputChange}
-              />
+            <ImageUpload
+              value={courseData.instructor.avatar}
+              onChange={(url) => handleInputChange('instructor', 'avatar', url)}
+              label="Instructor Avatar"
+            />
+            <div className="form-group">
+              <label>Or take a photo</label>
+
+              {courseData.instructor.avatar && (
+                <div style={{ marginBottom: 12 }}>
+                  <img
+                    src={courseData.instructor.avatar}
+                    alt="Instructor avatar preview"
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1px solid #ddd'
+                    }}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {!cameraOpen ? (
+                  <button type="button" className="secondary-button" onClick={startCamera}>
+                    Use Camera
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" className="primary-button" onClick={captureInstructorAvatar}>
+                      Take Photo
+                    </button>
+
+                    <button type="button" className="secondary-button" onClick={stopCamera}>
+                      Stop
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setFacingMode((m) => (m === 'user' ? 'environment' : 'user'))}
+                    >
+                      Switch Camera
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {cameraError && (
+                <p style={{ marginTop: 10, color: 'crimson' }}>{cameraError}</p>
+              )}
+
+              {cameraOpen && (
+                <div style={{ marginTop: 12 }}>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{
+                      width: '100%',
+                      maxWidth: 420,
+                      height: 260,
+                      background: '#000',
+                      borderRadius: 12
+                    }}
+                  />
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                </div>
+              )}
+
+              <p className="section-subtitle" style={{ marginTop: 10 }}>
+              </p>
             </div>
           </div>
-        )}
+            
+        );
 
-        {currentStep === 'pricing' && (
-          <div className="bg-light-tertiary p-8 mb-3">
-            <h2 className="text-2xl font-semibold text-dark-primary mb-2">Pricing Details</h2>
-            <p className="text-md text-dark-secondary mb-8">Set the price for your course. Leave blank for free courses</p>
+      case 3:
+        return (
+          <div className="form-section">
+            <h2>Pricing Details</h2>
+            <p className="section-subtitle">Set the price for your course</p>
 
-            <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Price Amount</label>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Price Amount</label>
                 <input
                   type="number"
+                  value={courseData.pricing.amount}
+                  onChange={(e) => handleInputChange('pricing', 'amount', parseFloat(e.target.value) || 0)}
+                  placeholder="e.g., 299"
                   min="0"
-                  step="0.01"
-                  name="priceAmount"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  placeholder="e.g., 199"
-                  value={courseData.priceAmount}
-                  onChange={handleInputChange}
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Currency</label>
+              <div className="form-group">
+                <label>Currency</label>
                 <select
-                  name="priceCurrency"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans cursor-pointer bg-white transition-colors duration-300 focus:outline-none focus:border-dark-primary"
-                  value={courseData.priceCurrency}
-                  onChange={handleInputChange}
+                  value={courseData.pricing.currency}
+                  onChange={(e) => handleInputChange('pricing', 'currency', e.target.value)}
                 >
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
-                  <option value="CAD">CAD</option>
+                  <option value="GBP">GBP</option>
                 </select>
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Pricing Type</label>
+            <div className="form-group">
+              <label>Pricing Type</label>
               <select
-                name="pricingType"
-                className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans cursor-pointer bg-white transition-colors duration-300 focus:outline-none focus:border-dark-primary"
-                value={courseData.pricingType}
-                onChange={handleInputChange}
+                value={courseData.pricing.type}
+                onChange={(e) => handleInputChange('pricing', 'type', e.target.value)}
               >
                 <option value="one-time">One-time payment</option>
                 <option value="subscription">Subscription</option>
               </select>
             </div>
-
-            {courseData.pricingType === 'subscription' && (
-              <p className="text-md text-dark-secondary mt-2.5">
-                (You can extend this to monthly / yearly plans later.)
-              </p>
-            )}
-
-            {courseData.isLiteVersion && (
-              <p className="text-md text-dark-secondary mt-2.5">
-                Note: this course is marked as "Lite", so it may be treated as
-                free in the course list.
-              </p>
-            )}
           </div>
-        )}
+        );
 
-        {currentStep === 'content' && (
-          <div className="bg-light-tertiary p-8 mb-3">
-            <h2 className="text-2xl font-semibold text-dark-primary mb-2">Course Content</h2>
-            <p className="text-md text-dark-secondary mb-8">Add key learning points for your course</p>
+      case 4:
+        return (
+          <div className="form-section modules-section">
+            <h2>Course Modules</h2>
+            <p className="section-subtitle">Create modules with overview, learning outcomes, materials, and assignments</p>
 
-            <div className="mb-6">
-              <label className="block text-base font-semibold text-dark-primary mb-2">Learning Points</label>
-              <div className="flex gap-2.5 mb-5">
-                <input
-                  type="text"
-                  className="flex-1 w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  placeholder="e.g., Master social media marketing strategies"
-                  value={learningPoint}
-                  onChange={(e) => setLearningPoint(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddLearningPoint();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="py-3 px-6 bg-accent text-white border-none rounded-sm text-base font-semibold cursor-pointer whitespace-nowrap transition-colors duration-300 hover:bg-accent-secondary"
-                  onClick={handleAddLearningPoint}
-                >
-                  Add Point
-                </button>
-              </div>
-            </div>
-
-            {courseData.learningPoints.length > 0 && (
-              <div className="bg-white rounded p-5 mt-5">
-                <h3 className="text-base font-semibold text-dark-primary mb-4">Added Learning Points:</h3>
-                <ul className="list-none p-0 m-0">
-                  {courseData.learningPoints.map((point, index) => (
-                    <li key={index} className="flex justify-between items-center py-3 px-4 bg-light-tertiary rounded-sm mb-2.5 last:mb-0 transition-colors duration-200 hover:bg-light-secondary">
-                      <span className="flex-1 text-dark-primary text-base">✓ {point}</span>
-                      <button
-                        type="button"
-                        className="bg-transparent border-none text-accent text-lg cursor-pointer px-2 py-1 transition-colors duration-200 hover:text-accent-secondary"
-                        onClick={() => handleRemoveLearningPoint(index)}
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {courseData.learningPoints.length === 0 && (
-              <p className="text-center py-10 px-5 text-light-primary italic text-base">No learning points added yet. Add some to help students understand what they'll learn!</p>
-            )}
-          </div>
-        )}
-
-        {currentStep === 'modules' && (
-          <div className="bg-light-tertiary p-8 mb-3">
-            <h2 className="text-2xl font-semibold text-dark-primary mb-2">Course Modules</h2>
-            <p className="text-md text-dark-secondary mb-8">Organize your course into structured modules with content</p>
-
-            <div className="rounded p-6 mb-8">
-              <h3 className="text-lg font-semibold text-dark-primary mb-5">Add New Module</h3>
-
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">
-                  Module Title <span className="text-accent">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  placeholder="e.g., Introduction to Digital Marketing"
-                  value={currentModule.title}
-                  onChange={handleModuleInputChange}
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Module Description</label>
-                <textarea
-                  name="description"
-                  className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 resize-y min-h-[120px] focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                  rows="3"
-                  placeholder="Brief description of what this module covers..."
-                  value={currentModule.description}
-                  onChange={handleModuleInputChange}
-                />
-              </div>
-
-              <div className="bg-light-tertiary p-5 rounded-sm my-5">
-                <h4 className="text-md font-semibold text-dark-primary mb-4">Module Content</h4>
-
-                <div className="mb-6">
-                  <label className="block text-base font-semibold text-dark-primary mb-2">Video URL</label>
-                  <input
-                    type="text"
-                    name="videoUrl"
-                    className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={currentModule.videoUrl}
-                    onChange={handleModuleInputChange}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-base font-semibold text-dark-primary mb-2">Article Content</label>
-                  <textarea
-                    name="articleContent"
-                    className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 resize-y min-h-[120px] focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    rows="5"
-                    placeholder="Write your article content here..."
-                    value={currentModule.articleContent}
-                    onChange={handleModuleInputChange}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-base font-semibold text-dark-primary mb-2">PDF/Document URL</label>
-                  <input
-                    type="text"
-                    name="pdfUrl"
-                    className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    placeholder="https://example.com/document.pdf"
-                    value={currentModule.pdfUrl}
-                    onChange={handleModuleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                <div className="mb-6">
-                  <label className="block text-base font-semibold text-dark-primary mb-2">Duration</label>
-                  <input
-                    type="text"
-                    name="duration"
-                    className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    placeholder="e.g., 45 minutes"
-                    value={currentModule.duration}
-                    onChange={handleModuleInputChange}
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-base font-semibold text-dark-primary mb-2">Thumbnail URL</label>
-                  <input
-                    type="text"
-                    name="thumbnail"
-                    className="w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    placeholder="https://example.com/thumb.jpg"
-                    value={currentModule.thumbnail}
-                    onChange={handleModuleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-dark-primary mb-2">Module Learning Points</label>
-                <div className="flex gap-2.5 mb-5">
-                  <input
-                    type="text"
-                    className="flex-1 w-full px-4 py-3 border border-light-secondary rounded-sm text-base text-dark-primary font-sans transition-colors duration-300 focus:outline-none focus:border-dark-primary placeholder:text-light-primary"
-                    placeholder="e.g., Understand key marketing concepts"
-                    value={modulePoint}
-                    onChange={(e) => setModulePoint(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddModulePoint();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="py-3 px-6 bg-accent text-white border-none rounded-sm text-base font-semibold cursor-pointer whitespace-nowrap transition-colors duration-300 hover:bg-accent-secondary"
-                    onClick={handleAddModulePoint}
-                  >
-                    Add Point
-                  </button>
-                </div>
-              </div>
-
-              {currentModule.learningPoints.length > 0 && (
-                <div className="mt-4 mb-5">
-                  <ul className="list-none p-0 m-0">
-                    {currentModule.learningPoints.map((point, index) => (
-                      <li key={index} className="flex justify-between items-center py-3 px-4 bg-light-tertiary rounded-sm mb-2.5 last:mb-0 transition-colors duration-200 hover:bg-light-secondary">
-                        <span className="flex-1 text-dark-primary text-base">✓ {point}</span>
-                        <button
-                          type="button"
-                          className="bg-transparent border-none text-accent text-lg cursor-pointer px-2 py-1 transition-colors duration-200 hover:text-accent-secondary"
-                          onClick={() => handleRemoveModulePoint(index)}
-                        >
-                          ✕
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="w-full py-3.5 px-6 bg-dark-primary text-white border-none rounded-sm text-md font-semibold cursor-pointer transition-colors duration-300 mt-5 hover:bg-dark-secondary"
-                onClick={handleAddModule}
-              >
-                + Add Module to Course
-              </button>
-            </div>
+            <ModuleBuilder
+              currentModule={currentModule}
+              setCurrentModule={setCurrentModule}
+              onSave={handleModuleSave}
+              newOutcome={newOutcome}
+              setNewOutcome={setNewOutcome}
+              addLearningOutcome={addLearningOutcome}
+              removeLearningOutcome={removeLearningOutcome}
+            />
 
             {courseData.modules.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-base font-semibold text-dark-primary mb-4">Course Modules ({courseData.modules.length})</h3>
+              <div className="modules-list">
+                <h3>Course Modules ({courseData.modules.length})</h3>
                 {courseData.modules.map((module, index) => (
-                  <div key={index} className="bg-white rounded p-5 mb-4 border border-light-secondary transition-shadow duration-200 hover:shadow-md">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <span className="inline-block bg-accent text-white py-1 px-3 rounded text-xs font-semibold mb-2">Module {index + 1}</span>
-                        <h4 className="text-lg font-semibold text-dark-primary my-2">{module.title}</h4>
-                        {module.duration && <span className="text-sm text-dark-secondary ml-2.5">⏱ {module.duration}</span>}
+                  <div key={index} className="module-card">
+                    <div className="module-header">
+                      <div>
+                        <h4>Module {index + 1}: {module.title}</h4>
+                        <p className="module-overview">{module.overview}</p>
                       </div>
-                      <button
-                        type="button"
-                        className="bg-transparent text-accent border border-accent py-2 px-4 rounded text-sm font-semibold cursor-pointer transition-all duration-200 hover:bg-accent hover:text-white"
-                        onClick={() => handleRemoveModule(index)}
-                      >
-                        ✕ Remove
+                      <button onClick={() => removeModule(index)} className="remove-button">
+                        Remove
                       </button>
                     </div>
-                    {module.description && (
-                      <p className="text-dark-secondary text-base mb-3 leading-relaxed">{module.description}</p>
-                    )}
-                    <div className="flex gap-2 mb-3 flex-wrap">
-                      {module.videoUrl && <span className="bg-light-tertiary py-1.5 px-3 rounded text-sm text-dark-primary font-medium">📹 Video</span>}
-                      {module.articleContent && <span className="bg-light-tertiary py-1.5 px-3 rounded text-sm text-dark-primary font-medium">📝 Article</span>}
-                      {module.pdfUrl && <span className="bg-light-tertiary py-1.5 px-3 rounded text-sm text-dark-primary font-medium">📄 PDF</span>}
-                    </div>
-                    {module.learningPoints.length > 0 && (
-                      <div className="mt-3 p-3 bg-light-tertiary rounded">
-                        <strong className="text-sm text-dark-primary block mb-2">Learning Points:</strong>
-                        <ul className="m-0 pl-5">
-                          {module.learningPoints.map((point, idx) => (
-                            <li key={idx} className="text-sm text-dark-secondary mb-1">{point}</li>
-                          ))}
-                        </ul>
+                    
+                    <div className="module-details">
+                      <div className="detail-section">
+                        <strong>Learning Outcomes:</strong> {module.learningOutcomes.length}
                       </div>
-                    )}
+                      <div className="detail-section">
+                        <strong>Materials:</strong> {' '}
+                        {module.learningMaterials.readings.length} readings, {' '}
+                        {module.learningMaterials.podcasts.length} podcasts, {' '}
+                        {module.learningMaterials.videos.length} videos
+                      </div>
+                      {module.assignment && (
+                        <div className="detail-section">
+                          <strong>Assignment:</strong> {module.assignment.title}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        );
 
-            {courseData.modules.length === 0 && (
-              <p className="text-center py-10 px-5 text-light-primary italic text-base">No modules added yet. Create your first module above!</p>
+      case 5:
+        return (
+          <div className="form-section">
+            <h2>Final Test</h2>
+            <p className="section-subtitle">Create a final test to assess student learning</p>
+
+            <div className="form-group">
+              <label>Test Title</label>
+              <input
+                type="text"
+                value={courseData.finalTest.title}
+                onChange={(e) => handleInputChange('finalTest', 'title', e.target.value)}
+                placeholder="Final Test"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Test Description</label>
+              <textarea
+                value={courseData.finalTest.description}
+                onChange={(e) => handleInputChange('finalTest', 'description', e.target.value)}
+                placeholder="Description of the final test..."
+                rows={3}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Passing Score (%)</label>
+                <input
+                  type="number"
+                  value={courseData.finalTest.passingScore}
+                  onChange={(e) => handleInputChange('finalTest', 'passingScore', parseInt(e.target.value))}
+                  min="0"
+                  max="100"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Time Limit (minutes, 0 = no limit)</label>
+                <input
+                  type="number"
+                  value={courseData.finalTest.timeLimit}
+                  onChange={(e) => handleInputChange('finalTest', 'timeLimit', parseInt(e.target.value))}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="question-builder">
+              <h4>Add Test Questions</h4>
+
+              <div className="form-group">
+                <label>Question</label>
+                <input
+                  type="text"
+                  value={currentQuestion.question}
+                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
+                  placeholder="Enter your question..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Answer Options</label>
+                {currentQuestion.options.map((option, index) => (
+                  <input
+                    key={index}
+                    type="text"
+                    value={option}
+                    onChange={(e) => {
+                      const newOptions = [...currentQuestion.options];
+                      newOptions[index] = e.target.value;
+                      setCurrentQuestion({ ...currentQuestion, options: newOptions });
+                    }}
+                    placeholder={`Option ${index + 1}`}
+                    style={{ marginBottom: '8px' }}
+                  />
+                ))}
+              </div>
+
+              <div className="form-group">
+                <label>Correct Answer</label>
+                <select
+                  value={currentQuestion.correctAnswer}
+                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
+                >
+                  <option value="">Select correct answer...</option>
+                  {currentQuestion.options.map((option, index) => (
+                    <option key={index} value={index}>{option || `Option ${index + 1}`}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={addQuestionToTest} className="add-button">
+                Add Question
+              </button>
+
+              {courseData.finalTest.questions.length > 0 && (
+                <div className="items-list">
+                  <h5>Test Questions ({courseData.finalTest.questions.length})</h5>
+                  {courseData.finalTest.questions.map((q, index) => (
+                    <div key={index} className="list-item">
+                      <span>{index + 1}. {q.question}</span>
+                      <button onClick={() => removeQuestionFromTest(index)} className="remove-button">
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="form-section">
+            <h2>Completion Badge</h2>
+            <p className="section-subtitle">Design a badge that students will earn upon completing the course</p>
+
+            <div className="form-group">
+              <label>Badge Name</label>
+              <input
+                type="text"
+                value={courseData.badge.name}
+                onChange={(e) => handleInputChange('badge', 'name', e.target.value)}
+                placeholder="e.g., Freelance Branding Expert"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Badge Description</label>
+              <textarea
+                value={courseData.badge.description}
+                onChange={(e) => handleInputChange('badge', 'description', e.target.value)}
+                placeholder="Description of what this badge represents..."
+                rows={3}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Badge Color</label>
+              <input
+                type="color"
+                value={courseData.badge.color}
+                onChange={(e) => handleInputChange('badge', 'color', e.target.value)}
+              />
+            </div>
+
+            <ImageUpload
+              value={courseData.badge.imageUrl}
+              onChange={(url) => handleInputChange('badge', 'imageUrl', url)}
+              label="Badge Image (optional)"
+            />
+
+            {courseData.badge.name && (
+              <div className="badge-preview">
+                <h4>Badge Preview</h4>
+                <div 
+                  className="preview-badge"
+                  style={{ backgroundColor: courseData.badge.color }}
+                >
+                  {courseData.badge.imageUrl ? (
+                    <img src={courseData.badge.imageUrl} alt={courseData.badge.name} />
+                  ) : (
+                    <span className="badge-emoji">🏆</span>
+                  )}
+                </div>
+                <p><strong>{courseData.badge.name}</strong></p>
+                <p>{courseData.badge.description}</p>
+              </div>
             )}
           </div>
-        )}
+        );
 
-        <div className="flex justify-end gap-4 pt-5">
-          <button className="py-3 px-8 bg-transparent text-dark-secondary border-none rounded-sm text-md font-medium cursor-pointer transition-colors duration-300 hover:text-dark-primary" onClick={handleCancel}>
-            Cancel
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="create-course-page">
+      <div className="create-course-container">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <FiArrowLeft size={18} /> Back
+        </button>
+
+        <h1>{isEditMode ? 'Edit Course' : 'Create New Course'}</h1>
+        <p className="page-subtitle">Fill in the details to create a new course</p>
+
+        <div className="steps-indicator">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className={`step ${currentStep === index + 1 ? 'active' : ''} ${
+                currentStep > index + 1 ? 'completed' : ''
+              }`}
+            >
+              <div className="step-number">{index + 1}</div>
+              <div className="step-label">{step}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="form-container">
+          {renderStepContent()}
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            className="secondary-button"
+          >
+            Previous
           </button>
-          <button className="py-3 px-8 bg-accent text-white border-none rounded-sm text-md font-semibold cursor-pointer inline-flex items-center gap-2 transition-colors duration-300 hover:bg-accent-tertiary" onClick={handleCreateCourse}>
-            Create Course
-          </button>
+
+          {currentStep < steps.length ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="primary-button"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="primary-button"
+            >
+              {isEditMode ? 'Update Course' : 'Create Course'}
+            </button>
+          )}
         </div>
       </div>
     </div>

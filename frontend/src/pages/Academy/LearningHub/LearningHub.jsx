@@ -68,7 +68,6 @@ function LearningHub() {
   const fetchStats = async () => {
     try {
       // Use configured API URL and new profile endpoint
-      // eslint-disable-next-line no-undef
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiUrl}/api/users/profile`, {
         credentials: 'include' // Use cookies!

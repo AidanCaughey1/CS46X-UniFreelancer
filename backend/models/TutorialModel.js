@@ -12,6 +12,11 @@ const TutorialSchema = new mongoose.Schema({
   videoUrl: { type: String },          // YouTube, Vimeo, etc.
   writtenContent: { type: String },    // Long text section
 
+  // INSTRUCTOR
+  instructor: {
+    name: { type: String, required: true }
+  },
+
   // Downloadable Resources
   resources: [
     {

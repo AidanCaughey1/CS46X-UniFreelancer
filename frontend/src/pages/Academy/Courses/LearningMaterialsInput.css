@@ -1,0 +1,186 @@
+.learning-materials-input {
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Tabs */
+.materials-tabs {
+  display: flex;
+  background: #e8eaed;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.materials-tabs .tab {
+  flex: 1;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #666;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.materials-tabs .tab:hover {
+  background: rgba(79, 70, 229, 0.05);
+  color: #4F46E5;
+}
+
+.materials-tabs .tab.active {
+  background: white;
+  color: #4F46E5;
+  border-bottom-color: #4F46E5;
+  font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+  background: white;
+  padding: 1.5rem;
+}
+
+.readings-section h4,
+.podcasts-section h4,
+.videos-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Add Material Button */
+.add-material-button {
+  background: #4F46E5;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+}
+
+.add-material-button:hover {
+  background: #4338CA;
+}
+
+/* Materials List */
+.materials-list {
+  margin-top: 1.5rem;
+}
+
+.material-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.material-item:last-child {
+  margin-bottom: 0;
+}
+
+.material-info {
+  flex: 1;
+}
+
+.material-info strong {
+  display: block;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.material-info .author {
+  color: #666;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.material-info .citation {
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.material-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #4F46E5;
+  font-size: 0.875rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.material-link:hover {
+  text-decoration: underline;
+}
+
+/* Form Groups in Material Input */
+.tab-content .form-group {
+  margin-bottom: 1rem;
+}
+
+.tab-content .form-group label {
+  display: block;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.tab-content .form-group input,
+.tab-content .form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.tab-content .form-group input:focus,
+.tab-content .form-group textarea:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Empty State */
+.tab-content .empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .materials-tabs {
+    flex-direction: column;
+  }
+
+  .materials-tabs .tab {
+    border-bottom: 1px solid #ddd;
+    border-right: none;
+  }
+
+  .materials-tabs .tab.active {
+    border-bottom-color: #4F46E5;
+  }
+
+  .tab-content {
+    padding: 1rem;
+  }
+}

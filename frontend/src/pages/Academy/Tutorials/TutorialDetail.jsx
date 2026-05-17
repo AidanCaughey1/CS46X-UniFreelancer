@@ -1,4 +1,3 @@
-/* global process */
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiClock, FiVideo, FiLink } from "react-icons/fi";
@@ -270,6 +269,7 @@ function TutorialDetail() {
     };
 
     run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, isAuthenticated, isBookmarked, isCompleted, location.search]);
 
   const thumbnail = tutorial?.thumbnail || tutorial?.thumbnailUrl;

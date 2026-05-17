@@ -24,7 +24,7 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password,
-      role,
+      accountType,
     } = req.body;
 
     // Basic required fields check
@@ -32,6 +32,10 @@ router.post("/register", async (req, res) => {
       return res
         .status(400)
         .json({ message: "Missing required fields for registration" });
+    }
+
+    if (accountType && !["student", "instructor"].includes(accountType)) {
+      return res.status(400).json({ message: "Invalid account type" });
     }
 
     // Check if email or username already exists
@@ -46,8 +50,8 @@ router.post("/register", async (req, res) => {
       lastName,
       username,
       email,
-      password,   // <-- will be hashed by the pre-save hook
-      role,
+      password,
+      accountType: accountType || "student",
     });
     await user.save();
 
@@ -58,7 +62,7 @@ router.post("/register", async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-      sameSite: 'strict', // Prevent CSRF
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
@@ -105,7 +109,7 @@ router.post("/login", async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
@@ -267,6 +271,25 @@ router.delete("/tutorials/:tutorialId/complete", protect, async (req, res) => {
 // -------------------------------
 // Enroll in a course
 // -------------------------------
+router.post("/enroll/:courseId", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.enrolledCourses.includes(req.params.courseId)) {
+      user.enrolledCourses.push(req.params.courseId);
+      await user.save();
+    }
+
+    res.json({
+      message: "Course enrolled successfully",
+      enrolledCourses: user.enrolledCourses,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post("/:id/enroll-course/:courseId", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
